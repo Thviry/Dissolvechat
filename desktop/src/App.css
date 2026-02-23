@@ -474,6 +474,44 @@ code {
 .contact-item.active {
   background: var(--bg-active);
 }
+.contact-item-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.contact-item-wrap .contact-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-menu-btn {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+  font-size: 16px;
+  padding: 4px 6px;
+}
+
+.contact-item-wrap:hover .contact-menu-btn {
+  opacity: 0.6;
+}
+
+.contact-menu-btn:hover {
+  opacity: 1 !important;
+}
+
+.contact-actions {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+}
 
 .contact-info {
   min-width: 0;

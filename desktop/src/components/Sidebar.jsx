@@ -25,6 +25,7 @@ export default function Sidebar({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [contactMenu, setContactMenu] = useState(null);
   const importRef = useRef(null);
 
   const handleLookup = async () => {
@@ -163,19 +164,40 @@ export default function Sidebar({
         ) : (
           <div className="contact-list">
             {contacts.map((c) => (
-              <button
-                key={c.id}
-                className={`contact-item ${c.id === activeId ? "active" : ""}`}
-                onClick={() => onSelectPeer(c.id)}
-              >
-                <div className="contact-avatar">
-                  {(c.label || "?").charAt(0).toUpperCase()}
-                </div>
-                <div className="contact-info">
-                  <div className="contact-name">{c.label}</div>
-                  <div className="contact-id">{c.id.slice(0, 20)}…</div>
-                </div>
-              </button>
+              <div key={c.id} className="contact-item-wrap">
+                <button
+                  className={`contact-item ${c.id === activeId ? "active" : ""}`}
+                  onClick={() => onSelectPeer(c.id)}
+                >
+                  <div className="contact-avatar">
+                    {(c.label || "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="contact-info">
+                    <div className="contact-name">{c.label}</div>
+                    <div className="contact-id">{c.id.slice(0, 20)}…</div>
+                  </div>
+                </button>
+                <button
+                  className="btn-icon contact-menu-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setContactMenu(contactMenu === c.id ? null : c.id);
+                  }}
+                  title="Options"
+                >
+                  ⋮
+                </button>
+                {contactMenu === c.id && (
+                  <div className="contact-actions">
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => { onBlockPeer(c.id); setContactMenu(null); }}
+                    >
+                      Block
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
