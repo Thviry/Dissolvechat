@@ -1,15 +1,3 @@
-// desktop/src-tauri/src/main.rs
-// DissolveChat Desktop — Tauri backend
-//
-// Security model:
-// - No IPC commands exposed (webview is fully sandboxed)
-// - No file system access beyond what Tauri grants by default
-// - No shell access
-// - The React client runs identically to the web version
-// - All crypto happens in the webview's WebCrypto API
-//
-// Future: Add IPC commands for OS keychain storage, system tray, etc.
-
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::{
@@ -22,14 +10,12 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            // Build tray menu
             let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
             let hide = MenuItem::with_id(app, "hide", "Hide", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &hide, &quit])?;
 
-            // Create tray icon
-            TrayIconBuilder::new()
+            let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .tooltip("DissolveChat")
@@ -52,10 +38,13 @@ fn main() {
                 })
                 .build(app)?;
 
+            // Keep tray icon alive by leaking the reference
+            // (otherwise Rust drops it and the icon disappears)
+            std::mem::forget(_tray);
+
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Minimize to tray on close instead of quitting
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let _ = window.hide();
                 api.prevent_close();
