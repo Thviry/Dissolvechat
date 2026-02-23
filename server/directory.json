@@ -1,0 +1,29 @@
+{
+  "jonk": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "vQOtQF2IDdEaFRfsKnXQf_4o3qGNRZ0ncLGhbn9LFN0",
+    "label": "jonk",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "_N4WN_Qh5KxatlnaDOEmBn5STEm_qZ3_fgTiNdNmbJU",
+      "y": "gaUtXXIN4fymVnlITF9AgjQ3UADUrfStm2bQIH-ZxtY",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "lz6u8NKvfrfjqrN7FM-d0VGHkbi2w0KwkrOhlI5EIgo",
+      "y": "tESsf-g2-wILEJl179r9aGrpdwS9upD--dbrDJM--sU",
+      "key_ops": [],
+      "ext": true
+    },
+    "requestCap": "9FXjXpkgGCPn8YWYtzzzWsj2uJDr8w_jcmfp_KJW7iU",
+    "requestCapHash": "eg8PpND8zMSb30HfhYC_g3pHF-39bz19lhCX969ShxU",
+    "updatedAt": "2026-02-23T17:23:35.050Z"
+  }
+}
