@@ -49,7 +49,7 @@ class RateLimiter {
 const LIMITS = {
   // IP-based (per minute)
   IP_SEND:          parseInt(process.env.LIMIT_IP_SEND)          || 60,
-  IP_DRAIN:         parseInt(process.env.LIMIT_IP_DRAIN)         || 30,
+  IP_DRAIN:         parseInt(process.env.LIMIT_IP_DRAIN)         || 120,
   IP_CAPS:          parseInt(process.env.LIMIT_IP_CAPS)          || 20,
   IP_DIRECTORY:     parseInt(process.env.LIMIT_IP_DIRECTORY)     || 20,
   IP_LOOKUP:        parseInt(process.env.LIMIT_IP_LOOKUP)        || 60,
@@ -58,7 +58,7 @@ const LIMITS = {
 
   // Identity-based (per minute)
   ID_SEND:          parseInt(process.env.LIMIT_ID_SEND)          || 60,
-  ID_DRAIN:         parseInt(process.env.LIMIT_ID_DRAIN)         || 20,
+  ID_DRAIN:         parseInt(process.env.LIMIT_ID_DRAIN)         || 60,
   ID_CAPS:          parseInt(process.env.LIMIT_ID_CAPS)          || 10,
   ID_SIG_FAIL:      parseInt(process.env.LIMIT_ID_SIG_FAIL)      || 5,  // failed sig attempts
   ID_CAP_FAIL:      parseInt(process.env.LIMIT_ID_CAP_FAIL)      || 10, // failed cap attempts
