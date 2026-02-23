@@ -21,6 +21,8 @@ const jwkPublicKey = z.object({
   crv: z.literal("P-256"),
   x: b64u(64),
   y: b64u(64),
+  key_ops: z.array(z.string()).optional(),
+  ext: z.boolean().optional(),
 }).strict();
 
 // Encrypted payload (ephemeral ECDH + AES-GCM)
