@@ -239,13 +239,15 @@ export function useMessaging(identity, contactsMgr) {
         const reqCapsBody = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [reqCapHash]);
         await publishRequestCaps(myId, reqCapsBody);
 
-        if (discoverable && handle?.trim()) {
+        if (handle?.trim()) {
           const profile = {
             dissolveProtocol: 4, v: 4,
             id: myId, label: myLabel,
             authPublicJwk: authPubJwk,
             e2eePublicJwk: e2eePubJwk,
-            requestCap, requestCapHash: reqCapHash,
+            requestCap: discoverable ? requestCap : undefined,
+            requestCapHash: discoverable ? reqCapHash : undefined,
+            discoverable: !!discoverable,
           };
           const dirBody = await buildDirectoryPublish(handle.trim(), profile, authPrivJwk);
           await fetch(

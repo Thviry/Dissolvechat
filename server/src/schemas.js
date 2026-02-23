@@ -117,6 +117,7 @@ const directoryPublishSchema = z.object({
     e2eePublicJwk: jwkPublicKey,
     requestCap: capToken.optional(),
     requestCapHash: b64u(64).optional(),
+    discoverable: z.boolean().optional(),
   }).strict(),
   sig: signature,
 }).strict();
