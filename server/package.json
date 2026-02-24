@@ -1,0 +1,18 @@
+{
+  "name": "dissolvechat-relay",
+  "version": "4.1.0",
+  "description": "Dissolve Chat relay server (Protocol v4-secure)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "canonicalize": "^2.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "ws": "^8.16.0",
+    "zod": "^3.23.0"
+  }
+}
