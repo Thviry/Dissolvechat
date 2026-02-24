@@ -69,9 +69,6 @@ export default function Sidebar({
           >
             ⚙
           </button>
-          <button className="btn btn-secondary" onClick={onExportKeyfile}>
-                  Export Keyfile (with contacts)
-                </button>
           <button className="btn-icon" onClick={onLogout} title="Logout">
             ⏻
           </button>
@@ -100,6 +97,9 @@ export default function Sidebar({
                   }}
                 />
               </label>
+              <button className="btn btn-sm" onClick={onExportKeyfile}>
+                Export Keyfile
+              </button>
             </div>
           </div>
 
@@ -141,6 +141,34 @@ export default function Sidebar({
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="settings-section">
+            <h4>Theme</h4>
+            <div className="theme-picker">
+              {[
+                { id: "", label: "Midnight", color: "#6c8cff" },
+                { id: "ocean", label: "Ocean", color: "#4da6ff" },
+                { id: "forest", label: "Forest", color: "#4dcc7a" },
+                { id: "ember", label: "Ember", color: "#ff8c4d" },
+                { id: "violet", label: "Violet", color: "#a78bfa" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  className={`theme-swatch ${(document.documentElement.getAttribute("data-theme") || "") === t.id ? "active" : ""}`}
+                  style={{ background: t.color }}
+                  title={t.label}
+                  onClick={() => {
+                    if (t.id) {
+                      document.documentElement.setAttribute("data-theme", t.id);
+                    } else {
+                      document.documentElement.removeAttribute("data-theme");
+                    }
+                    saveJson(`theme:${identity.id}`, { theme: t.id });
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="settings-section">

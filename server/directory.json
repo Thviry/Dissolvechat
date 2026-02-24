@@ -105,7 +105,7 @@
       "ext": true
     },
     "discoverable": false,
-    "updatedAt": "2026-02-24T04:50:14.812Z"
+    "updatedAt": "2026-02-24T04:56:52.807Z"
   },
   "tester1": {
     "dissolveProtocol": 4,
@@ -133,6 +133,6 @@
     "requestCap": "IwaCBVs_Cs13GtTY5cLr_ip3Q1UEzMgNEOl1Bo62vW8",
     "requestCapHash": "2nq8SGj7ZyDDDvH0xbHpVaGWjRljQaMjuRT8JON_NvE",
     "discoverable": true,
-    "updatedAt": "2026-02-24T04:47:13.158Z"
+    "updatedAt": "2026-02-24T04:59:58.157Z"
   }
 }

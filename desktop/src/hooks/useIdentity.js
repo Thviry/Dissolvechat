@@ -132,6 +132,14 @@ export function useIdentity() {
     const relayPref = loadJson(`relay:${data.id}`, { url: "" });
     setRelayUrl(relayPref.url || "");
 
+    // Restore theme
+    const themePref = loadJson(`theme:${data.id}`, { theme: "" });
+    if (themePref.theme) {
+      document.documentElement.setAttribute("data-theme", themePref.theme);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+
     if (!skipPersist) {
       await encryptSession({
         authPrivJwk: data.authPrivJwk,

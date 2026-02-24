@@ -6,6 +6,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -13,6 +14,20 @@ export default function ChatPanel({ peer, messages, onSend }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Auto-focus message input when peer changes or on mount
+  useEffect(() => {
+    if (peer?.cap && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [peer]);
+
+  // Re-focus message input when clicking anywhere in chat (unless clicking another input)
+  const handleChatClick = (e) => {
+    if (e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
 
   const handleSend = async () => {
     if (!text.trim() || !peer || sending) return;
@@ -41,7 +56,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
   }
 
   return (
-    <main className="chat-panel">
+    <main className="chat-panel" onClick={handleChatClick}>
       <div className="chat-header">
         <div className="chat-header-avatar">
           {(peer.label || "?").charAt(0).toUpperCase()}
@@ -61,7 +76,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
 
       <div className="chat-messages" ref={scrollRef}>
         <div className="chat-ephemeral-notice">
-          ◇ Messages are ephemeral — they vanish when you close or refresh this tab.
+          ◇ End-to-end encrypted. Enable "Save messages locally" in settings to keep history.
         </div>
         {messages.length === 0 ? (
           <div className="chat-no-messages">No messages yet</div>
@@ -84,6 +99,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
         {error && <div className="chat-error">{error}</div>}
         <div className="chat-input-row">
           <input
+            ref={inputRef}
             className="chat-input"
             value={text}
             onChange={(e) => setText(e.target.value)}

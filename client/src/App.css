@@ -40,6 +40,64 @@
   --header-height: 60px;
 }
 
+/* ── Theme: Midnight (default) ── */
+
+/* ── Theme: Ocean ── */
+[data-theme="ocean"] {
+  --bg-primary: #0a1628;
+  --bg-secondary: #0f1f35;
+  --bg-tertiary: #162a42;
+  --bg-hover: #1c3350;
+  --bg-active: #233d5e;
+  --accent: #4da6ff;
+  --accent-hover: #7abfff;
+  --accent-subtle: rgba(77, 166, 255, 0.12);
+  --border: #1c3350;
+  --border-subtle: #142840;
+}
+
+/* ── Theme: Forest ── */
+[data-theme="forest"] {
+  --bg-primary: #0c1410;
+  --bg-secondary: #111d16;
+  --bg-tertiary: #17261d;
+  --bg-hover: #1e3026;
+  --bg-active: #253a2e;
+  --accent: #4dcc7a;
+  --accent-hover: #70dba0;
+  --accent-subtle: rgba(77, 204, 122, 0.12);
+  --border: #1e3026;
+  --border-subtle: #162418;
+}
+
+/* ── Theme: Ember ── */
+[data-theme="ember"] {
+  --bg-primary: #14100e;
+  --bg-secondary: #1d1614;
+  --bg-tertiary: #261d1a;
+  --bg-hover: #302520;
+  --bg-active: #3a2d27;
+  --accent: #ff8c4d;
+  --accent-hover: #ffa874;
+  --accent-subtle: rgba(255, 140, 77, 0.12);
+  --border: #302520;
+  --border-subtle: #241a16;
+}
+
+/* ── Theme: Violet ── */
+[data-theme="violet"] {
+  --bg-primary: #110e18;
+  --bg-secondary: #181422;
+  --bg-tertiary: #1f1a2c;
+  --bg-hover: #282237;
+  --bg-active: #312b42;
+  --accent: #a78bfa;
+  --accent-hover: #c4b5fd;
+  --accent-subtle: rgba(167, 139, 250, 0.12);
+  --border: #282237;
+  --border-subtle: #1c172a;
+}
+
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
 
 /* ============================================================
@@ -1061,4 +1119,27 @@ code {
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   margin-top: 8px;
+}
+
+/* Theme picker */
+.theme-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.15);
+}
+
+.theme-swatch.active {
+  border-color: var(--text-primary);
 }
