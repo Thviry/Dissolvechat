@@ -50,10 +50,8 @@
       "key_ops": [],
       "ext": true
     },
-    "requestCap": "9FXjXpkgGCPn8YWYtzzzWsj2uJDr8w_jcmfp_KJW7iU",
-    "requestCapHash": "eg8PpND8zMSb30HfhYC_g3pHF-39bz19lhCX969ShxU",
-    "discoverable": true,
-    "updatedAt": "2026-02-24T04:27:42.521Z"
+    "discoverable": false,
+    "updatedAt": "2026-02-24T05:09:41.949Z"
   },
   "jonk": {
     "dissolveProtocol": 4,
@@ -133,6 +131,6 @@
     "requestCap": "IwaCBVs_Cs13GtTY5cLr_ip3Q1UEzMgNEOl1Bo62vW8",
     "requestCapHash": "2nq8SGj7ZyDDDvH0xbHpVaGWjRljQaMjuRT8JON_NvE",
     "discoverable": true,
-    "updatedAt": "2026-02-24T04:59:58.157Z"
+    "updatedAt": "2026-02-24T05:10:27.986Z"
   }
 }

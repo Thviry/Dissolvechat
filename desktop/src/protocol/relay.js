@@ -133,7 +133,12 @@ async function fetchWsChallenge() {
   const data = await resp.json();
   return data.nonce;
 }
-
+export async function checkHandleAvailable(handle) {
+  const resp = await relayFetch(`/directory/available?handle=${encodeURIComponent(handle)}`);
+  if (!resp.ok) return false;
+  const data = await resp.json();
+  return !!data.available;
+}
 /**
  * Create an authenticated WebSocket connection.
  * Flow: fetch nonce → sign → authenticate → receive notifications.
@@ -220,4 +225,5 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
       ws?.close();
     },
   };
+  
 }
