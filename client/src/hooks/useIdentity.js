@@ -126,7 +126,6 @@ export function useIdentity() {
     const pref = loadJson(`discoverable:${data.id}`, { discoverable: false, handle: "" });
     setDiscoverable(!!pref.discoverable);
     setHandle(pref.handle || "");
-
     const archPref = loadJson(`archive:${data.id}`, { enabled: false });
     setArchiveEnabled(!!archPref.enabled);
 
@@ -226,7 +225,8 @@ export function useIdentity() {
     if (!passphrase) throw new Error("Passphrase required");
 
     const decrypted = await decryptPrivateData(keyFile.encryptedPrivate, passphrase);
-
+// Extract contacts from keyfile if present (portable contacts)
+    const importedContacts = Array.isArray(decrypted.contacts) ? decrypted.contacts : [];
     const authPub = keyFile?.auth?.publicJwk;
     const e2eePub = keyFile?.e2ee?.publicJwk;
     if (!authPub || !e2eePub) throw new Error("Missing public keys in key file");
@@ -244,7 +244,7 @@ export function useIdentity() {
       requestCap: typeof decrypted.requestCap === "string" ? decrypted.requestCap : randomCap(),
     });
 
-    return userId;
+    return { userId, importedContacts };
   }, [computeId, activateSession]);
 
   const logout = useCallback(() => {
@@ -260,7 +260,38 @@ export function useIdentity() {
     setDiscoverable(false);
     setHandle("");
   }, []);
+const exportKeyfile = useCallback(async (passphrase, contactsList) => {
+    if (!authPrivJwk || !authPubJwk || !e2eePubJwk || !id) {
+      throw new Error("No active identity");
+    }
+    if (!passphrase) throw new Error("Passphrase required");
 
+    const encrypted = await encryptPrivateData(
+      {
+        authPrivateJwk: authPrivJwk,
+        e2eePrivateJwk: e2eePrivJwk,
+        inboxCap,
+        requestCap,
+        contacts: contactsList || [],
+      },
+      passphrase
+    );
+
+    const keyFile = {
+      version: 4,
+      dissolveProtocol: 4,
+      id,
+      label,
+      handle: handle || undefined,
+      auth: { alg: "ECDSA_P-256", publicJwk: authPubJwk },
+      e2ee: { alg: "ECDH_P-256", publicJwk: e2eePubJwk },
+      encryptedPrivate: encrypted,
+      exportedAt: new Date().toISOString(),
+    };
+
+    downloadJson(`dissolve-${id.slice(0, 12)}.usbkey.json`, keyFile);
+    return keyFile;
+  }, [authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk, id, label, handle, inboxCap, requestCap]);
   return {
     // State
     authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk,
@@ -272,6 +303,6 @@ export function useIdentity() {
     isReady,
     sessionChecked,
     // Actions
-    enroll, login, logout, computeId,
+    enroll, login, logout, computeId, exportKeyfile,
   };
 }

@@ -10,47 +10,14 @@
 
 import { signObject } from "../crypto/signing";
 
-const DEFAULT_API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const DEFAULT_WS = import.meta.env.VITE_WS_URL || "ws://localhost:3001/ws";
-
-let _apiUrl = DEFAULT_API;
-let _wsUrl = DEFAULT_WS;
-
-/**
- * Get the current relay API URL.
- */
-export function getRelayUrl() { return _apiUrl; }
-
-/**
- * Get the current relay WebSocket URL.
- */
-export function getRelayWsUrl() { return _wsUrl; }
-
-/**
- * Set the relay URL at runtime. Derives the WS URL automatically.
- * @param {string} url - HTTP(S) URL of the relay (e.g. "https://relay.example.com")
- */
-export function setRelayUrl(url) {
-  if (!url || typeof url !== "string") return;
-  // Strip trailing slash
-  _apiUrl = url.replace(/\/+$/, "");
-  // Derive WS URL from HTTP URL
-  _wsUrl = _apiUrl.replace(/^http/, "ws") + "/ws";
-}
-
-/**
- * Reset relay URL to default (from env or localhost).
- */
-export function resetRelayUrl() {
-  _apiUrl = DEFAULT_API;
-  _wsUrl = DEFAULT_WS;
-}
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:3001/ws";
 
 /**
  * Make a JSON request to the relay.
  */
 async function relayFetch(path, options = {}) {
-  const url = `${_apiUrl}${path}`;
+  const url = `${API}${path}`;
   const resp = await fetch(url, {
     headers: { "Content-Type": "application/json" },
     ...options,
@@ -169,7 +136,7 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
 
     // Step 3: Connect and authenticate
     try {
-      ws = new WebSocket(_wsUrl);
+      ws = new WebSocket(WS_URL);
     } catch {
       scheduleReconnect();
       return;
@@ -231,4 +198,4 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
   };
 }
 
-
+export { API };

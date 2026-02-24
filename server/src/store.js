@@ -10,6 +10,7 @@ const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // 5 minutes
 
 class Store {
   constructor() {
+    this._dirFile = process.env.DIRECTORY_FILE || "./directory.json";
     // toId -> Set(capHash)
     this.caps = new Map();
     this.requestCaps = new Map();
@@ -37,6 +38,9 @@ class Store {
 
     // Start periodic cleanup
     this._cleanupTimer = setInterval(() => this._cleanup(), CLEANUP_INTERVAL_MS);
+
+    // Load persisted directory
+    this._loadDirectory();
   }
 
   // --- Helpers ---
@@ -223,6 +227,33 @@ class Store {
     }
     this.directory.set(handle, { ...profile, updatedAt: new Date().toISOString() });
     this.handleOwners.set(profile.id, handle);
+    this._saveDirectory();
+  }
+
+  _saveDirectory() {
+    try {
+      const data = {};
+      for (const [handle, profile] of this.directory) {
+        data[handle] = profile;
+      }
+      require("fs").writeFileSync(this._dirFile, JSON.stringify(data, null, 2));
+    } catch (err) {
+      console.error("[WARN] Failed to save directory:", err.message);
+    }
+  }
+
+  _loadDirectory() {
+    try {
+      const raw = require("fs").readFileSync(this._dirFile, "utf-8");
+      const data = JSON.parse(raw);
+      for (const [handle, profile] of Object.entries(data)) {
+        this.directory.set(handle, profile);
+        if (profile.id) this.handleOwners.set(profile.id, handle);
+      }
+      console.log(`[STORE] Loaded ${this.directory.size} directory entries from disk`);
+    } catch {
+      // File doesn't exist yet — that's fine
+    }
   }
 
   lookupDirectory(handle) {

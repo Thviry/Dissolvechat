@@ -38,6 +38,8 @@ fn main() {
                 })
                 .build(app)?;
 
+            // Keep tray icon alive by leaking the reference
+            // (otherwise Rust drops it and the icon disappears)
             std::mem::forget(_tray);
 
             Ok(())

@@ -47,10 +47,10 @@ const td = new TextDecoder();
  * Uses HKDF with a fixed salt + the identity ID as info.
  * This means only someone with this identity's session can read the archive.
  */
-async function deriveArchiveKey(identityId) {
+async function deriveArchiveKey(identitySecret) {
   const baseKey = await crypto.subtle.importKey(
     "raw",
-    te.encode(identityId),
+    te.encode(identitySecret),
     "HKDF",
     false,
     ["deriveKey"]
@@ -60,7 +60,7 @@ async function deriveArchiveKey(identityId) {
       name: "HKDF",
       hash: "SHA-256",
       salt: te.encode("dissolve-message-archive-v1"),
-      info: te.encode(identityId),
+      info: te.encode("dissolve-archive"),
     },
     baseKey,
     { name: "AES-GCM", length: 256 },

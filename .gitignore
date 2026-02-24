@@ -1,0 +1,7 @@
+node_modules/
+dist/
+target/
+*.pdb
+.env.local
+.env
+directory.json

@@ -18,6 +18,7 @@ export default function Sidebar({
   onLookup,
   onSendRequest,
   onLogout,
+  onExportKeyfile,
   onDiscoverabilityChange,
   shareCardData,
 }) {
@@ -26,7 +27,7 @@ export default function Sidebar({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [contactMenu, setContactMenu] = useState(null); // id of contact with open menu
+  const [contactMenu, setContactMenu] = useState(null);
   const importRef = useRef(null);
 
   const handleLookup = async () => {
@@ -68,6 +69,9 @@ export default function Sidebar({
           >
             ⚙
           </button>
+          <button className="btn btn-secondary" onClick={onExportKeyfile}>
+                  Export Keyfile (with contacts)
+                </button>
           <button className="btn-icon" onClick={onLogout} title="Logout">
             ⏻
           </button>
@@ -104,6 +108,17 @@ export default function Sidebar({
             <label className="toggle-label">
               <input
                 type="checkbox"
+                checked={identity.archiveEnabled}
+                onChange={(e) => {
+                  identity.setArchiveEnabled(e.target.checked);
+                  saveJson(`archive:${identity.id}`, { enabled: e.target.checked });
+                }}
+              />
+              <span>Save messages locally (encrypted)</span>
+            </label>
+            <label className="toggle-label">
+              <input
+                type="checkbox"
                 checked={identity.discoverable}
                 onChange={(e) => onDiscoverabilityChange(e.target.checked, identity.handle)}
               />
@@ -132,7 +147,7 @@ export default function Sidebar({
             <h4>Relay</h4>
             <input
               className="input-field"
-              value={identity.relayUrl}
+              value={identity.relayUrl || ""}
               onChange={(e) => {
                 identity.setRelayUrl(e.target.value);
                 saveJson(`relay:${identity.id}`, { url: e.target.value });
@@ -266,7 +281,7 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <div className="session-notice">
           <span className="session-notice-icon">◇</span>
-          <span>Session persists across refresh. Closing the tab or logging out ends your session. Messages are ephemeral. Contacts persist locally.</span>
+          <span>Session persists across refresh. Closing the tab or logging out ends your session. Messages are archived locally (encrypted). Contacts persist locally.</span>
         </div>
       </div>
 

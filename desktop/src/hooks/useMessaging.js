@@ -237,21 +237,25 @@ export function useMessaging(identity, contactsMgr) {
     }
   }, [relayUrl]);
 
-  // --- Initialize message archive and load history ---
+  // --- Initialize message archive and load history (only if enabled) ---
   useEffect(() => {
     if (!isReady || !myId) return;
+    if (!archiveEnabled) {
+      archiveRef.current?.close();
+      archiveRef.current = null;
+      setHistoryLoaded(true);
+      return;
+    }
 
     let cancelled = false;
     (async () => {
       try {
-        const store = await createMessageStore(myId);
+        const store = await createMessageStore(JSON.stringify(e2eePrivJwk));
         archiveRef.current = store;
 
-        // Load all saved messages
         const history = await store.loadAll();
         if (!cancelled && history.length > 0) {
           setMessages((prev) => {
-            // Merge: keep existing (live) messages, add history that isn't already present
             const existingIds = new Set(prev.map((m) => m.msgId));
             const newFromHistory = history.filter((m) => !existingIds.has(m.msgId));
             const merged = [...newFromHistory, ...prev].sort((a, b) => a.ts - b.ts);
@@ -270,7 +274,7 @@ export function useMessaging(identity, contactsMgr) {
       archiveRef.current?.close();
       archiveRef.current = null;
     };
-  }, [isReady, myId]);
+  }, [isReady, myId, archiveEnabled]);
 
   // --- Publish capabilities and start polling/websocket ---
   useEffect(() => {

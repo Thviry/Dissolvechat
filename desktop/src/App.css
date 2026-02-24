@@ -474,7 +474,6 @@ code {
 .contact-item.active {
   background: var(--bg-active);
 }
-
 .contact-item-wrap {
   position: relative;
   display: flex;
