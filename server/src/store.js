@@ -269,6 +269,9 @@ class Store {
     const existing = this.directory.get(handle);
     return existing ? existing.id !== requesterId : false;
   }
+  isHandleClaimed(handle) {
+    return this.directory.has(handle);
+  }
 
   // --- Stats (for /health and /debug/state) ---
 

@@ -297,7 +297,19 @@ function registerRoutes(app, store, wss) {
     logger.directoryPublished(trimmed);
     res.json({ ok: true });
   });
+// ── GET /directory/available — check if handle is unclaimed ────────
+  app.get("/directory/available", (req, res) => {
+    const ipKey = getIpKey(req);
+    if (!rateCheck(req, res, "ip", `${ipKey}:lookup`, LIMITS.IP_LOOKUP, "/directory/available")) return;
 
+    const handle = String(req.query.handle || "").trim().toLowerCase();
+    if (!handle || !/^[a-z0-9_-]{1,32}$/.test(handle)) {
+      return res.status(400).json({ error: "invalid_handle" });
+    }
+
+    const taken = store.isHandleClaimed(handle);
+    res.json({ handle, available: !taken });
+  });
   // ── GET /directory/lookup ─────────────────────────────────────────
   app.get("/directory/lookup", (req, res) => {
     const ipKey = getIpKey(req);

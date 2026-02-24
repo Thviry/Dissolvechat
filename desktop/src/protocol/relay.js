@@ -123,7 +123,12 @@ export async function lookupDirectory(handle) {
   const data = await resp.json();
   return data.profile || null;
 }
-
+export async function checkHandleAvailable(handle) {
+  const resp = await relayFetch(`/directory/available?handle=${encodeURIComponent(handle)}`);
+  if (!resp.ok) return false;
+  const data = await resp.json();
+  return !!data.available;
+}
 /**
  * Fetch a WebSocket authentication nonce from the relay.
  */

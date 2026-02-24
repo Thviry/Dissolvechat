@@ -61,8 +61,8 @@ export default function App() {
 
   // --- Check handle availability (called from LoginScreen during enrollment) ---
   const handleCheckHandle = useCallback(async (handle) => {
-    const result = await relayLookup(handle);
-    return result === null; // null = not found = available
+    const { checkHandleAvailable } = await import("./protocol/relay");
+    return checkHandleAvailable(handle);
   }, []);
 
   // --- Enroll ---

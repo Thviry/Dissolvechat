@@ -24,7 +24,8 @@
     },
     "requestCap": "MycvqVVp93GHxDAdiEsfnhiKxxdtnE64NCCGRQJdY8o",
     "requestCapHash": "6OW62rMZbQxS1dyQpDlEe6jT3GJnH0EmBn25rGRkORA",
-    "updatedAt": "2026-02-24T01:29:01.940Z"
+    "discoverable": true,
+    "updatedAt": "2026-02-24T04:33:42.386Z"
   },
   "jorky": {
     "dissolveProtocol": 4,
@@ -53,5 +54,85 @@
     "requestCapHash": "eg8PpND8zMSb30HfhYC_g3pHF-39bz19lhCX969ShxU",
     "discoverable": true,
     "updatedAt": "2026-02-24T04:27:42.521Z"
+  },
+  "jonk": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "UYe1kTpfsd-o0YbVPD-keUNYpAdN5jwH-lQrH846A6k",
+    "label": "jonk",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "8VP8Rg0nY3-8fkMAkY-7Ei4D8rihqhd6juG65Uy5B0U",
+      "y": "yr7ojRYRgkwC44csMstESg3RtmWoxhKmpZiMh14ka88",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "zudkyRSimSOai3aFWlgyMrX-SXziWjwv0G8agcHXxLw",
+      "y": "CJAB612i014G5ZnmFKotC3B6K1RUVTU4zBiaJNwEV1A",
+      "key_ops": [],
+      "ext": true
+    },
+    "discoverable": false,
+    "updatedAt": "2026-02-24T04:34:21.823Z"
+  },
+  "tester": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "yFyYZ3MzjDE8W9bg5YOtCBIFF2KLYzwDLAWVGhkB4tE",
+    "label": "tester",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "NKyRJco9qzKoyXUtK-QI7BdtCQ4KEu_uA05uzaGcFwM",
+      "y": "V1two8i-8FBbfV_t0j4BkDSm9wW0m4QvF4GjHeQYgw4",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "dpvzWRVyh1MBv3dhB0pe3umcE1ezD6BVg_9yC56FUV4",
+      "y": "mXNiDVNY80I6Yaz-eqDR1a7IIp3eNV13yo2-O7kFeec",
+      "key_ops": [],
+      "ext": true
+    },
+    "discoverable": false,
+    "updatedAt": "2026-02-24T04:50:14.812Z"
+  },
+  "tester1": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "7ynhAzj4Vi8H9ZLjmYAzBIvmuEeytJqGRugj_W5JXP0",
+    "label": "tester1",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "zvz4ExivOio61WeHKmwkkF42ITUf9h6g16cjq6bwQW0",
+      "y": "Lgeq3CMASm_P0evsSZaA-7_YTCxuRu8X1zUgPCxt8Ac",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "ysrTGy6FVzterWl4sN1JEHeUqhLRafENeiSiZv8-D9o",
+      "y": "t6QNBlmKnrMyn9WKC1YGVm70ubI4kzBZgChxeizq7lk",
+      "key_ops": [],
+      "ext": true
+    },
+    "requestCap": "IwaCBVs_Cs13GtTY5cLr_ip3Q1UEzMgNEOl1Bo62vW8",
+    "requestCapHash": "2nq8SGj7ZyDDDvH0xbHpVaGWjRljQaMjuRT8JON_NvE",
+    "discoverable": true,
+    "updatedAt": "2026-02-24T04:47:13.158Z"
   }
 }
