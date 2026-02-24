@@ -10,14 +10,45 @@
 
 import { signObject } from "../crypto/signing";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:3001/ws";
+const DEFAULT_API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const DEFAULT_WS = import.meta.env.VITE_WS_URL || "ws://localhost:3001/ws";
+
+let _apiUrl = DEFAULT_API;
+let _wsUrl = DEFAULT_WS;
+
+/**
+ * Get the current relay API URL.
+ */
+export function getRelayUrl() { return _apiUrl; }
+
+/**
+ * Get the current relay WebSocket URL.
+ */
+export function getRelayWsUrl() { return _wsUrl; }
+
+/**
+ * Set the relay URL at runtime. Derives the WS URL automatically.
+ * @param {string} url - HTTP(S) URL of the relay (e.g. "https://relay.example.com")
+ */
+export function setRelayUrl(url) {
+  if (!url || typeof url !== "string") return;
+  _apiUrl = url.replace(/\/+$/, "");
+  _wsUrl = _apiUrl.replace(/^http/, "ws") + "/ws";
+}
+
+/**
+ * Reset relay URL to default (from env or localhost).
+ */
+export function resetRelayUrl() {
+  _apiUrl = DEFAULT_API;
+  _wsUrl = DEFAULT_WS;
+}
 
 /**
  * Make a JSON request to the relay.
  */
 async function relayFetch(path, options = {}) {
-  const url = `${API}${path}`;
+  const url = `${_apiUrl}${path}`;
   const resp = await fetch(url, {
     headers: { "Content-Type": "application/json" },
     ...options,
@@ -115,7 +146,6 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
   async function connect() {
     if (closed) return;
 
-    // Step 1: Get nonce
     let nonce;
     try {
       nonce = await fetchWsChallenge();
@@ -124,7 +154,6 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
       return;
     }
 
-    // Step 2: Sign nonce
     let sig;
     try {
       const authObj = { nonce, authPub: authPubJwk };
@@ -134,16 +163,14 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
       return;
     }
 
-    // Step 3: Connect and authenticate
     try {
-      ws = new WebSocket(WS_URL);
+      ws = new WebSocket(_wsUrl);
     } catch {
       scheduleReconnect();
       return;
     }
 
     ws.onopen = () => {
-      // Send auth message
       ws.send(JSON.stringify({
         type: "auth",
         nonce,
@@ -155,10 +182,7 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === "auth_ok") {
-          // Authenticated successfully
-          return;
-        }
+        if (msg.type === "auth_ok") return;
         if (msg.type === "auth_error") {
           console.warn("[Dissolve WS] Auth failed:", msg.error);
           ws.close();
@@ -197,5 +221,3 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
     },
   };
 }
-
-export { API };

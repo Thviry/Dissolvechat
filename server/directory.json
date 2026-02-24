@@ -1,0 +1,57 @@
+{
+  "jonky": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "rf5q3CPypecRKxYZUrDcHxgJ9ssz4-jNo9I--O0kWJU",
+    "label": "jonk",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "-djZmEtiuTej9HBUOkVV9iDdsTG2bAKr8W6Dtx3FJZA",
+      "y": "fSwY0tbbWI5bjXkBYBpHU5gNDvo7HCLtvl7nFWwqlAg",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "ICJhhQ2inRHxQc8le6cwZ_bdzPdOzCodwBxpuv7Y5hg",
+      "y": "1xr1be33QwvvzrZffVXTuUot4leK7rLQAkqCdupj8ts",
+      "key_ops": [],
+      "ext": true
+    },
+    "requestCap": "MycvqVVp93GHxDAdiEsfnhiKxxdtnE64NCCGRQJdY8o",
+    "requestCapHash": "6OW62rMZbQxS1dyQpDlEe6jT3GJnH0EmBn25rGRkORA",
+    "updatedAt": "2026-02-24T01:29:01.940Z"
+  },
+  "jorky": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "vQOtQF2IDdEaFRfsKnXQf_4o3qGNRZ0ncLGhbn9LFN0",
+    "label": "jonk",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "_N4WN_Qh5KxatlnaDOEmBn5STEm_qZ3_fgTiNdNmbJU",
+      "y": "gaUtXXIN4fymVnlITF9AgjQ3UADUrfStm2bQIH-ZxtY",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "lz6u8NKvfrfjqrN7FM-d0VGHkbi2w0KwkrOhlI5EIgo",
+      "y": "tESsf-g2-wILEJl179r9aGrpdwS9upD--dbrDJM--sU",
+      "key_ops": [],
+      "ext": true
+    },
+    "requestCap": "9FXjXpkgGCPn8YWYtzzzWsj2uJDr8w_jcmfp_KJW7iU",
+    "requestCapHash": "eg8PpND8zMSb30HfhYC_g3pHF-39bz19lhCX969ShxU",
+    "discoverable": true,
+    "updatedAt": "2026-02-24T04:27:42.521Z"
+  }
+}
