@@ -1,5 +1,8 @@
 // client/src/crypto/signing.js
 // ECDSA P-256 signing and verification over JCS-canonicalized JSON.
+//
+// signObject accepts either a raw JWK object OR a non-extractable CryptoKey.
+// Callers that hold a CryptoKey (the normal in-session path) pay zero import cost.
 
 import canonicalize from "canonicalize";
 import { b64uFromBytes, bytesFromB64u, enc } from "./encoding";
@@ -20,10 +23,14 @@ async function importEcdsaPublicKey(jwk) {
 
 /**
  * Sign an object (without the `sig` field) using ECDSA P-256 + SHA-256.
+ * @param {object} objNoSig - Object to sign (must not have a `sig` field)
+ * @param {CryptoKey|object} authPrivateKeyOrJwk - Non-extractable CryptoKey (preferred) or JWK
  * Returns the signature as base64url.
  */
-export async function signObject(objNoSig, authPrivateJwk) {
-  const priv = await importEcdsaPrivateKey(authPrivateJwk);
+export async function signObject(objNoSig, authPrivateKeyOrJwk) {
+  const priv = authPrivateKeyOrJwk instanceof CryptoKey
+    ? authPrivateKeyOrJwk
+    : await importEcdsaPrivateKey(authPrivateKeyOrJwk);
   const data = enc.encode(jcs(objNoSig));
   const sigBytes = new Uint8Array(
     await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, priv, data)

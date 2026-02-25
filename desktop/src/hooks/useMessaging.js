@@ -1,4 +1,4 @@
-// client/src/hooks/useMessaging.js
+// desktop/src/hooks/useMessaging.js
 // Handles message sending, receiving, decryption, and inbox polling.
 //
 // v4-secure changes:
@@ -7,6 +7,10 @@
 //   to get the inner envelope with all sender info.
 // - Inbox drain is authenticated (signed POST, not unauthenticated GET).
 // - Backwards-compatible: still accepts old v4 envelopes with `body.msg.cipher`.
+//
+// Security:
+// - authPrivKey and e2eePrivKey are non-extractable CryptoKey objects.
+// - Timing jitter is applied before each send to resist traffic analysis.
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { randomId, capHashFromCap } from "../crypto";
@@ -34,6 +38,11 @@ import {
 import { checkAndUpdateReplay } from "../utils/storage";
 import { createMessageStore } from "../utils/messageStore";
 
+// Random send delay 20–200ms to obscure message timing
+function sendJitter() {
+  return new Promise((r) => setTimeout(r, 20 + Math.floor(Math.random() * 180)));
+}
+
 export function useMessaging(identity, contactsMgr) {
   const [messages, setMessages] = useState([]);
   const [activeId, setActiveId] = useState("");
@@ -44,8 +53,8 @@ export function useMessaging(identity, contactsMgr) {
 
   const {
     id: myId, label: myLabel,
-    authPubJwk, authPrivJwk,
-    e2eePubJwk, e2eePrivJwk,
+    authPubJwk, authPrivKey,
+    e2eePubJwk, e2eePrivKey,
     inboxCap, requestCap,
     isReady, discoverable, handle,
     archiveEnabled, relayUrl,
@@ -66,7 +75,7 @@ export function useMessaging(identity, contactsMgr) {
     if (env.payload) {
       let inner;
       try {
-        const decrypted = await e2eeDecrypt(env.payload, e2eePrivJwk);
+        const decrypted = await e2eeDecrypt(env.payload, e2eePrivKey);
         inner = JSON.parse(decrypted);
       } catch {
         return; // can't decrypt — not for us or corrupted
@@ -159,7 +168,7 @@ export function useMessaging(identity, contactsMgr) {
 
       let plaintext = "";
       try {
-        plaintext = await e2eeDecrypt(msg.cipher, e2eePrivJwk);
+        plaintext = await e2eeDecrypt(msg.cipher, e2eePrivKey);
       } catch {
         return;
       }
@@ -211,14 +220,13 @@ export function useMessaging(identity, contactsMgr) {
         archiveRef.current?.save(myId, archMsg);
       }
     }
-  }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest]);
+  }, [myId, e2eePrivKey, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest]);
 
   // --- Fetch and process all pending messages (authenticated) ---
   const fetchMessages = useCallback(async () => {
     if (!isReady) return;
     try {
-      // Build signed drain requests (Fix #1)
-      const drainBody = await buildInboxDrain(myId, authPubJwk, authPrivJwk);
+      const drainBody = await buildInboxDrain(myId, authPubJwk, authPrivKey);
 
       const items = await drainInbox(myId, drainBody);
       for (const env of items) await handleIncoming(env);
@@ -226,7 +234,7 @@ export function useMessaging(identity, contactsMgr) {
       const reqItems = await drainRequestInbox(myId, drainBody);
       for (const env of reqItems) await handleIncoming(env);
     } catch { /* ignore */ }
-  }, [isReady, myId, authPubJwk, authPrivJwk, handleIncoming]);
+  }, [isReady, myId, authPubJwk, authPrivKey, handleIncoming]);
 
   // --- Sync relay URL when identity settings change ---
   useEffect(() => {
@@ -250,7 +258,9 @@ export function useMessaging(identity, contactsMgr) {
     let cancelled = false;
     (async () => {
       try {
-        const store = await createMessageStore(JSON.stringify(e2eePrivJwk));
+        // Use myId (the public identity hash) as archive key material.
+        // Private keys are non-extractable so cannot be serialized here.
+        const store = await createMessageStore(myId);
         archiveRef.current = store;
 
         const history = await store.loadAll();
@@ -285,11 +295,11 @@ export function useMessaging(identity, contactsMgr) {
     const publishAndStart = async () => {
       try {
         const capHash = await capHashFromCap(inboxCap);
-        const capsBody = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [capHash]);
+        const capsBody = await buildCapsUpdate(myId, authPubJwk, authPrivKey, [capHash]);
         await publishCaps(myId, capsBody);
 
         const reqCapHash = await capHashFromCap(requestCap);
-        const reqCapsBody = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [reqCapHash]);
+        const reqCapsBody = await buildCapsUpdate(myId, authPubJwk, authPrivKey, [reqCapHash]);
         await publishRequestCaps(myId, reqCapsBody);
 
         if (handle?.trim()) {
@@ -299,10 +309,10 @@ export function useMessaging(identity, contactsMgr) {
             authPublicJwk: authPubJwk,
             e2eePublicJwk: e2eePubJwk,
             requestCap: discoverable ? requestCap : undefined,
-            requestCapHash: discoverable ? reqCapHash : undefined,
+            requestCapHash: discoverable ? await capHashFromCap(requestCap) : undefined,
             discoverable: !!discoverable,
           };
-          const dirBody = await buildDirectoryPublish(handle.trim(), profile, authPrivJwk);
+          const dirBody = await buildDirectoryPublish(handle.trim(), profile, authPrivKey);
           await fetch(
             `${getRelayUrl()}/directory/publish`,
             {
@@ -318,7 +328,7 @@ export function useMessaging(identity, contactsMgr) {
 
       fetchMessages();
 
-      wsRef.current = connectWebSocket(myId, authPubJwk, authPrivJwk, (_channel) => {
+      wsRef.current = connectWebSocket(myId, authPubJwk, authPrivKey, (_channel) => {
         fetchMessages();
       });
 
@@ -327,7 +337,7 @@ export function useMessaging(identity, contactsMgr) {
       const republishTimer = setInterval(async () => {
         try {
           const ch = await capHashFromCap(inboxCap);
-          const cb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [ch]);
+          const cb = await buildCapsUpdate(myId, authPubJwk, authPrivKey, [ch]);
           await publishCaps(myId, cb);
         } catch { /* ignore */ }
       }, 30000);
@@ -343,7 +353,7 @@ export function useMessaging(identity, contactsMgr) {
       clearInterval(pollTimerRef.current);
       cleanupPromise?.then?.((cleanup) => cleanup?.());
     };
-  }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, requestCap, discoverable, handle, myLabel, fetchMessages]);
+  }, [isReady, myId, authPubJwk, authPrivKey, e2eePubJwk, inboxCap, requestCap, discoverable, handle, myLabel, fetchMessages]);
 
   // --- Send a message ---
   const sendMsg = useCallback(async (peerId, text) => {
@@ -355,9 +365,12 @@ export function useMessaging(identity, contactsMgr) {
     }
 
     const { envelope, msgId, ts } = await buildMessage(
-      myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk,
+      myId, myLabel, authPubJwk, authPrivKey, e2eePubJwk,
       inboxCap, peer, text.trim()
     );
+
+    // Timing jitter: randomize send time to resist traffic analysis
+    await sendJitter();
 
     let lastError = "";
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -383,28 +396,30 @@ export function useMessaging(identity, contactsMgr) {
     }
 
     throw new Error(`Send failed: ${lastError}`);
-  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, contactsRef, requestsRef]);
+  }, [myId, myLabel, authPubJwk, authPrivKey, e2eePubJwk, inboxCap, contactsRef, requestsRef]);
 
   // --- Send contact request ---
   const sendRequest = useCallback(async (recipient) => {
     const envelope = await buildContactRequest(
-      myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, recipient
+      myId, myLabel, authPubJwk, authPrivKey, e2eePubJwk, inboxCap, recipient
     );
+    await sendJitter();
     const resp = await sendEnvelope(envelope);
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
       throw new Error(`Request failed: ${resp.status} ${errText}`);
     }
-  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap]);
+  }, [myId, myLabel, authPubJwk, authPrivKey, e2eePubJwk, inboxCap]);
 
   // --- Send contact grant ---
   const sendGrant = useCallback(async (recipient) => {
     if (typeof recipient.cap !== "string" || !recipient.cap) return;
     const envelope = await buildContactGrant(
-      myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, recipient
+      myId, myLabel, authPubJwk, authPrivKey, e2eePubJwk, inboxCap, recipient
     );
+    await sendJitter();
     await sendEnvelope(envelope).catch(() => {});
-  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap]);
+  }, [myId, myLabel, authPubJwk, authPrivKey, e2eePubJwk, inboxCap]);
 
   const reset = useCallback(() => {
     setMessages([]);
