@@ -311,6 +311,70 @@ code {
   margin-top: 4px;
 }
 
+/* ── Threat model explainer (login screen) ─────────────────── */
+.login-threat-model {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.threat-model-summary {
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.threat-model-summary::-webkit-details-marker { display: none; }
+.threat-model-summary::before { content: "▸ "; }
+details[open] .threat-model-summary::before { content: "▾ "; }
+
+.threat-model-body {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.threat-model-body p { margin: 0 0 8px 0; }
+.threat-model-body p:last-child { margin-bottom: 0; }
+
+/* ── Onboarding screen ─────────────────────────────────────── */
+.onboarding-section {
+  background: var(--surface-secondary, rgba(255,255,255,0.04));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.onboarding-section.onboarding-warn {
+  border-color: var(--accent-warn, #e67e22);
+  background: var(--accent-warn-bg, rgba(230,126,34,0.08));
+}
+
+.onboarding-heading {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: var(--text-primary);
+}
+
+.onboarding-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.onboarding-list {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin: 6px 0 0 0;
+  padding-left: 20px;
+}
+
 /* ============================================================
    App layout
    ============================================================ */

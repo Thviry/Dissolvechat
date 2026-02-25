@@ -17,12 +17,13 @@ import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
 import { buildBlockRequest } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
+import OnboardingScreen from "./components/OnboardingScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
 import "./App.css";
 
 export default function App() {
-  const [mode, setMode] = useState("login"); // login | chat
+  const [mode, setMode] = useState("login"); // login | onboarding | chat
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
@@ -88,8 +89,8 @@ export default function App() {
 
     try {
       await identity.enroll(displayName || handle, passphrase, handle);
-      // enroll() auto-activates the session — go straight to chat
-      setMode("chat");
+      // enroll() auto-activates the session — show onboarding before chat
+      setMode("onboarding");
     } catch (err) {
       throw new Error("Enrollment failed: " + err.message);
     }
@@ -199,7 +200,7 @@ export default function App() {
         ? await capHashFromCap(peer.cap)
         : null;
       const body = await buildBlockRequest(
-        identity.id, identity.authPubJwk, identity.authPrivJwk, id, capHash
+        identity.id, identity.authPubJwk, identity.authPrivKey, id, capHash
       );
       await blockOnRelay(identity.id, id, capHash, body);
     } catch { /* best-effort */ }
@@ -268,6 +269,10 @@ export default function App() {
 
   if (mode === "login") {
     return <LoginScreen onLogin={handleLogin} onEnroll={handleEnroll} onCheckHandle={handleCheckHandle} />;
+  }
+
+  if (mode === "onboarding") {
+    return <OnboardingScreen identity={identity} onContinue={() => setMode("chat")} />;
   }
 
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;

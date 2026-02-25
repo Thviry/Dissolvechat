@@ -1,4 +1,4 @@
-// client/src/components/LoginScreen.jsx
+// desktop/src/components/LoginScreen.jsx
 import { useState, useRef } from "react";
 
 export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
@@ -62,7 +62,7 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
         <div className="login-icon">◈</div>
         <h1>Dissolve</h1>
         <p className="login-subtitle">
-          End-to-end encrypted messaging. Your identity is your key file.
+          End-to-end encrypted messaging. No accounts. No servers that know who you are.
         </p>
 
         {!showEnroll ? (
@@ -93,6 +93,22 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
             <p className="login-hint">
               Select your <code>dissolve-*.usbkey.json</code> file
             </p>
+
+            <div className="login-threat-model">
+              <details>
+                <summary className="threat-model-summary">How does this work?</summary>
+                <div className="threat-model-body">
+                  <p><strong>Your key file is your identity.</strong> It contains encrypted private keys
+                  that prove who you are. No username or password is stored on any server.</p>
+                  <p><strong>End-to-end encrypted.</strong> Messages are encrypted on your device before
+                  leaving it. The relay only forwards opaque ciphertext — it cannot read your messages.</p>
+                  <p><strong>No recovery.</strong> If you lose your key file and have no backup, that
+                  identity is gone forever. Keep your key file backed up in multiple places.</p>
+                  <p><strong>Self-hostable.</strong> You can run your own relay and point Dissolve at it
+                  from Settings. You don't have to trust anyone's infrastructure.</p>
+                </div>
+              </details>
+            </div>
           </div>
         ) : (
           <form className="enroll-form" onSubmit={handleSubmit}>

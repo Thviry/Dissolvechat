@@ -1,4 +1,4 @@
-// client/src/App.jsx
+// desktop/src/App.jsx
 // Dissolve Chat v4 — Protocol-first E2EE messenger.
 //
 // Architecture:
@@ -17,12 +17,13 @@ import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
 import { buildBlockRequest } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
+import OnboardingScreen from "./components/OnboardingScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
 import "./App.css";
 
 export default function App() {
-  const [mode, setMode] = useState("login"); // login | chat
+  const [mode, setMode] = useState("login"); // login | onboarding | chat
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
@@ -59,6 +60,18 @@ export default function App() {
     } catch { /* ignore malformed fragments */ }
   }, [identity.isReady, identity.id, contactsMgr]);
 
+  const handleExportKeyfile = useCallback(async () => {
+    const passphrase = prompt("Enter passphrase to encrypt your keyfile:");
+    if (!passphrase) return;
+    const confirm = prompt("Confirm passphrase:");
+    if (passphrase !== confirm) { alert("Passphrases don't match"); return; }
+    try {
+      await identity.exportKeyfile(passphrase, contactsMgr.contacts);
+    } catch (err) {
+      alert("Export failed: " + err.message);
+    }
+  }, [identity, contactsMgr]);
+
   // --- Check handle availability (called from LoginScreen during enrollment) ---
   const handleCheckHandle = useCallback(async (handle) => {
     const { checkHandleAvailable } = await import("./protocol/relay");
@@ -76,26 +89,34 @@ export default function App() {
 
     try {
       await identity.enroll(displayName || handle, passphrase, handle);
-      // enroll() auto-activates the session — go straight to chat
-      setMode("chat");
+      // enroll() auto-activates the session — show onboarding before chat
+      setMode("onboarding");
     } catch (err) {
       throw new Error("Enrollment failed: " + err.message);
     }
   }, [identity, handleCheckHandle]);
 
   // --- Login ---
-  const handleLogin = useCallback(async (file) => {
+ const handleLogin = useCallback(async (file) => {
     if (!file) return;
     const passphrase = prompt("Enter your key file passphrase:");
     if (!passphrase) return;
     try {
       const raw = await file.text();
-      await identity.login(raw, passphrase);
+      const result = await identity.login(raw, passphrase);
+      // Import contacts from keyfile if present
+      if (result?.importedContacts?.length > 0) {
+        for (const c of result.importedContacts) {
+          if (c.id && c.authPublicJwk && c.e2eePublicJwk) {
+            contactsMgr.addContact(c);
+          }
+        }
+      }
       setMode("chat");
     } catch (err) {
       alert("Login failed: " + (err.message || "Wrong passphrase or corrupted file."));
     }
-  }, [identity]);
+  }, [identity, contactsMgr]);
 
   // --- Logout ---
   const handleLogout = useCallback(() => {
@@ -179,7 +200,7 @@ export default function App() {
         ? await capHashFromCap(peer.cap)
         : null;
       const body = await buildBlockRequest(
-        identity.id, identity.authPubJwk, identity.authPrivJwk, id, capHash
+        identity.id, identity.authPubJwk, identity.authPrivKey, id, capHash
       );
       await blockOnRelay(identity.id, id, capHash, body);
     } catch { /* best-effort */ }
@@ -250,6 +271,10 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} onEnroll={handleEnroll} onCheckHandle={handleCheckHandle} />;
   }
 
+  if (mode === "onboarding") {
+    return <OnboardingScreen identity={identity} onContinue={() => setMode("chat")} />;
+  }
+
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;
   const visibleMessages = messaging.activeId
     ? messaging.messages.filter((m) => m.peerId === messaging.activeId)
@@ -272,6 +297,7 @@ export default function App() {
         onLookup={handleLookup}
         onSendRequest={handleSendRequest}
         onLogout={handleLogout}
+        onExportKeyfile={handleExportKeyfile}
         onDiscoverabilityChange={handleDiscoverabilityChange}
         shareCardData={shareCardData}
       />
