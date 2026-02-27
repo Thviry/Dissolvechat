@@ -27,6 +27,7 @@ import {
   jcs,
 } from "../crypto";
 import { encryptPrivateData, decryptPrivateData } from "../crypto/keyfile";
+import { generateMnemonic, validateMnemonic, deriveIdentityFromMnemonic } from "../crypto/seed";
 import { downloadJson, loadJson, saveJson } from "../utils/storage";
 
 const SESSION_KEY = "dissolve_session";
@@ -187,6 +188,8 @@ export function useIdentity() {
         id: data.id,
         inboxCap: data.inboxCap,
         requestCap: data.requestCap,
+        // mnemonic is only present for seed-phrase-based identities
+        mnemonic: data.mnemonic || null,
       });
     }
   }, []);
@@ -209,26 +212,13 @@ export function useIdentity() {
   const enroll = useCallback(async (displayName, passphrase, handle) => {
     if (!passphrase) throw new Error("Passphrase required");
 
-    const e2eePair = await crypto.subtle.generateKey(
-      { name: "ECDH", namedCurve: "P-256" },
-      true,
-      ["deriveKey"]
-    );
-    const e2eePub = await crypto.subtle.exportKey("jwk", e2eePair.publicKey);
-    const e2eePriv = await crypto.subtle.exportKey("jwk", e2eePair.privateKey);
+    // Generate 12-word seed phrase and derive all key material from it
+    const mnemonic = generateMnemonic();
+    const derived = await deriveIdentityFromMnemonic(mnemonic);
+    const { authPrivJwk: authPriv, authPubJwk: authPub, e2eePrivJwk: e2eePriv, e2eePubJwk: e2eePub, inboxCap: cap, requestCap: reqCap } = derived;
 
-    const signPair = await crypto.subtle.generateKey(
-      { name: "ECDSA", namedCurve: "P-256" },
-      true,
-      ["sign", "verify"]
-    );
-    const authPub = await crypto.subtle.exportKey("jwk", signPair.publicKey);
-    const authPriv = await crypto.subtle.exportKey("jwk", signPair.privateKey);
-
-    const cap = randomCap();
-    const reqCap = randomCap();
     const encrypted = await encryptPrivateData(
-      { authPrivateJwk: authPriv, e2eePrivateJwk: e2eePriv, inboxCap: cap, requestCap: reqCap },
+      { authPrivateJwk: authPriv, e2eePrivateJwk: e2eePriv, inboxCap: cap, requestCap: reqCap, mnemonic },
       passphrase
     );
     const userId = await computeId(authPub);
@@ -260,9 +250,10 @@ export function useIdentity() {
       id: userId,
       inboxCap: cap,
       requestCap: reqCap,
+      mnemonic,
     });
 
-    return keyFile;
+    return { keyFile, mnemonic };
   }, [computeId, activateSession]);
 
   const login = useCallback(async (fileContent, passphrase) => {
@@ -290,6 +281,32 @@ export function useIdentity() {
     });
 
     return { userId, importedContacts };
+  }, [computeId, activateSession]);
+
+  /**
+   * Recover an identity from a 12-word seed phrase.
+   * All key material and caps are re-derived deterministically.
+   * displayName is optional (defaults to "Me") since it isn't stored in keys.
+   */
+  const recover = useCallback(async (mnemonic, displayName) => {
+    if (!validateMnemonic(mnemonic)) throw new Error("Invalid recovery phrase");
+    const derived = await deriveIdentityFromMnemonic(mnemonic);
+    const { authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk, inboxCap, requestCap } = derived;
+    const userId = await computeId(authPubJwk);
+
+    await activateSession({
+      authPrivJwk,
+      authPubJwk,
+      e2eePrivJwk,
+      e2eePubJwk,
+      label: displayName || "Me",
+      id: userId,
+      inboxCap,
+      requestCap,
+      mnemonic: mnemonic.trim(),
+    });
+
+    return { userId };
   }, [computeId, activateSession]);
 
   const logout = useCallback(() => {
@@ -325,6 +342,8 @@ export function useIdentity() {
         inboxCap,
         requestCap,
         contacts: contactsList || [],
+        // preserve mnemonic in re-exported keyfiles
+        ...(sessionData.mnemonic ? { mnemonic: sessionData.mnemonic } : {}),
       },
       passphrase
     );
@@ -356,6 +375,6 @@ export function useIdentity() {
     isReady,
     sessionChecked,
     // Actions
-    enroll, login, logout, computeId, exportKeyfile,
+    enroll, login, recover, logout, computeId, exportKeyfile,
   };
 }

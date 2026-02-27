@@ -27,19 +27,21 @@ export default function OnboardingScreen({ onContinue, identity }) {
         </div>
 
         <div className="onboarding-section onboarding-warn">
-          <h3 className="onboarding-heading">⚠ Losing your key file = losing your identity forever</h3>
+          <h3 className="onboarding-heading">⚠ You need two backups</h3>
           <p className="onboarding-body">
-            There is no "forgot password" flow. There is no support team that can reset
-            your account. If you lose the key file and have no backup, that identity is
-            gone permanently. Your contacts will not be able to reach you on that handle
-            again.
+            You were shown a 12-word recovery phrase during enrollment — that phrase can
+            restore your complete identity if you lose your key file. Keep it written on
+            paper in a safe place. If you lose both the key file and the phrase,
+            that identity is gone permanently.
           </p>
         </div>
 
         <div className="onboarding-section">
-          <h3 className="onboarding-heading">Back it up — right now</h3>
+          <h3 className="onboarding-heading">Back up your key file too</h3>
           <p className="onboarding-body">
-            Keep copies in at least two separate places:
+            The recovery phrase restores your cryptographic identity but not your message
+            history or contact list. Back up the key file (just downloaded) in at least
+            two places:
           </p>
           <ul className="onboarding-list">
             <li>A USB drive or encrypted external disk</li>
@@ -47,8 +49,8 @@ export default function OnboardingScreen({ onContinue, identity }) {
             <li>A password manager that can store file attachments</li>
           </ul>
           <p className="onboarding-body" style={{ marginTop: 8 }}>
-            You can always re-export your key file from Settings → Export Key File if
-            you need another copy later.
+            You can view your recovery phrase and re-export your key file at any time
+            from Settings.
           </p>
         </div>
 
@@ -64,7 +66,7 @@ export default function OnboardingScreen({ onContinue, identity }) {
 
         <div className="enroll-actions" style={{ marginTop: 24 }}>
           <button className="btn btn-primary" onClick={onContinue}>
-            I've backed up my key file — let's go
+            Got it — let's go
           </button>
         </div>
       </div>

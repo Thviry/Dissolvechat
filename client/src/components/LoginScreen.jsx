@@ -1,26 +1,33 @@
 // client/src/components/LoginScreen.jsx
 import { useState, useRef } from "react";
+import { validateMnemonic } from "../crypto/seed";
 
-export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
+export default function LoginScreen({ onLogin, onEnroll, onCheckHandle, onRecover }) {
   const fileRef = useRef(null);
-  const [showEnroll, setShowEnroll] = useState(false);
+  const [view, setView] = useState("home"); // home | enroll | recover
+
+  // ── Enrollment state ────────────────────────────────────────────────
   const [handle, setHandle] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [passphrase, setPassphrase] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
-  const [handleStatus, setHandleStatus] = useState(null); // null | "checking" | "available" | "taken" | "error"
+  const [handleStatus, setHandleStatus] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
   const [enrollError, setEnrollError] = useState(null);
   const checkTimer = useRef(null);
 
-  // Normalize handle input: lowercase, strip invalid chars, max 32
+  // ── Recovery state ──────────────────────────────────────────────────
+  const [recoveryPhrase, setRecoveryPhrase] = useState("");
+  const [recoveryName, setRecoveryName] = useState("");
+  const [recovering, setRecovering] = useState(false);
+  const [recoverError, setRecoverError] = useState(null);
+
   const onHandleChange = (e) => {
     const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 32);
     setHandle(clean);
     setHandleStatus(null);
     setEnrollError(null);
 
-    // Debounced availability check
     clearTimeout(checkTimer.current);
     if (clean.length >= 2) {
       setHandleStatus("checking");
@@ -42,7 +49,7 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
     passphrase === confirmPass &&
     !enrolling;
 
-  const handleSubmit = async (e) => {
+  const handleEnrollSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit) return;
     setEnrolling(true);
@@ -56,6 +63,30 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
     }
   };
 
+  const phraseWords = recoveryPhrase.trim().split(/\s+/).filter(Boolean);
+  const phraseValid = phraseWords.length === 12 && validateMnemonic(recoveryPhrase);
+  const canRecover = phraseValid && !recovering;
+
+  const handleRecoverSubmit = async (e) => {
+    e.preventDefault();
+    if (!canRecover) return;
+    setRecovering(true);
+    setRecoverError(null);
+    try {
+      await onRecover(recoveryPhrase.trim(), recoveryName.trim());
+    } catch (err) {
+      setRecoverError(err.message);
+    } finally {
+      setRecovering(false);
+    }
+  };
+
+  const backToHome = () => {
+    setView("home");
+    setEnrollError(null);
+    setRecoverError(null);
+  };
+
   return (
     <div className="login-screen">
       <div className="login-card">
@@ -65,15 +96,13 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
           End-to-end encrypted messaging. No accounts. No servers that know who you are.
         </p>
 
-        {!showEnroll ? (
+        {view === "home" && (
           <div className="login-actions">
-            <button className="btn btn-primary" onClick={() => setShowEnroll(true)}>
+            <button className="btn btn-primary" onClick={() => setView("enroll")}>
               Create New Identity
             </button>
 
-            <div className="login-divider">
-              <span>or</span>
-            </div>
+            <div className="login-divider"><span>or</span></div>
 
             <label className="btn btn-secondary" tabIndex={0}>
               Load Key File
@@ -94,6 +123,12 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
               Select your <code>dissolve-*.usbkey.json</code> file
             </p>
 
+            <div className="login-divider"><span>or</span></div>
+
+            <button className="btn btn-ghost" onClick={() => setView("recover")}>
+              Recover from Seed Phrase
+            </button>
+
             <div className="login-threat-model">
               <details>
                 <summary className="threat-model-summary">How does this work?</summary>
@@ -102,17 +137,18 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
                   that prove who you are. No username or password is stored on any server.</p>
                   <p><strong>End-to-end encrypted.</strong> Messages are encrypted on your device before
                   leaving it. The relay only forwards opaque ciphertext — it cannot read your messages.</p>
-                  <p><strong>No recovery.</strong> If you lose your key file and have no backup, that
-                  identity is gone forever. Keep your key file backed up in multiple places.</p>
+                  <p><strong>12-word recovery phrase.</strong> New identities come with a seed phrase
+                  that can fully restore your identity if you lose your key file. Write it down.</p>
                   <p><strong>Self-hostable.</strong> You can run your own relay and point Dissolve at it
-                  from Settings. You don't have to trust anyone's infrastructure.</p>
+                  from Settings. You do not have to trust anyone else's infrastructure.</p>
                 </div>
               </details>
             </div>
           </div>
-        ) : (
-          <form className="enroll-form" onSubmit={handleSubmit}>
-            {/* Handle (required, unique) */}
+        )}
+
+        {view === "enroll" && (
+          <form className="enroll-form" onSubmit={handleEnrollSubmit}>
             <div className="form-group">
               <label className="form-label">
                 Handle <span className="form-required">*</span>
@@ -143,7 +179,6 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
               </div>
             </div>
 
-            {/* Display name (optional) */}
             <div className="form-group">
               <label className="form-label">Display Name</label>
               <input
@@ -155,7 +190,6 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
               />
             </div>
 
-            {/* Passphrase */}
             <div className="form-group">
               <label className="form-label">
                 Passphrase <span className="form-required">*</span>
@@ -169,7 +203,6 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
               />
             </div>
 
-            {/* Confirm passphrase */}
             <div className="form-group">
               <label className="form-label">
                 Confirm Passphrase <span className="form-required">*</span>
@@ -182,7 +215,7 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
                 placeholder="Type it again"
               />
               {confirmPass && passphrase !== confirmPass && (
-                <div className="form-hint status-taken">Passphrases don't match</div>
+                <div className="form-hint status-taken">Passphrases do not match</div>
               )}
               {passphrase && passphrase.length < 4 && (
                 <div className="form-hint status-taken">At least 4 characters</div>
@@ -195,11 +228,65 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle }) {
               <button className="btn btn-primary" type="submit" disabled={!canSubmit}>
                 {enrolling ? "Creating…" : "Create Identity"}
               </button>
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={() => { setShowEnroll(false); setEnrollError(null); }}
-              >
+              <button className="btn btn-secondary" type="button" onClick={backToHome}>
+                Back
+              </button>
+            </div>
+          </form>
+        )}
+
+        {view === "recover" && (
+          <form className="enroll-form" onSubmit={handleRecoverSubmit}>
+            <div className="form-group">
+              <label className="form-label">
+                Recovery Phrase <span className="form-required">*</span>
+              </label>
+              <textarea
+                className="input-field"
+                style={{ minHeight: 80, resize: "vertical" }}
+                value={recoveryPhrase}
+                onChange={(e) => { setRecoveryPhrase(e.target.value); setRecoverError(null); }}
+                placeholder="Enter your 12 words separated by spaces"
+                autoFocus
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+              />
+              <div className="form-hint">
+                {phraseWords.length === 0 && "Enter the 12 words from your recovery phrase"}
+                {phraseWords.length > 0 && phraseWords.length < 12 && (
+                  <span className="status-checking">{phraseWords.length} / 12 words</span>
+                )}
+                {phraseWords.length === 12 && phraseValid && (
+                  <span className="status-available">✓ Valid recovery phrase</span>
+                )}
+                {phraseWords.length === 12 && !phraseValid && (
+                  <span className="status-taken">✗ Invalid phrase — check for typos</span>
+                )}
+                {phraseWords.length > 12 && (
+                  <span className="status-taken">Too many words</span>
+                )}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Display Name</label>
+              <input
+                className="input-field"
+                value={recoveryName}
+                onChange={(e) => setRecoveryName(e.target.value)}
+                placeholder="Optional — how you appear to contacts"
+                maxLength={64}
+              />
+            </div>
+
+            {recoverError && <div className="form-error">{recoverError}</div>}
+
+            <div className="enroll-actions">
+              <button className="btn btn-primary" type="submit" disabled={!canRecover}>
+                {recovering ? "Recovering…" : "Recover Identity"}
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={backToHome}>
                 Back
               </button>
             </div>
