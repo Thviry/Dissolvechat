@@ -1,32 +1,63 @@
-// client/src/App.jsx
-// Dissolve Chat v4 — Protocol-first E2EE messenger.
+// desktop/src/App.jsx
+// Dissolve Chat v5 — Protocol-first E2EE messenger.
 //
 // Architecture:
 // - Identity, contacts, and messaging are managed by dedicated hooks.
 // - Crypto is isolated in src/crypto/.
 // - Protocol/relay communication is in src/protocol/.
 // - UI is composed of focused components.
+// - alert()/prompt() have been replaced with Toast + PassphraseModal.
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useIdentity } from "./hooks/useIdentity";
 import { useContacts } from "./hooks/useContacts";
 import { useMessaging } from "./hooks/useMessaging";
-import { capHashFromCap, sha256B64u, enc } from "./crypto";
+import { useToast } from "./hooks/useToast";
+import { capHashFromCap } from "./crypto";
 import { signObject } from "./crypto/signing";
 import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
 import { buildBlockRequest } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
+import MnemonicScreen from "./components/MnemonicScreen";
+import OnboardingScreen from "./components/OnboardingScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
+import ToastContainer from "./components/Toast";
+import PassphraseModal from "./components/PassphraseModal";
 import "./App.css";
 
 export default function App() {
-  const [mode, setMode] = useState("login"); // login | chat
+  const [mode, setMode] = useState("login"); // login | mnemonic | onboarding | chat
+  const [pendingMnemonic, setPendingMnemonic] = useState(null);
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
   const messaging = useMessaging(identity, contactsMgr);
+  const { toasts, addToast } = useToast();
+
+  // --- Passphrase modal (replaces native prompt()) ---
+  const passphraseResolverRef = useRef(null);
+  const [passphraseState, setPassphraseState] = useState(null);
+
+  const requestPassphrase = useCallback((title, description, withConfirm = false) => {
+    return new Promise((resolve, reject) => {
+      passphraseResolverRef.current = { resolve, reject };
+      setPassphraseState({ title, description, withConfirm });
+    });
+  }, []);
+
+  const handlePassphraseConfirm = useCallback((value) => {
+    passphraseResolverRef.current?.resolve(value);
+    passphraseResolverRef.current = null;
+    setPassphraseState(null);
+  }, []);
+
+  const handlePassphraseCancel = useCallback(() => {
+    passphraseResolverRef.current?.reject(new Error("cancelled"));
+    passphraseResolverRef.current = null;
+    setPassphraseState(null);
+  }, []);
 
   // Auto-switch to chat mode when session is restored from sessionStorage
   useEffect(() => {
@@ -54,10 +85,10 @@ export default function App() {
         });
         // Clear the fragment so it doesn't re-import on refresh
         window.history.replaceState(null, "", window.location.pathname);
-        alert(`Contact "${card.label || card.id.slice(0, 12)}" imported!`);
+        addToast(`Contact "${card.label || card.id.slice(0, 12)}" imported!`, "success");
       }
     } catch { /* ignore malformed fragments */ }
-  }, [identity.isReady, identity.id, contactsMgr]);
+  }, [identity.isReady, identity.id, contactsMgr, addToast]);
 
   // --- Check handle availability (called from LoginScreen during enrollment) ---
   const handleCheckHandle = useCallback(async (handle) => {
@@ -75,27 +106,44 @@ export default function App() {
     if (!stillAvailable) throw new Error("Handle was just taken — pick another");
 
     try {
-      await identity.enroll(displayName || handle, passphrase, handle);
-      // enroll() auto-activates the session — go straight to chat
-      setMode("chat");
+      const { mnemonic } = await identity.enroll(displayName || handle, passphrase, handle);
+      setPendingMnemonic(mnemonic);
+      setMode("mnemonic");
     } catch (err) {
       throw new Error("Enrollment failed: " + err.message);
     }
   }, [identity, handleCheckHandle]);
 
+  // --- Recover ---
+  const handleRecover = useCallback(async (mnemonic, displayName) => {
+    try {
+      await identity.recover(mnemonic, displayName);
+      setMode("chat");
+    } catch (err) {
+      throw new Error("Recovery failed: " + err.message);
+    }
+  }, [identity]);
+
   // --- Login ---
   const handleLogin = useCallback(async (file) => {
     if (!file) return;
-    const passphrase = prompt("Enter your key file passphrase:");
-    if (!passphrase) return;
+    let passphrase;
+    try {
+      passphrase = await requestPassphrase(
+        "Enter Passphrase",
+        "Enter the passphrase that protects your key file."
+      );
+    } catch {
+      return; // user cancelled
+    }
     try {
       const raw = await file.text();
       await identity.login(raw, passphrase);
       setMode("chat");
     } catch (err) {
-      alert("Login failed: " + (err.message || "Wrong passphrase or corrupted file."));
+      addToast("Login failed: " + (err.message || "Wrong passphrase or corrupted file."), "error");
     }
-  }, [identity]);
+  }, [identity, requestPassphrase, addToast]);
 
   // --- Logout ---
   const handleLogout = useCallback(() => {
@@ -104,6 +152,26 @@ export default function App() {
     identity.logout();
     setMode("login");
   }, [identity, contactsMgr, messaging]);
+
+  // --- Export keyfile ---
+  const handleExportKeyfile = useCallback(async () => {
+    let passphrase;
+    try {
+      passphrase = await requestPassphrase(
+        "Export Key File",
+        "Choose a passphrase to encrypt your key file. You will need it to log in on another device.",
+        true /* withConfirm */
+      );
+    } catch {
+      return; // user cancelled
+    }
+    try {
+      await identity.exportKeyfile(passphrase, contactsMgr.contacts);
+      addToast("Key file exported successfully.", "success");
+    } catch (err) {
+      addToast("Export failed: " + err.message, "error");
+    }
+  }, [identity, contactsMgr, requestPassphrase, addToast]);
 
   // --- Export contact card (includes inbox cap — share with trusted contacts) ---
   const handleExportCard = useCallback(async () => {
@@ -141,12 +209,12 @@ export default function App() {
       const raw = await file.text();
       const card = JSON.parse(raw);
       if (!card?.id || !card?.authPublicJwk || !card?.e2eePublicJwk) {
-        alert("Invalid contact card.");
+        addToast("Invalid contact card.", "error");
         return;
       }
       const computed = await identity.computeId(card.authPublicJwk);
       if (computed !== card.id) {
-        alert("Contact card failed integrity check (id mismatch).");
+        addToast("Contact card failed integrity check (id mismatch).", "error");
         return;
       }
       contactsMgr.addContact({
@@ -156,10 +224,11 @@ export default function App() {
         e2eePublicJwk: card.e2eePublicJwk,
         cap: typeof card.cap === "string" ? card.cap : null,
       });
+      addToast(`Contact "${card.label || card.id.slice(0, 12)}" imported.`, "success");
     } catch (err) {
-      alert("Failed to import: " + err.message);
+      addToast("Failed to import: " + err.message, "error");
     }
-  }, [identity, contactsMgr]);
+  }, [identity, contactsMgr, addToast]);
 
   // --- Accept request ---
   const handleAcceptRequest = useCallback(async (id) => {
@@ -189,25 +258,25 @@ export default function App() {
   const handleLookup = useCallback(async (handle) => {
     const result = await relayLookup(handle);
     if (!result) {
-      alert("Not found (or relay offline).");
+      addToast("Not found (or relay offline).", "warning");
       return null;
     }
     return result;
-  }, []);
+  }, [addToast]);
 
   // --- Send contact request ---
   const handleSendRequest = useCallback(async (recipient) => {
     if (!recipient?.id || typeof recipient?.requestCap !== "string") {
-      alert("Look up a handle first.");
+      addToast("Look up a handle first.", "warning");
       return;
     }
     try {
       await messaging.sendRequest(recipient);
-      alert("Request sent.");
+      addToast("Request sent.", "success");
     } catch (err) {
-      alert("Request failed: " + err.message);
+      addToast("Request failed: " + err.message, "error");
     }
-  }, [messaging]);
+  }, [messaging, addToast]);
 
   // --- Discoverability ---
   const handleDiscoverabilityChange = useCallback((disc, h) => {
@@ -238,16 +307,50 @@ export default function App() {
   if (!identity.sessionChecked) {
     return (
       <div className="login-screen">
-        <div className="login-card">
-          <div className="login-icon">◈</div>
-          <p className="login-subtitle">Restoring session…</p>
+        <div className="login-card" style={{ textAlign: "center" }}>
+          <div className="login-wordmark" style={{ marginBottom: "12px" }}>Dissolve</div>
+          <p style={{ color: "var(--text-tertiary)", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <span className="spinner" />
+            Restoring session…
+          </p>
         </div>
+        <ToastContainer toasts={toasts} />
       </div>
     );
   }
 
   if (mode === "login") {
-    return <LoginScreen onLogin={handleLogin} onEnroll={handleEnroll} onCheckHandle={handleCheckHandle} />;
+    return (
+      <>
+        <LoginScreen onLogin={handleLogin} onEnroll={handleEnroll} onCheckHandle={handleCheckHandle} onRecover={handleRecover} />
+        <ToastContainer toasts={toasts} />
+        {passphraseState && (
+          <PassphraseModal
+            title={passphraseState.title}
+            description={passphraseState.description}
+            withConfirm={passphraseState.withConfirm}
+            onConfirm={handlePassphraseConfirm}
+            onCancel={handlePassphraseCancel}
+          />
+        )}
+      </>
+    );
+  }
+
+  if (mode === "mnemonic") {
+    return (
+      <MnemonicScreen
+        mnemonic={pendingMnemonic}
+        onContinue={() => {
+          setPendingMnemonic(null);
+          setMode("onboarding");
+        }}
+      />
+    );
+  }
+
+  if (mode === "onboarding") {
+    return <OnboardingScreen identity={identity} onContinue={() => setMode("chat")} />;
   }
 
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;
@@ -256,30 +359,43 @@ export default function App() {
     : [];
 
   return (
-    <div className="app-layout">
-      <Sidebar
-        identity={identity}
-        contacts={contactsMgr.contacts}
-        requests={contactsMgr.requests}
-        activeId={messaging.activeId}
-        onSelectPeer={messaging.setActiveId}
-        onExportCard={handleExportCard}
-        onExportProfile={handleExportProfile}
-        onImportContact={handleImportContact}
-        onAcceptRequest={handleAcceptRequest}
-        onRejectRequest={contactsMgr.rejectRequest}
-        onBlockPeer={handleBlockPeer}
-        onLookup={handleLookup}
-        onSendRequest={handleSendRequest}
-        onLogout={handleLogout}
-        onDiscoverabilityChange={handleDiscoverabilityChange}
-        shareCardData={shareCardData}
-      />
-      <ChatPanel
-        peer={activePeer}
-        messages={visibleMessages}
-        onSend={messaging.sendMsg}
-      />
-    </div>
+    <>
+      <div className="app-layout">
+        <Sidebar
+          identity={identity}
+          contacts={contactsMgr.contacts}
+          requests={contactsMgr.requests}
+          activeId={messaging.activeId}
+          onSelectPeer={messaging.setActiveId}
+          onExportCard={handleExportCard}
+          onExportProfile={handleExportProfile}
+          onImportContact={handleImportContact}
+          onAcceptRequest={handleAcceptRequest}
+          onRejectRequest={contactsMgr.rejectRequest}
+          onBlockPeer={handleBlockPeer}
+          onLookup={handleLookup}
+          onSendRequest={handleSendRequest}
+          onLogout={handleLogout}
+          onExportKeyfile={handleExportKeyfile}
+          onDiscoverabilityChange={handleDiscoverabilityChange}
+          shareCardData={shareCardData}
+        />
+        <ChatPanel
+          peer={activePeer}
+          messages={visibleMessages}
+          onSend={messaging.sendMsg}
+        />
+      </div>
+      <ToastContainer toasts={toasts} />
+      {passphraseState && (
+        <PassphraseModal
+          title={passphraseState.title}
+          description={passphraseState.description}
+          withConfirm={passphraseState.withConfirm}
+          onConfirm={handlePassphraseConfirm}
+          onCancel={handlePassphraseCancel}
+        />
+      )}
+    </>
   );
 }

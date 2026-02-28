@@ -1,5 +1,24 @@
 // client/src/components/ChatPanel.jsx
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+
+// Format a date for the separator chip
+function formatDateChip(date) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday) return "Today";
+  if (isYesterday) return "Yesterday";
+  const sameYear = date.getFullYear() === today.getFullYear();
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
 
 export default function ChatPanel({ peer, messages, onSend }) {
   const [text, setText] = useState("");
@@ -8,6 +27,24 @@ export default function ChatPanel({ peer, messages, onSend }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Track which message IDs have already been rendered to avoid animating on mount
+  // or when switching contacts. seenRef.current is null until first render for a peer.
+  const seenRef = useRef(null);
+  const prevPeerRef = useRef(null);
+
+  // When peer changes, reset seenRef so all existing messages are treated as seen
+  if (peer?.id !== prevPeerRef.current) {
+    prevPeerRef.current = peer?.id ?? null;
+    seenRef.current = null;
+  }
+
+  // After each render, register all currently visible message IDs as seen
+  useEffect(() => {
+    const ids = new Set(seenRef.current ?? []);
+    for (const msg of messages) ids.add(msg.msgId);
+    seenRef.current = ids;
+  });
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
@@ -15,14 +52,14 @@ export default function ChatPanel({ peer, messages, onSend }) {
     }
   }, [messages]);
 
-  // Auto-focus message input when peer changes or on mount
+  // Auto-focus message input when peer changes
   useEffect(() => {
     if (peer?.cap && inputRef.current) {
       inputRef.current.focus();
     }
   }, [peer]);
 
-  // Re-focus message input when clicking anywhere in chat (unless clicking another input)
+  // Re-focus input on chat area click (unless clicking another input)
   const handleChatClick = (e) => {
     if (e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && inputRef.current) {
       inputRef.current.focus();
@@ -43,13 +80,29 @@ export default function ChatPanel({ peer, messages, onSend }) {
     }
   };
 
+  // Build flat list interleaved with date separator objects
+  const items = useMemo(() => {
+    const result = [];
+    let lastDateStr = null;
+    for (const msg of messages) {
+      const d = new Date(msg.ts);
+      const dateStr = d.toDateString();
+      if (dateStr !== lastDateStr) {
+        result.push({ type: "separator", key: `sep-${dateStr}`, label: formatDateChip(d) });
+        lastDateStr = dateStr;
+      }
+      result.push({ type: "message", ...msg });
+    }
+    return result;
+  }, [messages]);
+
   if (!peer) {
     return (
       <main className="chat-panel">
         <div className="chat-empty">
-          <div className="chat-empty-icon">◈</div>
+          <div className="chat-empty-icon" aria-hidden="true">◈</div>
           <h2>Dissolve Chat</h2>
-          <p>Select a contact to start messaging</p>
+          <p>Select a contact to start a secure conversation</p>
         </div>
       </main>
     );
@@ -57,8 +110,9 @@ export default function ChatPanel({ peer, messages, onSend }) {
 
   return (
     <main className="chat-panel" onClick={handleChatClick}>
+      {/* Header */}
       <div className="chat-header">
-        <div className="chat-header-avatar">
+        <div className="chat-header-avatar" aria-hidden="true">
           {(peer.label || "?").charAt(0).toUpperCase()}
         </div>
         <div className="chat-header-info">
@@ -68,43 +122,64 @@ export default function ChatPanel({ peer, messages, onSend }) {
           </div>
         </div>
         {!peer.cap && (
-          <div className="chat-header-warning" title="Cannot send — no inbox capability">
+          <div
+            className="chat-header-warning"
+            title="Cannot send messages — no inbox capability for this contact"
+            role="status"
+          >
             ⚠ No cap
           </div>
         )}
       </div>
 
-      <div className="chat-messages" ref={scrollRef}>
-        <div className="chat-ephemeral-notice">
-          ◇ End-to-end encrypted. Enable "Save messages locally" in settings to keep history.
+      {/* Messages */}
+      <div className="chat-messages" ref={scrollRef} role="log" aria-live="polite">
+        <div className="chat-ephemeral-notice" role="note">
+          ◇ End-to-end encrypted · Enable "Save messages locally" in settings to keep history
         </div>
+
         {messages.length === 0 ? (
-          <div className="chat-no-messages">No messages yet</div>
+          <div className="chat-no-messages">
+            <span>No messages yet</span>
+            <span style={{ fontSize: "11px" }}>
+              {peer.cap ? "Send the first message below" : "No inbox capability — request one first"}
+            </span>
+          </div>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.msgId}
-              className={`chat-bubble ${m.dir === "out" ? "outgoing" : "incoming"}`}
-            >
-              <div className="chat-bubble-text">{m.text}</div>
-              <div className="chat-bubble-time">
-                {new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          items.map((item) =>
+            item.type === "separator" ? (
+              <div key={item.key} className="chat-date-separator" aria-label={`Messages from ${item.label}`}>
+                <span className="chat-date-chip">{item.label}</span>
               </div>
-            </div>
-          ))
+            ) : (
+              <div
+                key={item.msgId}
+                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}`}
+              >
+                <div className="chat-bubble-text">{item.text}</div>
+                <div className="chat-bubble-time" aria-label={new Date(item.ts).toLocaleString()}>
+                  {new Date(item.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+            )
+          )
         )}
       </div>
 
+      {/* Input area */}
       <div className="chat-input-area">
-        {error && <div className="chat-error">{error}</div>}
+        {error && (
+          <div className="chat-error" role="alert">{error}</div>
+        )}
         <div className="chat-input-row">
           <input
             ref={inputRef}
             className="chat-input"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={peer.cap ? "Type a message…" : "Cannot send (no inbox cap)"}
+            placeholder={peer.cap ? "Type a message…" : "Cannot send — no inbox capability"}
             disabled={!peer.cap || sending}
+            aria-label="Message input"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -116,8 +191,9 @@ export default function ChatPanel({ peer, messages, onSend }) {
             className="btn btn-primary btn-send"
             onClick={handleSend}
             disabled={!text.trim() || !peer.cap || sending}
+            aria-label="Send message"
           >
-            {sending ? "…" : "Send"}
+            {sending ? <span className="spinner" aria-hidden="true" /> : "Send"}
           </button>
         </div>
       </div>
