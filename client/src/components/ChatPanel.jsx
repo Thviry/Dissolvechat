@@ -27,6 +27,24 @@ export default function ChatPanel({ peer, messages, onSend }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Track which message IDs have already been rendered to avoid animating on mount
+  // or when switching contacts. seenRef.current is null until first render for a peer.
+  const seenRef = useRef(null);
+  const prevPeerRef = useRef(null);
+
+  // When peer changes, reset seenRef so all existing messages are treated as seen
+  if (peer?.id !== prevPeerRef.current) {
+    prevPeerRef.current = peer?.id ?? null;
+    seenRef.current = null;
+  }
+
+  // After each render, register all currently visible message IDs as seen
+  useEffect(() => {
+    const ids = new Set(seenRef.current ?? []);
+    for (const msg of messages) ids.add(msg.msgId);
+    seenRef.current = ids;
+  });
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
@@ -136,7 +154,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
             ) : (
               <div
                 key={item.msgId}
-                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}`}
+                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}`}
               >
                 <div className="chat-bubble-text">{item.text}</div>
                 <div className="chat-bubble-time" aria-label={new Date(item.ts).toLocaleString()}>

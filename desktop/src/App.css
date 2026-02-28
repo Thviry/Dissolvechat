@@ -1041,6 +1041,9 @@ code, kbd {
   border-radius: var(--radius-lg);
   word-wrap: break-word;
   white-space: pre-wrap;
+}
+
+.chat-bubble.is-new {
   animation: msg-in 0.15s ease;
 }
 
