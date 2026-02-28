@@ -23,11 +23,11 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
   1. An encrypted message payload is always one of four fixed sizes (512B, 1KB, 2KB, 4KB) — ciphertext size no longer reveals message length
   2. A developer can change the poll interval, reconnect delay, or TTL by editing a single file (`client/src/config.js`) rather than hunting through hook source
   3. The app functions correctly with the padded payload format — send and receive work end-to-end with no regressions
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Implement envelope padding in e2ee.js (fixed-size buckets)
-- [ ] 01-02: Centralize client magic numbers into config.js
+- [ ] 01-01-PLAN.md — Add zero-byte bucket padding to e2ee.js (client + desktop)
+- [ ] 01-02-PLAN.md — Centralize magic number timing constants into config.js (client + desktop)
 
 ### Phase 2: Architecture (Shared Core)
 **Goal**: `crypto/` and `hooks/` live in one place, both clients import from it, and the client can use multiple relay URLs
