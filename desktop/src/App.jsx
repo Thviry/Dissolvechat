@@ -19,6 +19,8 @@ import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
 import { buildBlockRequest } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
+import MnemonicScreen from "./components/MnemonicScreen";
+import OnboardingScreen from "./components/OnboardingScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
 import ToastContainer from "./components/Toast";
@@ -26,7 +28,8 @@ import PassphraseModal from "./components/PassphraseModal";
 import "./App.css";
 
 export default function App() {
-  const [mode, setMode] = useState("login"); // login | chat
+  const [mode, setMode] = useState("login"); // login | mnemonic | onboarding | chat
+  const [pendingMnemonic, setPendingMnemonic] = useState(null);
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
@@ -103,13 +106,23 @@ export default function App() {
     if (!stillAvailable) throw new Error("Handle was just taken — pick another");
 
     try {
-      await identity.enroll(displayName || handle, passphrase, handle);
-      // enroll() auto-activates the session — go straight to chat
-      setMode("chat");
+      const { mnemonic } = await identity.enroll(displayName || handle, passphrase, handle);
+      setPendingMnemonic(mnemonic);
+      setMode("mnemonic");
     } catch (err) {
       throw new Error("Enrollment failed: " + err.message);
     }
   }, [identity, handleCheckHandle]);
+
+  // --- Recover ---
+  const handleRecover = useCallback(async (mnemonic, displayName) => {
+    try {
+      await identity.recover(mnemonic, displayName);
+      setMode("chat");
+    } catch (err) {
+      throw new Error("Recovery failed: " + err.message);
+    }
+  }, [identity]);
 
   // --- Login ---
   const handleLogin = useCallback(async (file) => {
@@ -309,7 +322,7 @@ export default function App() {
   if (mode === "login") {
     return (
       <>
-        <LoginScreen onLogin={handleLogin} onEnroll={handleEnroll} onCheckHandle={handleCheckHandle} />
+        <LoginScreen onLogin={handleLogin} onEnroll={handleEnroll} onCheckHandle={handleCheckHandle} onRecover={handleRecover} />
         <ToastContainer toasts={toasts} />
         {passphraseState && (
           <PassphraseModal
@@ -322,6 +335,22 @@ export default function App() {
         )}
       </>
     );
+  }
+
+  if (mode === "mnemonic") {
+    return (
+      <MnemonicScreen
+        mnemonic={pendingMnemonic}
+        onContinue={() => {
+          setPendingMnemonic(null);
+          setMode("onboarding");
+        }}
+      />
+    );
+  }
+
+  if (mode === "onboarding") {
+    return <OnboardingScreen identity={identity} onContinue={() => setMode("chat")} />;
   }
 
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;
