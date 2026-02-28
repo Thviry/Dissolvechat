@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@scure/bip39": "^2.0.1",
     "canonicalize": "^2.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
