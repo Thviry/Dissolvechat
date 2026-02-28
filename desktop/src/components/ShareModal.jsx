@@ -1,6 +1,7 @@
 // client/src/components/ShareModal.jsx
 import { useState, useMemo } from "react";
 import { generateQRSvg } from "../utils/qrcode";
+import { IconClose } from "./Icons";
 
 export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile, onClose }) {
   const [tab, setTab] = useState("link"); // link | file | qr
@@ -12,12 +13,11 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
     const json = JSON.stringify(cardData);
     const b64 = btoa(unescape(encodeURIComponent(json)))
       .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    const origin = window.location.origin;
-    return `${origin}#contact=${b64}`;
+    return `${window.location.origin}#contact=${b64}`;
   }, [cardData]);
 
   const qrSvg = useMemo(() => {
-    if (!shareLink) return "";
+    if (!shareLink) return null;
     try {
       return generateQRSvg(shareLink, 3, 4);
     } catch {
@@ -28,55 +28,61 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const ta = document.createElement("textarea");
       ta.value = shareLink;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") onClose();
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-modal-title"
+      onKeyDown={handleKeyDown}
+    >
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Share Contact</h3>
-          <button className="btn-icon modal-close" onClick={onClose}>✕</button>
+          <h3 id="share-modal-title">Share Contact</h3>
+          <button className="btn-icon modal-close" onClick={onClose} aria-label="Close"><IconClose size={16} /></button>
         </div>
 
-        <div className="share-tabs">
-          <button
-            className={`share-tab ${tab === "link" ? "active" : ""}`}
-            onClick={() => setTab("link")}
-          >
-            Link
-          </button>
-          <button
-            className={`share-tab ${tab === "file" ? "active" : ""}`}
-            onClick={() => setTab("file")}
-          >
-            File
-          </button>
-          <button
-            className={`share-tab ${tab === "qr" ? "active" : ""}`}
-            onClick={() => setTab("qr")}
-          >
-            QR Code
-          </button>
+        {/* Tabs */}
+        <div className="share-tabs" role="tablist" aria-label="Share method">
+          {[
+            { id: "link", label: "Link" },
+            { id: "file", label: "File" },
+            { id: "qr",   label: "QR Code" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`share-tab${tab === t.id ? " active" : ""}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        <div className="share-body">
+        <div className="share-body" role="tabpanel">
           {tab === "link" && (
-            <div className="share-link-section">
+            <div>
               <p className="share-description">
-                Copy this link and send it to someone. They can open it to import your contact card.
+                Copy this link and send it to someone. They open it to import your contact card instantly.
               </p>
               <div className="share-link-box">
                 <code className="share-link-text">{shareLink}</code>
@@ -88,7 +94,7 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
           )}
 
           {tab === "file" && (
-            <div className="share-file-section">
+            <div>
               <p className="share-description">
                 Download your contact card as a JSON file to share manually.
               </p>
@@ -112,16 +118,18 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
           {tab === "qr" && (
             <div className="share-qr-section">
               <p className="share-description">
-                Scan this QR code with a phone or camera to import the contact card.
+                Scan this QR code to import the contact card directly.
               </p>
               {qrSvg ? (
                 <div
                   className="share-qr-container"
                   dangerouslySetInnerHTML={{ __html: qrSvg }}
+                  aria-label="QR code for contact card"
                 />
               ) : (
                 <div className="share-qr-fallback">
-                  QR code too large for this contact card. Use the link or file option instead.
+                  QR code too large for this contact card.<br />
+                  Use the Link or File option instead.
                 </div>
               )}
             </div>
