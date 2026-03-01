@@ -1,0 +1,17 @@
+{
+  "name": "dissolve-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./crypto": "./src/crypto/index.js",
+    "./crypto/*": "./src/crypto/*.js",
+    "./hooks": "./src/hooks/index.js",
+    "./hooks/*": "./src/hooks/*.js"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@scure/bip39": ">=2.0.0",
+    "canonicalize": ">=2.0.0"
+  }
+}
