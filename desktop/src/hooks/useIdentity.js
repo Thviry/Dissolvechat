@@ -1,14 +1,21 @@
-// client/src/hooks/useIdentity.js
+// desktop/src/hooks/useIdentity.js
 // Manages the user's cryptographic identity: enroll, login, logout.
 //
 // Session persistence strategy:
-// - On login/enroll, session data (private keys, caps) is encrypted with a
+// - On login/enroll, session data (private key JWKs, caps) is encrypted with a
 //   random AES-256-GCM key and stored in sessionStorage.
 // - The ephemeral AES key is also stored in sessionStorage.
 // - sessionStorage is tab-scoped: it survives page refresh but is wiped
 //   when the tab/window closes.
 // - Nothing unencrypted touches any persistent storage. The relay never
 //   sees private keys. localStorage is never used for key material.
+//
+// Non-extractable key storage:
+// - Private keys are stored in React state as non-extractable CryptoKey objects.
+//   This means they cannot be read back out of JS memory even by DevTools or
+//   extensions — they can only be used for signing / key derivation operations.
+// - The JWK form is kept ONLY in the encrypted sessionStorage blob, and is
+//   accessed on demand when re-exporting the keyfile.
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
@@ -20,6 +27,7 @@ import {
   jcs,
 } from "../crypto";
 import { encryptPrivateData, decryptPrivateData } from "../crypto/keyfile";
+import { generateMnemonic, validateMnemonic, deriveIdentityFromMnemonic } from "../crypto/seed";
 import { downloadJson, loadJson, saveJson } from "../utils/storage";
 
 const SESSION_KEY = "dissolve_session";
@@ -75,12 +83,34 @@ function clearSession() {
   sessionStorage.removeItem(SESSION_AES);
 }
 
+// ── Non-extractable key import ───────────────────────────────────────
+
+async function importAuthPrivKey(jwk) {
+  return crypto.subtle.importKey(
+    "jwk", jwk,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,  // non-extractable
+    ["sign"]
+  );
+}
+
+async function importE2eePrivKey(jwk) {
+  return crypto.subtle.importKey(
+    "jwk", jwk,
+    { name: "ECDH", namedCurve: "P-256" },
+    false,  // non-extractable
+    ["deriveKey"]
+  );
+}
+
 // ── Hook ────────────────────────────────────────────────────────────
 
 export function useIdentity() {
-  const [authPrivJwk, setAuthPrivJwk] = useState(null);
+  // Private keys are non-extractable CryptoKey objects — cannot be read back
+  // by JS, only used for cryptographic operations.
+  const [authPrivKey, setAuthPrivKey] = useState(null);
   const [authPubJwk, setAuthPubJwk] = useState(null);
-  const [e2eePrivJwk, setE2eePrivJwk] = useState(null);
+  const [e2eePrivKey, setE2eePrivKey] = useState(null);
   const [e2eePubJwk, setE2eePubJwk] = useState(null);
   const [label, setLabel] = useState("Me");
   const [id, setId] = useState("");
@@ -98,25 +128,32 @@ export function useIdentity() {
 
   const isReady = useMemo(
     () =>
-      !!authPrivJwk &&
+      !!authPrivKey &&
       !!authPubJwk &&
-      !!e2eePrivJwk &&
+      !!e2eePrivKey &&
       !!e2eePubJwk &&
       !!id &&
       typeof inboxCap === "string" &&
       typeof requestCap === "string",
-    [authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk, id, inboxCap, requestCap]
+    [authPrivKey, authPubJwk, e2eePrivKey, e2eePubJwk, id, inboxCap, requestCap]
   );
 
   const computeId = useCallback(async (pubJwk) => {
     return sha256B64u(enc.encode(jcs(pubJwk)));
   }, []);
 
-  // Activate session state from a data object (shared by login, enroll, restore)
+  // Activate session state from a data object (shared by login, enroll, restore).
+  // `data` must contain the JWK form of private keys so we can import them.
   const activateSession = useCallback(async (data, skipPersist) => {
-    setAuthPrivJwk(data.authPrivJwk);
+    // Import private keys as non-extractable CryptoKey objects
+    const [privAuthKey, privE2eeKey] = await Promise.all([
+      importAuthPrivKey(data.authPrivJwk),
+      importE2eePrivKey(data.e2eePrivJwk),
+    ]);
+
+    setAuthPrivKey(privAuthKey);
     setAuthPubJwk(data.authPubJwk);
-    setE2eePrivJwk(data.e2eePrivJwk);
+    setE2eePrivKey(privE2eeKey);
     setE2eePubJwk(data.e2eePubJwk);
     setLabel(data.label || "Me");
     setId(data.id);
@@ -141,6 +178,7 @@ export function useIdentity() {
     }
 
     if (!skipPersist) {
+      // Persist JWKs (encrypted) for session restore across page refreshes
       await encryptSession({
         authPrivJwk: data.authPrivJwk,
         authPubJwk: data.authPubJwk,
@@ -150,6 +188,8 @@ export function useIdentity() {
         id: data.id,
         inboxCap: data.inboxCap,
         requestCap: data.requestCap,
+        // mnemonic is only present for seed-phrase-based identities
+        mnemonic: data.mnemonic || null,
       });
     }
   }, []);
@@ -172,26 +212,13 @@ export function useIdentity() {
   const enroll = useCallback(async (displayName, passphrase, handle) => {
     if (!passphrase) throw new Error("Passphrase required");
 
-    const e2eePair = await crypto.subtle.generateKey(
-      { name: "ECDH", namedCurve: "P-256" },
-      true,
-      ["deriveKey"]
-    );
-    const e2eePub = await crypto.subtle.exportKey("jwk", e2eePair.publicKey);
-    const e2eePriv = await crypto.subtle.exportKey("jwk", e2eePair.privateKey);
+    // Generate 12-word seed phrase and derive all key material from it
+    const mnemonic = generateMnemonic();
+    const derived = await deriveIdentityFromMnemonic(mnemonic);
+    const { authPrivJwk: authPriv, authPubJwk: authPub, e2eePrivJwk: e2eePriv, e2eePubJwk: e2eePub, inboxCap: cap, requestCap: reqCap } = derived;
 
-    const signPair = await crypto.subtle.generateKey(
-      { name: "ECDSA", namedCurve: "P-256" },
-      true,
-      ["sign", "verify"]
-    );
-    const authPub = await crypto.subtle.exportKey("jwk", signPair.publicKey);
-    const authPriv = await crypto.subtle.exportKey("jwk", signPair.privateKey);
-
-    const cap = randomCap();
-    const reqCap = randomCap();
     const encrypted = await encryptPrivateData(
-      { authPrivateJwk: authPriv, e2eePrivateJwk: e2eePriv, inboxCap: cap, requestCap: reqCap },
+      { authPrivateJwk: authPriv, e2eePrivateJwk: e2eePriv, inboxCap: cap, requestCap: reqCap, mnemonic },
       passphrase
     );
     const userId = await computeId(authPub);
@@ -223,9 +250,10 @@ export function useIdentity() {
       id: userId,
       inboxCap: cap,
       requestCap: reqCap,
+      mnemonic,
     });
 
-    return keyFile;
+    return { keyFile, mnemonic };
   }, [computeId, activateSession]);
 
   const login = useCallback(async (fileContent, passphrase) => {
@@ -233,7 +261,7 @@ export function useIdentity() {
     if (!passphrase) throw new Error("Passphrase required");
 
     const decrypted = await decryptPrivateData(keyFile.encryptedPrivate, passphrase);
-// Extract contacts from keyfile if present (portable contacts)
+    // Extract contacts from keyfile if present (portable contacts)
     const importedContacts = Array.isArray(decrypted.contacts) ? decrypted.contacts : [];
     const authPub = keyFile?.auth?.publicJwk;
     const e2eePub = keyFile?.e2ee?.publicJwk;
@@ -255,11 +283,37 @@ export function useIdentity() {
     return { userId, importedContacts };
   }, [computeId, activateSession]);
 
+  /**
+   * Recover an identity from a 12-word seed phrase.
+   * All key material and caps are re-derived deterministically.
+   * displayName is optional (defaults to "Me") since it isn't stored in keys.
+   */
+  const recover = useCallback(async (mnemonic, displayName) => {
+    if (!validateMnemonic(mnemonic)) throw new Error("Invalid recovery phrase");
+    const derived = await deriveIdentityFromMnemonic(mnemonic);
+    const { authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk, inboxCap, requestCap } = derived;
+    const userId = await computeId(authPubJwk);
+
+    await activateSession({
+      authPrivJwk,
+      authPubJwk,
+      e2eePrivJwk,
+      e2eePubJwk,
+      label: displayName || "Me",
+      id: userId,
+      inboxCap,
+      requestCap,
+      mnemonic: mnemonic.trim(),
+    });
+
+    return { userId };
+  }, [computeId, activateSession]);
+
   const logout = useCallback(() => {
     clearSession();
-    setAuthPrivJwk(null);
+    setAuthPrivKey(null);
     setAuthPubJwk(null);
-    setE2eePrivJwk(null);
+    setE2eePrivKey(null);
     setE2eePubJwk(null);
     setLabel("Me");
     setId("");
@@ -268,19 +322,28 @@ export function useIdentity() {
     setDiscoverable(false);
     setHandle("");
   }, []);
-const exportKeyfile = useCallback(async (passphrase, contactsList) => {
-    if (!authPrivJwk || !authPubJwk || !e2eePubJwk || !id) {
+
+  const exportKeyfile = useCallback(async (passphrase, contactsList) => {
+    if (!authPrivKey || !authPubJwk || !e2eePubJwk || !id) {
       throw new Error("No active identity");
     }
     if (!passphrase) throw new Error("Passphrase required");
 
+    // Private keys are non-extractable, so retrieve JWKs from the encrypted session
+    const sessionData = await decryptSession();
+    if (!sessionData?.authPrivJwk || !sessionData?.e2eePrivJwk) {
+      throw new Error("Session data unavailable — please log in again");
+    }
+
     const encrypted = await encryptPrivateData(
       {
-        authPrivateJwk: authPrivJwk,
-        e2eePrivateJwk: e2eePrivJwk,
+        authPrivateJwk: sessionData.authPrivJwk,
+        e2eePrivateJwk: sessionData.e2eePrivJwk,
         inboxCap,
         requestCap,
         contacts: contactsList || [],
+        // preserve mnemonic in re-exported keyfiles
+        ...(sessionData.mnemonic ? { mnemonic: sessionData.mnemonic } : {}),
       },
       passphrase
     );
@@ -299,10 +362,11 @@ const exportKeyfile = useCallback(async (passphrase, contactsList) => {
 
     downloadJson(`dissolve-${id.slice(0, 12)}.usbkey.json`, keyFile);
     return keyFile;
-  }, [authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk, id, label, handle, inboxCap, requestCap]);
+  }, [authPrivKey, authPubJwk, e2eePubJwk, id, label, handle, inboxCap, requestCap]);
+
   return {
     // State
-    authPrivJwk, authPubJwk, e2eePrivJwk, e2eePubJwk,
+    authPrivKey, authPubJwk, e2eePrivKey, e2eePubJwk,
     label, id, inboxCap, requestCap,
     discoverable, setDiscoverable,
     handle, setHandle,
@@ -311,6 +375,6 @@ const exportKeyfile = useCallback(async (passphrase, contactsList) => {
     isReady,
     sessionChecked,
     // Actions
-    enroll, login, logout, computeId, exportKeyfile,
+    enroll, login, recover, logout, computeId, exportKeyfile,
   };
 }
