@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
-status: unknown
-last_updated: "2026-03-01T22:20:55.144Z"
+status: in_progress
+last_updated: "2026-03-01T22:27:31Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -23,17 +23,17 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 2 of 6 (Architecture: Shared Core)
-Plan: 1 of 3 in current phase (02-01 complete)
+Plan: 2 of 3 in current phase (02-02 complete)
 Status: In progress
-Last activity: 2026-03-01 — Completed 02-01 (pnpm workspace setup and source restore)
+Last activity: 2026-03-01 — Completed 02-02 (move crypto to dissolve-core, rewrite imports)
 
-Progress: [███░░░░░░░] 25%
+Progress: [████░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 4 min
+- Total plans completed: 4
+- Average duration: 3.5 min
 - Total execution time: 0.2 hours
 
 **By Phase:**
@@ -41,10 +41,10 @@ Progress: [███░░░░░░░] 25%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-finish-the-foundations | 2 | 7 min | 3.5 min |
-| 02-architecture-shared-core | 1 | 3 min | 3 min |
+| 02-architecture-shared-core | 2 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5 min), 01-02 (2 min), 02-01 (3 min)
+- Last 5 plans: 01-01 (5 min), 01-02 (2 min), 02-01 (3 min), 02-02 (4 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -67,6 +67,8 @@ Recent decisions affecting current work:
 - [01-02] desktop/src/config.js is identical copy of client version — duplication accepted to limit refactor risk pre-v1.0
 - [Phase 02-architecture-shared-core]: pnpm installed globally via npm since it was not in PATH on this machine
 - [Phase 02-architecture-shared-core]: Used worktree version of useIdentity.js — difference was only line endings CRLF vs LF, content identical
+- [Phase 02-architecture-shared-core]: dissolve-core is canonical source for crypto; useToast moved to dissolve-core; per-client hooks with protocol/utils deps remain per-client
+- [Phase 02-architecture-shared-core]: LoginScreen.jsx and envelopes.js also had relative crypto imports and were updated as part of the import rewrite
 
 ### Pending Todos
 
@@ -79,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-01-PLAN.md (pnpm workspace setup and source restore) — Phase 2 plan 1 of 3 done
+Stopped at: Completed 02-02-PLAN.md (move crypto to dissolve-core and rewrite imports) — Phase 2 plan 2 of 3 done
 Resume file: None

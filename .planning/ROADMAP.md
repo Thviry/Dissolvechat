@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
-| 2. Architecture (Shared Core) | 0/3 | Not started | - |
+| 2. Architecture (Shared Core) | 2/3 | In Progress|  |
 | 3. Deployment & Infrastructure | 0/4 | Not started | - |
 | 4. Onboarding & Docs | 0/4 | Not started | - |
 | 5. Public Beta | 0/2 | Not started | - |

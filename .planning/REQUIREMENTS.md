@@ -12,7 +12,7 @@
 
 ### Architecture
 
-- [ ] **ARCH-01**: `crypto/` and `hooks/` modules are extracted to a `packages/dissolve-core` shared package consumed by both `client/` and `desktop/`
+- [x] **ARCH-01**: `crypto/` and `hooks/` modules are extracted to a `packages/dissolve-core` shared package consumed by both `client/` and `desktop/`
 - [x] **ARCH-02**: pnpm workspaces monorepo is configured so both clients import from `dissolve-core`
 - [ ] **ARCH-03**: Client supports multiple relay URLs — capability registrations broadcast to all, inboxes drained from whichever is reachable
 
@@ -81,7 +81,7 @@
 |-------------|-------|--------|
 | SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Complete |
-| ARCH-01 | Phase 2 | Pending |
+| ARCH-01 | Phase 2 | Complete |
 | ARCH-02 | Phase 2 | Complete |
 | ARCH-03 | Phase 2 | Pending |
 | DEPLOY-01 | Phase 3 | Pending |
