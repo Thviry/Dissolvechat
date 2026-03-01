@@ -6,7 +6,7 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
 
 ## Phases
 
-- [x] **Phase 1: Finish the Foundations** - Close security and configuration gaps before building on top (completed 2026-03-01)
+- [x] **Phase 1: Finish the Foundations** - Close security and configuration gaps before building on top (completed 2026-03-01)
 - [ ] **Phase 2: Architecture (Shared Core)** - Extract shared logic and add multi-relay support
 - [ ] **Phase 3: Deployment & Infrastructure** - Make the relay self-hostable by anyone with one command
 - [ ] **Phase 4: Onboarding & Docs** - A stranger can understand, install, and use DissolveChat without asking questions
@@ -27,7 +27,7 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
 
 Plans:
 - [x] 01-01-PLAN.md — Add zero-byte bucket padding to e2ee.js (client + desktop)
-- [ ] 01-02-PLAN.md — Centralize magic number timing constants into config.js (client + desktop)
+- [x] 01-02-PLAN.md — Centralize magic number timing constants into config.js (client + desktop)
 
 ### Phase 2: Architecture (Shared Core)
 **Goal**: `crypto/` and `hooks/` live in one place, both clients import from it, and the client can use multiple relay URLs
@@ -38,12 +38,12 @@ Plans:
   2. The monorepo builds cleanly with `pnpm install` and both clients pass their existing tests
   3. A user with two relay URLs configured can send a message that reaches a recipient connected to either relay
   4. Capability registrations are published to all configured relays automatically on login
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Set up pnpm workspaces and create packages/dissolve-core scaffold
-- [ ] 02-02: Extract crypto/ and hooks/ into dissolve-core; wire client and desktop imports
-- [ ] 02-03: Implement multi-relay support (array of URLs, broadcast caps, drain from reachable)
+- [ ] 02-01-PLAN.md — Set up pnpm workspaces, restore missing source files, create dissolve-core scaffold
+- [ ] 02-02-PLAN.md — Move crypto/ into dissolve-core/src/crypto/; rewrite all imports in both clients
+- [ ] 02-03-PLAN.md — Multi-relay support in relay.js (broadcast writes, first-reachable drain, multi-WS)
 
 ### Phase 3: Deployment & Infrastructure
 **Goal**: Anyone can deploy the relay to production with a single command, with SSL, monitoring, and full documentation
