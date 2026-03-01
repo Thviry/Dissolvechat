@@ -63,7 +63,7 @@ Each task was committed atomically:
 1. **Task 1: Add padding helpers and integrate into client/src/crypto/e2ee.js** - `3cd0517` (feat)
 2. **Task 2: Apply identical padding changes to desktop/src/crypto/e2ee.js** - `cd73a6d` (feat)
 
-**Plan metadata:** (docs commit — see below)
+**Plan metadata:** `d15d6b1` (docs: complete e2ee bucket padding plan)
 
 ## Files Created/Modified
 - `client/src/crypto/e2ee.js` - Added BUCKETS, padPlaintext, unpadPlaintext; applied before encrypt and after decrypt
@@ -89,6 +89,15 @@ None - no external service configuration required.
 - SEC-01 satisfied: ciphertext length no longer leaks message length to network observers
 - All three e2eeEncrypt call sites (messages, ContactRequest, ContactGrant) benefit transparently from padding
 - Ready to proceed to Plan 02 of Phase 1
+
+## Self-Check: PASSED
+
+- client/src/crypto/e2ee.js: FOUND
+- desktop/src/crypto/e2ee.js: FOUND
+- .planning/phases/01-finish-the-foundations/01-01-SUMMARY.md: FOUND
+- Commit 3cd0517 (Task 1): FOUND
+- Commit cd73a6d (Task 2): FOUND
+- Commit d15d6b1 (Metadata): FOUND
 
 ---
 *Phase: 01-finish-the-foundations*
