@@ -7,8 +7,8 @@
 
 ### Security
 
-- [ ] **SEC-01**: Encrypted payloads are padded to fixed-size buckets (512B/1KB/2KB/4KB) so ciphertext size does not leak message length
-- [ ] **SEC-02**: Client-side configuration constants (poll interval, reconnect delay, TTLs) are centralized in `client/src/config.js` rather than scattered as magic numbers
+- [x] **SEC-01**: Encrypted payloads are padded to fixed-size buckets (512B/1KB/2KB/4KB) so ciphertext size does not leak message length
+- [x] **SEC-02**: Client-side configuration constants (poll interval, reconnect delay, TTLs) are centralized in `client/src/config.js` rather than scattered as magic numbers
 
 ### Architecture
 
@@ -79,8 +79,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Phase 1 | Pending |
-| SEC-02 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Complete |
+| SEC-02 | Phase 1 | Complete |
 | ARCH-01 | Phase 2 | Pending |
 | ARCH-02 | Phase 2 | Pending |
 | ARCH-03 | Phase 2 | Pending |
@@ -105,4 +105,4 @@
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after initial definition*
+*Last updated: 2026-03-01 — SEC-01 marked complete (01-01)*

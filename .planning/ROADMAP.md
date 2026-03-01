@@ -6,7 +6,7 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
 
 ## Phases
 
-- [ ] **Phase 1: Finish the Foundations** - Close security and configuration gaps before building on top
+- [x] **Phase 1: Finish the Foundations** - Close security and configuration gaps before building on top (completed 2026-03-01)
 - [ ] **Phase 2: Architecture (Shared Core)** - Extract shared logic and add multi-relay support
 - [ ] **Phase 3: Deployment & Infrastructure** - Make the relay self-hostable by anyone with one command
 - [ ] **Phase 4: Onboarding & Docs** - A stranger can understand, install, and use DissolveChat without asking questions
@@ -26,7 +26,7 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Add zero-byte bucket padding to e2ee.js (client + desktop)
+- [x] 01-01-PLAN.md — Add zero-byte bucket padding to e2ee.js (client + desktop)
 - [ ] 01-02-PLAN.md — Centralize magic number timing constants into config.js (client + desktop)
 
 ### Phase 2: Architecture (Shared Core)
@@ -116,7 +116,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Finish the Foundations | 0/2 | Not started | - |
+| 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
 | 2. Architecture (Shared Core) | 0/3 | Not started | - |
 | 3. Deployment & Infrastructure | 0/4 | Not started | - |
 | 4. Onboarding & Docs | 0/4 | Not started | - |
