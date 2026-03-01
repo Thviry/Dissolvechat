@@ -12,44 +12,53 @@ import { signObject } from "dissolve-core/crypto/signing";
 import { WS_RECONNECT_DELAY_MS } from "../config";
 
 const DEFAULT_API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const DEFAULT_WS = import.meta.env.VITE_WS_URL || "ws://localhost:3001/ws";
 
-let _apiUrl = DEFAULT_API;
-let _wsUrl = DEFAULT_WS;
+let _relayUrls = [DEFAULT_API]; // array of HTTP base URLs (no trailing slash)
 
 /**
- * Get the current relay API URL.
+ * Get the current relay API URL (first relay, for backward compat).
  */
-export function getRelayUrl() { return _apiUrl; }
+export function getRelayUrl() { return _relayUrls[0]; }
 
 /**
- * Get the current relay WebSocket URL.
+ * Get the current relay WebSocket URL (first relay, for backward compat).
  */
-export function getRelayWsUrl() { return _wsUrl; }
-
-/**
- * Set the relay URL at runtime. Derives the WS URL automatically.
- * @param {string} url - HTTP(S) URL of the relay (e.g. "https://relay.example.com")
- */
-export function setRelayUrl(url) {
-  if (!url || typeof url !== "string") return;
-  _apiUrl = url.replace(/\/+$/, "");
-  _wsUrl = _apiUrl.replace(/^http/, "ws") + "/ws";
+export function getRelayWsUrl() {
+  return _relayUrls[0].replace(/^http/, "ws") + "/ws";
 }
 
 /**
- * Reset relay URL to default (from env or localhost).
+ * Set the relay URLs at runtime (multi-relay support).
+ * @param {string[]} urls - Array of HTTP(S) relay base URLs
+ */
+export function setRelayUrls(urls) {
+  if (!Array.isArray(urls) || urls.length === 0) return;
+  _relayUrls = urls
+    .map(u => (typeof u === "string" ? u.trim().replace(/\/+$/, "") : ""))
+    .filter(Boolean);
+  if (_relayUrls.length === 0) _relayUrls = [DEFAULT_API];
+}
+
+/** @deprecated Use setRelayUrls([url]) instead. Kept for backward compatibility. */
+export function setRelayUrl(url) {
+  setRelayUrls([url]);
+}
+
+/**
+ * Reset relay URLs to default (from env or localhost).
  */
 export function resetRelayUrl() {
-  _apiUrl = DEFAULT_API;
-  _wsUrl = DEFAULT_WS;
+  _relayUrls = [DEFAULT_API];
 }
 
 /**
  * Make a JSON request to the relay.
+ * @param {string} base - Base URL of the relay
+ * @param {string} path - Path to request
+ * @param {object} options - Fetch options
  */
-async function relayFetch(path, options = {}) {
-  const url = `${_apiUrl}${path}`;
+async function relayFetch(base, path, options = {}) {
+  const url = `${base}${path}`;
   const resp = await fetch(url, {
     headers: { "Content-Type": "application/json" },
     ...options,
@@ -57,94 +66,147 @@ async function relayFetch(path, options = {}) {
   return resp;
 }
 
+/**
+ * Broadcast: publish caps to ALL relay URLs (Promise.allSettled).
+ * Returns the first successful response, or the last error.
+ */
 export async function publishCaps(toId, signedBody) {
-  return relayFetch(`/caps/${encodeURIComponent(toId)}`, {
-    method: "PUT",
-    body: JSON.stringify(signedBody),
-  });
-}
-
-export async function publishRequestCaps(toId, signedBody) {
-  return relayFetch(`/requestCaps/${encodeURIComponent(toId)}`, {
-    method: "PUT",
-    body: JSON.stringify(signedBody),
-  });
-}
-
-export async function sendEnvelope(signedEnvelope) {
-  return relayFetch("/send", {
-    method: "POST",
-    body: JSON.stringify(signedEnvelope),
-  });
+  const results = await Promise.allSettled(
+    _relayUrls.map(base =>
+      relayFetch(base, `/caps/${encodeURIComponent(toId)}`, {
+        method: "PUT",
+        body: JSON.stringify(signedBody),
+      })
+    )
+  );
+  const ok = results.find(r => r.status === "fulfilled" && r.value.ok);
+  return ok ? ok.value : (results[results.length - 1].value ?? results[results.length - 1].reason);
 }
 
 /**
- * Drain inbox — POST with signed proof of ownership.
+ * Broadcast: publish request caps to ALL relay URLs (Promise.allSettled).
+ */
+export async function publishRequestCaps(toId, signedBody) {
+  const results = await Promise.allSettled(
+    _relayUrls.map(base =>
+      relayFetch(base, `/requestCaps/${encodeURIComponent(toId)}`, {
+        method: "PUT",
+        body: JSON.stringify(signedBody),
+      })
+    )
+  );
+  const ok = results.find(r => r.status === "fulfilled" && r.value.ok);
+  return ok ? ok.value : (results[results.length - 1].value ?? results[results.length - 1].reason);
+}
+
+/**
+ * Broadcast: send envelope to ALL relay URLs (Promise.allSettled).
+ */
+export async function sendEnvelope(signedEnvelope) {
+  const results = await Promise.allSettled(
+    _relayUrls.map(base =>
+      relayFetch(base, "/send", {
+        method: "POST",
+        body: JSON.stringify(signedEnvelope),
+      })
+    )
+  );
+  const ok = results.find(r => r.status === "fulfilled" && r.value.ok);
+  return ok ? ok.value : (results[results.length - 1].value ?? results[results.length - 1].reason);
+}
+
+/**
+ * First-reachable: drain inbox — try relays in order, return on first 200.
  */
 export async function drainInbox(toId, signedBody) {
-  const resp = await relayFetch(`/inbox/${encodeURIComponent(toId)}`, {
-    method: "POST",
-    body: JSON.stringify(signedBody),
-  });
-  if (!resp.ok) return [];
-  const data = await resp.json();
-  return Array.isArray(data.items) ? data.items : [];
+  for (const base of _relayUrls) {
+    try {
+      const resp = await relayFetch(base, `/inbox/${encodeURIComponent(toId)}`, {
+        method: "POST",
+        body: JSON.stringify(signedBody),
+      });
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      return Array.isArray(data.items) ? data.items : [];
+    } catch { continue; }
+  }
+  return [];
 }
 
 /**
- * Drain request inbox — POST with signed proof of ownership.
+ * First-reachable: drain request inbox — try relays in order, return on first 200.
  */
 export async function drainRequestInbox(toId, signedBody) {
-  const resp = await relayFetch(`/requests/inbox/${encodeURIComponent(toId)}`, {
-    method: "POST",
-    body: JSON.stringify(signedBody),
-  });
-  if (!resp.ok) return [];
-  const data = await resp.json();
-  return Array.isArray(data.items) ? data.items : [];
+  for (const base of _relayUrls) {
+    try {
+      const resp = await relayFetch(base, `/requests/inbox/${encodeURIComponent(toId)}`, {
+        method: "POST",
+        body: JSON.stringify(signedBody),
+      });
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      return Array.isArray(data.items) ? data.items : [];
+    } catch { continue; }
+  }
+  return [];
 }
 
+/**
+ * Primary relay only: block a contact.
+ */
 export async function blockOnRelay(toId, fromId, capHash, signedBody) {
-  return relayFetch(`/block/${encodeURIComponent(toId)}`, {
+  return relayFetch(_relayUrls[0], `/block/${encodeURIComponent(toId)}`, {
     method: "POST",
     body: JSON.stringify(signedBody),
   });
 }
 
+/**
+ * Primary relay only: publish directory entry.
+ */
 export async function publishDirectoryEntry(handle, profile, sig) {
-  return relayFetch("/directory/publish", {
+  return relayFetch(_relayUrls[0], "/directory/publish", {
     method: "POST",
     body: JSON.stringify({ handle, profile, sig }),
   });
 }
 
+/**
+ * Primary relay only: look up a directory entry.
+ */
 export async function lookupDirectory(handle) {
-  const resp = await relayFetch(`/directory/lookup?handle=${encodeURIComponent(handle)}`);
+  const resp = await relayFetch(_relayUrls[0], `/directory/lookup?handle=${encodeURIComponent(handle)}`);
   if (!resp.ok) return null;
   const data = await resp.json();
   return data.profile || null;
 }
 
 /**
- * Fetch a WebSocket authentication nonce from the relay.
+ * Primary relay only: check if a handle is available.
  */
-async function fetchWsChallenge() {
-  const resp = await relayFetch("/ws-challenge");
-  if (!resp.ok) throw new Error("Failed to get WS challenge");
-  const data = await resp.json();
-  return data.nonce;
-}
 export async function checkHandleAvailable(handle) {
-  const resp = await relayFetch(`/directory/available?handle=${encodeURIComponent(handle)}`);
+  const resp = await relayFetch(_relayUrls[0], `/directory/available?handle=${encodeURIComponent(handle)}`);
   if (!resp.ok) return false;
   const data = await resp.json();
   return !!data.available;
 }
+
 /**
- * Create an authenticated WebSocket connection.
+ * Fetch a WebSocket authentication nonce from a relay.
+ * @param {string} base - Base URL of the relay
+ */
+async function fetchWsChallenge(base) {
+  const resp = await relayFetch(base, "/ws-challenge");
+  if (!resp.ok) throw new Error("Failed to get WS challenge");
+  const data = await resp.json();
+  return data.nonce;
+}
+
+/**
+ * Create an authenticated WebSocket connection to a single relay URL.
  * Flow: fetch nonce → sign → authenticate → receive notifications.
  */
-export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
+function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify) {
   let ws = null;
   let reconnectTimer = null;
   let closed = false;
@@ -154,7 +216,7 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
 
     let nonce;
     try {
-      nonce = await fetchWsChallenge();
+      nonce = await fetchWsChallenge(base);
     } catch {
       scheduleReconnect();
       return;
@@ -170,7 +232,7 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
     }
 
     try {
-      ws = new WebSocket(_wsUrl);
+      ws = new WebSocket(wsUrl);
     } catch {
       scheduleReconnect();
       return;
@@ -226,5 +288,18 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
       ws?.close();
     },
   };
-  
+}
+
+/**
+ * Create authenticated WebSocket connections to ALL configured relay URLs.
+ * Any notification from any relay triggers the onNotify callback.
+ */
+export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
+  const handles = _relayUrls.map(base => {
+    const wsUrl = base.replace(/^http/, "ws") + "/ws";
+    return connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify);
+  });
+  return {
+    close() { handles.forEach(h => h.close()); },
+  };
 }
