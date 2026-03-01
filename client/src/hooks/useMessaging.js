@@ -33,6 +33,7 @@ import {
 } from "../protocol/envelopes";
 import { checkAndUpdateReplay } from "../utils/storage";
 import { createMessageStore } from "../utils/messageStore";
+import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS } from "../config";
 
 export function useMessaging(identity, contactsMgr) {
   const [messages, setMessages] = useState([]);
@@ -322,7 +323,7 @@ export function useMessaging(identity, contactsMgr) {
         fetchMessages();
       });
 
-      pollTimerRef.current = setInterval(fetchMessages, 5000);
+      pollTimerRef.current = setInterval(fetchMessages, POLL_INTERVAL_MS);
 
       const republishTimer = setInterval(async () => {
         try {
@@ -330,7 +331,7 @@ export function useMessaging(identity, contactsMgr) {
           const cb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [ch]);
           await publishCaps(myId, cb);
         } catch { /* ignore */ }
-      }, 30000);
+      }, CAP_REPUBLISH_INTERVAL_MS);
 
       return () => clearInterval(republishTimer);
     };
@@ -375,7 +376,7 @@ export function useMessaging(identity, contactsMgr) {
       console.warn(`[Dissolve] Send attempt ${attempt + 1} failed:`, lastError);
 
       if (errData.error === "cap_not_allowed" || errData.error === "request_cap_not_allowed") {
-        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, SEND_RETRY_BASE_DELAY_MS * (attempt + 1)));
         continue;
       }
 

@@ -9,6 +9,7 @@
 // 4. Server verifies and binds socket to identity
 
 import { signObject } from "../crypto/signing";
+import { WS_RECONNECT_DELAY_MS } from "../config";
 
 const DEFAULT_API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const DEFAULT_WS = import.meta.env.VITE_WS_URL || "ws://localhost:3001/ws";
@@ -213,7 +214,7 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
   function scheduleReconnect() {
     if (closed) return;
     clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(connect, 3000);
+    reconnectTimer = setTimeout(connect, WS_RECONNECT_DELAY_MS);
   }
 
   connect();
