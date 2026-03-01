@@ -7,7 +7,7 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
 ## Phases
 
 - [x] **Phase 1: Finish the Foundations** - Close security and configuration gaps before building on top (completed 2026-03-01)
-- [ ] **Phase 2: Architecture (Shared Core)** - Extract shared logic and add multi-relay support
+- [x] **Phase 2: Architecture (Shared Core)** - Extract shared logic and add multi-relay support (completed 2026-03-01)
 - [ ] **Phase 3: Deployment & Infrastructure** - Make the relay self-hostable by anyone with one command
 - [ ] **Phase 4: Onboarding & Docs** - A stranger can understand, install, and use DissolveChat without asking questions
 - [ ] **Phase 5: Public Beta** - Real users, real feedback, controlled rollout
@@ -41,9 +41,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Set up pnpm workspaces, restore missing source files, create dissolve-core scaffold
-- [ ] 02-02-PLAN.md — Move crypto/ into dissolve-core/src/crypto/; rewrite all imports in both clients
-- [ ] 02-03-PLAN.md — Multi-relay support in relay.js (broadcast writes, first-reachable drain, multi-WS)
+- [x] 02-01-PLAN.md — Set up pnpm workspaces, restore missing source files, create dissolve-core scaffold
+- [x] 02-02-PLAN.md — Move crypto/ into dissolve-core/src/crypto/; rewrite all imports in both clients
+- [x] 02-03-PLAN.md — Multi-relay support in relay.js (broadcast writes, first-reachable drain, multi-WS)
 
 ### Phase 3: Deployment & Infrastructure
 **Goal**: Anyone can deploy the relay to production with a single command, with SSL, monitoring, and full documentation
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
-| 2. Architecture (Shared Core) | 2/3 | In Progress|  |
+| 2. Architecture (Shared Core) | 3/3 | Complete   | 2026-03-01 |
 | 3. Deployment & Infrastructure | 0/4 | Not started | - |
 | 4. Onboarding & Docs | 0/4 | Not started | - |
 | 5. Public Beta | 0/2 | Not started | - |

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
 status: in_progress
-last_updated: "2026-03-01T22:27:31Z"
+last_updated: "2026-03-01T22:31:22Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 2 of 6 (Architecture: Shared Core)
-Plan: 2 of 3 in current phase (02-02 complete)
+Plan: 3 of 3 in current phase (02-03 complete — Phase 02 DONE)
 Status: In progress
-Last activity: 2026-03-01 — Completed 02-02 (move crypto to dissolve-core, rewrite imports)
+Last activity: 2026-03-01 — Completed 02-03 (multi-relay support in relay.js and useMessaging.js)
 
-Progress: [████░░░░░░] 33%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -41,10 +41,10 @@ Progress: [████░░░░░░] 33%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-finish-the-foundations | 2 | 7 min | 3.5 min |
-| 02-architecture-shared-core | 2 | 7 min | 3.5 min |
+| 02-architecture-shared-core | 3 | 11 min | 3.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5 min), 01-02 (2 min), 02-01 (3 min), 02-02 (4 min)
+- Last 5 plans: 01-01 (5 min), 01-02 (2 min), 02-01 (3 min), 02-02 (4 min), 02-03 (4 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -69,6 +69,7 @@ Recent decisions affecting current work:
 - [Phase 02-architecture-shared-core]: Used worktree version of useIdentity.js — difference was only line endings CRLF vs LF, content identical
 - [Phase 02-architecture-shared-core]: dissolve-core is canonical source for crypto; useToast moved to dissolve-core; per-client hooks with protocol/utils deps remain per-client
 - [Phase 02-architecture-shared-core]: LoginScreen.jsx and envelopes.js also had relative crypto imports and were updated as part of the import rewrite
+- [02-03]: Promise.allSettled for broadcast writes (publishCaps/publishRequestCaps/sendEnvelope); sequential first-reachable loop for drainInbox/drainRequestInbox; one WebSocket per relay URL
 
 ### Pending Todos
 
@@ -81,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-02-PLAN.md (move crypto to dissolve-core and rewrite imports) — Phase 2 plan 2 of 3 done
+Stopped at: Completed 02-03-PLAN.md (multi-relay support) — Phase 2 complete (3 of 3 plans done)
 Resume file: None
