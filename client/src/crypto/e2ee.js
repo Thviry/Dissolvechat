@@ -8,6 +8,25 @@ import { b64uFromBytes, bytesFromB64u, enc } from "./encoding";
 
 const dec = new TextDecoder();
 
+const BUCKETS = [512, 1024, 2048, 4096];
+
+function padPlaintext(bytes) {
+  const len = bytes.length;
+  let target = BUCKETS.find(b => b >= len);
+  if (!target) {
+    target = Math.ceil(len / 1024) * 1024;
+  }
+  const padded = new Uint8Array(target);
+  padded.set(bytes);
+  return padded;
+}
+
+function unpadPlaintext(bytes) {
+  let end = bytes.length;
+  while (end > 0 && bytes[end - 1] === 0) end--;
+  return bytes.subarray(0, end);
+}
+
 async function importEcdhPrivateKey(jwk) {
   return crypto.subtle.importKey("jwk", jwk, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
 }
@@ -44,7 +63,7 @@ export async function e2eeEncrypt(plaintext, theirStaticPubJwk) {
   );
 
   const ct = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, enc.encode(plaintext))
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, padPlaintext(enc.encode(plaintext)))
   );
 
   return {
@@ -73,5 +92,5 @@ export async function e2eeDecrypt(cipherPayload, myStaticPrivJwk) {
   );
 
   const ptBytes = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, aesKey, ct);
-  return dec.decode(new Uint8Array(ptBytes));
+  return dec.decode(unpadPlaintext(new Uint8Array(ptBytes)));
 }
