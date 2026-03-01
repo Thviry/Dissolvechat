@@ -20,7 +20,7 @@ import {
   publishRequestCaps,
   connectWebSocket,
   getRelayUrl,
-  setRelayUrl as setRelayUrlGlobal,
+  setRelayUrls as setRelayUrlsGlobal,
   resetRelayUrl,
 } from "../protocol/relay";
 import {
@@ -229,10 +229,11 @@ export function useMessaging(identity, contactsMgr) {
     } catch { /* ignore */ }
   }, [isReady, myId, authPubJwk, authPrivJwk, handleIncoming]);
 
-  // --- Sync relay URL when identity settings change ---
+  // --- Sync relay URL(s) when identity settings change ---
   useEffect(() => {
     if (relayUrl && relayUrl.trim()) {
-      setRelayUrlGlobal(relayUrl.trim());
+      const urls = relayUrl.split(/[\n,]/).map(u => u.trim()).filter(Boolean);
+      setRelayUrlsGlobal(urls.length ? urls : []);
     } else {
       resetRelayUrl();
     }
