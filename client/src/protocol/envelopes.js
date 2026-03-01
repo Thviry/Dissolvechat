@@ -8,8 +8,8 @@
 //   moved INSIDE the encrypted payload. The relay never sees them.
 // - `payload` is an opaque encrypted blob (ECDH ephemeral + AES-GCM).
 
-import { sha256B64u, enc, randomId, capHashFromCap, signObject } from "../crypto";
-import { e2eeEncrypt } from "../crypto/e2ee";
+import { sha256B64u, enc, randomId, capHashFromCap, signObject } from "dissolve-core/crypto";
+import { e2eeEncrypt } from "dissolve-core/crypto/e2ee";
 
 /**
  * Build a signed CapsUpdate envelope.

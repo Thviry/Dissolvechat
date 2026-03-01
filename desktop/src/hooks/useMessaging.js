@@ -9,9 +9,9 @@
 // - Backwards-compatible: still accepts old v4 envelopes with `body.msg.cipher`.
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { randomId, capHashFromCap } from "../crypto";
-import { signObject, verifyObject } from "../crypto/signing";
-import { e2eeDecrypt } from "../crypto/e2ee";
+import { randomId, capHashFromCap } from "dissolve-core/crypto";
+import { signObject, verifyObject } from "dissolve-core/crypto/signing";
+import { e2eeDecrypt } from "dissolve-core/crypto/e2ee";
 import {
   drainInbox,
   drainRequestInbox,

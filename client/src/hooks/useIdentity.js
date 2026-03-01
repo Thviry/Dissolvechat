@@ -25,9 +25,9 @@ import {
   b64uFromBytes,
   bytesFromB64u,
   jcs,
-} from "../crypto";
-import { encryptPrivateData, decryptPrivateData } from "../crypto/keyfile";
-import { generateMnemonic, validateMnemonic, deriveIdentityFromMnemonic } from "../crypto/seed";
+} from "dissolve-core/crypto";
+import { encryptPrivateData, decryptPrivateData } from "dissolve-core/crypto/keyfile";
+import { generateMnemonic, validateMnemonic, deriveIdentityFromMnemonic } from "dissolve-core/crypto/seed";
 import { downloadJson, loadJson, saveJson } from "../utils/storage";
 
 const SESSION_KEY = "dissolve_session";

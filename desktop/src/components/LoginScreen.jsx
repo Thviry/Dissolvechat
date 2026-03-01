@@ -1,6 +1,6 @@
 // client/src/components/LoginScreen.jsx
 import { useState, useRef } from "react";
-import { validateMnemonic } from "../crypto/seed";
+import { validateMnemonic } from "dissolve-core/crypto/seed";
 
 export default function LoginScreen({ onLogin, onEnroll, onCheckHandle, onRecover }) {
   const fileRef = useRef(null);

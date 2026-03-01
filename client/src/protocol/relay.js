@@ -8,7 +8,7 @@
 // 3. Client sends { type:"auth", nonce, authPub, sig } over WS
 // 4. Server verifies and binds socket to identity
 
-import { signObject } from "../crypto/signing";
+import { signObject } from "dissolve-core/crypto/signing";
 import { WS_RECONNECT_DELAY_MS } from "../config";
 
 const DEFAULT_API = import.meta.env.VITE_API_URL || "http://localhost:3001";
