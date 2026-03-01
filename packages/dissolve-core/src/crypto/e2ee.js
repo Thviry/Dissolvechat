@@ -1,4 +1,4 @@
-// client/src/crypto/e2ee.js
+// dissolve-core/src/crypto/e2ee.js
 // End-to-end encryption using ephemeral ECDH + AES-GCM.
 //
 // Each message generates a fresh ECDH keypair. The ephemeral private key

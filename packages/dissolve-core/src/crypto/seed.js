@@ -1,4 +1,4 @@
-// client/src/crypto/seed.js
+// dissolve-core/src/crypto/seed.js
 // BIP39 mnemonic → deterministic identity derivation.
 //
 // From 12 BIP39 words (128-bit entropy) we derive all four identity

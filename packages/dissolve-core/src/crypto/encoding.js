@@ -1,4 +1,4 @@
-// client/src/crypto/encoding.js
+// dissolve-core/src/crypto/encoding.js
 // Base64url encoding/decoding and hashing utilities.
 
 const enc = new TextEncoder();

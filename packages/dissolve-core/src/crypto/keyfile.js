@@ -1,4 +1,4 @@
-// client/src/crypto/keyfile.js
+// dissolve-core/src/crypto/keyfile.js
 // Encrypt/decrypt the USB key file's private material with a passphrase.
 
 import { b64uFromBytes, bytesFromB64u, enc } from "./encoding";

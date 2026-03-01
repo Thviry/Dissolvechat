@@ -1,4 +1,4 @@
-// client/src/crypto/signing.js
+// dissolve-core/src/crypto/signing.js
 // ECDSA P-256 signing and verification over JCS-canonicalized JSON.
 //
 // signObject accepts either a raw JWK object OR a non-extractable CryptoKey.

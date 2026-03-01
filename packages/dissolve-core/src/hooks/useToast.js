@@ -1,4 +1,4 @@
-// client/src/hooks/useToast.js
+// dissolve-core/src/hooks/useToast.js
 // Lightweight toast notification hook. No external dependencies.
 import { useState, useCallback } from "react";
 
