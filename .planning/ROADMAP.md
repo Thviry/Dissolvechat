@@ -120,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
 | 2. Architecture (Shared Core) | 5/5 | Complete   | 2026-03-02 |
-| 3. Deployment & Infrastructure | 4/4 | Complete   | 2026-03-02 |
+| 3. Deployment & Infrastructure | 4/4 | Complete    | 2026-03-02 |
 | 4. Onboarding & Docs | 0/4 | Not started | - |
 | 5. Public Beta | 0/2 | Not started | - |
 | 6. v1.0 Release | 0/2 | Not started | - |
