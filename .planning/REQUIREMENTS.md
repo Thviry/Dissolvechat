@@ -25,7 +25,7 @@
 
 ### Documentation
 
-- [ ] **DOCS-01**: `SELF_HOSTING.md` covers relay deployment end-to-end (Docker, env vars, reverse proxy, DNS)
+- [x] **DOCS-01**: `SELF_HOSTING.md` covers relay deployment end-to-end (Docker, env vars, reverse proxy, DNS)
 - [ ] **DOCS-02**: End-user guide covers: creating identity, adding contacts, seed phrase backup/recovery, switching relays
 - [ ] **DOCS-03**: README is updated to production quality with quickstart, architecture overview, and self-hosting link
 
@@ -88,7 +88,7 @@
 | DEPLOY-02 | Phase 3 | Complete |
 | DEPLOY-03 | Phase 3 | Complete |
 | DEPLOY-04 | Phase 3 | Complete |
-| DOCS-01 | Phase 3 | Pending |
+| DOCS-01 | Phase 3 | Complete |
 | DOCS-02 | Phase 4 | Pending |
 | DOCS-03 | Phase 4 | Pending |
 | ONB-01 | Phase 4 | Pending |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
 status: in_progress
-last_updated: "2026-03-02T22:14:00Z"
+last_updated: "2026-03-02T22:20:00Z"
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 10
 current_phase: 03-deployment-infrastructure
-current_plan: 03-03
+current_plan: 03-04
 ---
 
 # Project State
@@ -24,19 +24,19 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 3 of 6 (Deployment Infrastructure)
-Plan: 3 of N in current phase (03-03 docker-compose.yml complete)
+Phase: 3 of 6 (Deployment Infrastructure) — COMPLETE
+Plan: 4 of 4 in current phase (03-04 SELF_HOSTING.md complete — Phase 03 done)
 Status: In progress
-Last activity: 2026-03-02 — Completed 03-03 (docker-compose.yml single-command production deployment orchestration)
+Last activity: 2026-03-02 — Completed 03-04 (SELF_HOSTING.md end-to-end self-hosting guide, Phase 03 complete)
 
-Progress: [█████░░░░░] 55%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: ~2.3 min
-- Total execution time: ~0.35 hours
+- Total plans completed: 10
+- Average duration: ~2.1 min
+- Total execution time: ~0.37 hours
 
 **By Phase:**
 
@@ -44,16 +44,17 @@ Progress: [█████░░░░░] 55%
 |-------|-------|-------|----------|
 | 01-finish-the-foundations | 2 | 7 min | 3.5 min |
 | 02-architecture-shared-core | 5 | 14.5 min | 2.9 min |
-| 03-deployment-infrastructure | 3 | 4 min | 1.3 min |
+| 03-deployment-infrastructure | 4 | 6 min | 1.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (4 min), 02-04 (2 min), 02-05 (1.5 min), 03-02 (1 min), 03-03 (1 min)
+- Last 5 plans: 02-04 (2 min), 02-05 (1.5 min), 03-02 (1 min), 03-03 (1 min), 03-04 (2 min)
 - Trend: Fast
 
 *Updated after each plan completion*
 | Phase 03-deployment-infrastructure P03 | 1 min | 1 task | 1 file |
 | Phase 03-deployment-infrastructure P02 | 1 min | 2 tasks | 2 files |
 | Phase 03 P01 | 2 | 2 tasks | 2 files |
+| Phase 03-deployment-infrastructure P04 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ Recent decisions affecting current work:
 - [03-03]: Compose-level healthcheck duplicated from Dockerfile — depends_on service_healthy reads Compose-level healthcheck
 - [03-03]: $${!} (double dollar) in certbot entrypoint — escapes Compose interpolation so shell receives ${!} (last background PID)
 - [03-03]: Tor service block included as commented-out YAML — operator opt-in avoids complicating base deployment
+- [Phase 03-04]: SSL bootstrap uses two-phase approach (HTTP-only nginx first, then certbot --webroot) in SELF_HOSTING.md — addresses chicken-and-egg without stopping nginx completely
+- [Phase 03-04]: VITE_API_URL build-time warning placed at both .env editing step AND env var reference table in SELF_HOSTING.md — belt-and-suspenders for the most common self-hoster pitfall
 
 ### Pending Todos
 
@@ -105,5 +108,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 03-03-PLAN.md (docker-compose.yml single-command production deployment orchestration)
+Stopped at: Completed 03-04-PLAN.md (SELF_HOSTING.md end-to-end self-hosting guide — Phase 03 deployment infrastructure complete)
 Resume file: None
