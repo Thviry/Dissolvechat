@@ -45,7 +45,7 @@ Plans:
 - [x] 02-02-PLAN.md — Move crypto/ into dissolve-core/src/crypto/; rewrite all imports in both clients
 - [x] 02-03-PLAN.md — Multi-relay support in relay.js (broadcast writes, first-reachable drain, multi-WS)
 - [x] 02-04-PLAN.md — Gap closure: add authPrivJwk alias to useIdentity hooks (fixes undefined signing key)
-- [ ] 02-05-PLAN.md — Gap closure: fix sendEnvelope synthetic 503 + add e2eePrivJwk alias + e2eeDecrypt CryptoKey guard
+- [x] 02-05-PLAN.md — Gap closure: fix sendEnvelope synthetic 503 + add e2eePrivJwk alias + e2eeDecrypt CryptoKey guard
 
 ### Phase 3: Deployment & Infrastructure
 **Goal**: Anyone can deploy the relay to production with a single command, with SSL, monitoring, and full documentation
@@ -60,10 +60,10 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 03-01: Add /health endpoint to relay server
-- [ ] 03-02: Write docker-compose.yml for relay (and optional static web client)
-- [ ] 03-03: Document all environment variables (DEPLOY-02) and write nginx config example (DEPLOY-03)
-- [ ] 03-04: Write SELF_HOSTING.md end-to-end guide (DOCS-01)
+- [x] 03-01-PLAN.md — server/Dockerfile (node:20-slim, healthcheck) + nginx/dissolve.conf (SSL termination, WebSocket proxy)
+- [x] 03-02-PLAN.md — Dockerfile.client (3-stage pnpm monorepo build) + .env.example (self-hoster env template)
+- [x] 03-03-PLAN.md — docker-compose.yml (relay + nginx + certbot, service_healthy, single-command deployment)
+- [ ] 03-04-PLAN.md — SELF_HOSTING.md end-to-end guide (DOCS-01)
 
 ### Phase 4: Onboarding & Docs
 **Goal**: A stranger can find DissolveChat, understand what it is, and complete the full flow (enroll, add contact, message) without help
@@ -120,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
 | 2. Architecture (Shared Core) | 5/5 | Complete   | 2026-03-02 |
-| 3. Deployment & Infrastructure | 2/4 | In Progress|  |
+| 3. Deployment & Infrastructure | 3/4 | In Progress|  |
 | 4. Onboarding & Docs | 0/4 | Not started | - |
 | 5. Public Beta | 0/2 | Not started | - |
 | 6. v1.0 Release | 0/2 | Not started | - |
