@@ -1,0 +1,60 @@
+# Dockerfile.client — Multi-stage build for the DissolveChat React client
+# Build context: repo root (required for pnpm workspace — dissolve-core dependency)
+# Usage: docker compose up --build
+# Note: VITE_API_URL is baked into the bundle at build time.
+#       After changing VITE_API_URL in .env, run: docker compose up --build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1: deps — fetch all packages into pnpm store (lockfile only, no source)
+# Only the lockfile and workspace manifests are needed here.
+# This layer is cached across rebuilds as long as pnpm-lock.yaml doesn't change.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-slim AS deps
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+# Copy workspace manifests and lockfile FIRST (maximizes Docker layer cache)
+# Source code changes will not invalidate this fetch layer
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/dissolve-core/package.json ./packages/dissolve-core/
+COPY client/package.json ./client/
+
+# pnpm fetch: downloads all packages from the registry into the pnpm store
+# Only the lockfile is needed — no source code required at this stage
+RUN pnpm fetch
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2: builder — copy source, install from store offline, run Vite build
+# ─────────────────────────────────────────────────────────────────────────────
+FROM deps AS builder
+
+WORKDIR /app
+
+# Copy source AFTER fetch (fetch layer is cached; source changes don't re-fetch)
+COPY packages/dissolve-core/ ./packages/dissolve-core/
+COPY client/ ./client/
+
+# Install from local store only — no network access (all deps already fetched above)
+RUN pnpm install --offline
+
+# Build arg for Vite — VITE_API_URL is baked into the JavaScript bundle at build time (NOT runtime)
+# The WebSocket URL is derived at runtime: base.replace(/^http/, "ws") + "/ws"
+# Do NOT pass VITE_WS_URL — it is not read directly by the client source (derived from VITE_API_URL)
+ARG VITE_API_URL=http://localhost:3001
+RUN cd client && VITE_API_URL=$VITE_API_URL pnpm build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 3: client — lightweight nginx image serving the static React build
+# ─────────────────────────────────────────────────────────────────────────────
+FROM nginx:alpine AS client
+
+# Copy built React app from builder stage
+COPY --from=builder /app/client/dist /usr/share/nginx/html
+
+# Note: The nginx config (nginx/dissolve.conf) is volume-mounted by docker-compose,
+# NOT copied into this image. This is intentional — self-hosters customize the config
+# (domain name, SSL certificate paths) without needing to rebuild the image.
+# The image only bakes in the static files.
+
+EXPOSE 80 443
