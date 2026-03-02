@@ -271,12 +271,12 @@ Expected response:
 ```json
 {
     "ok": true,
-    "protocol": "DissolveChat/1.0",
-    "version": "...",
-    "persistence": true,
+    "protocol": 4,
+    "version": "4.1.0-hardened",
+    "persistence": "in-memory",
     "uptime": {
         "ms": 12345,
-        "human": "12s"
+        "human": "0m 12s"
     },
     "store": {
         "handles": 0,
@@ -287,7 +287,7 @@ Expected response:
 }
 ```
 
-`"ok": true` confirms the relay is running. `"persistence": true` confirms the relay-data volume is working.
+`"ok": true` confirms the relay is running. `"persistence": "in-memory"` is expected — the relay-data volume persists the directory file, but message inboxes are in-memory by design.
 
 ### Verify the web client
 
