@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-architecture-shared-core
-source: [02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md]
-started: 2026-03-01T22:45:00Z
-updated: 2026-03-01T23:10:00Z
+source: [02-04-SUMMARY.md]
+started: 2026-03-01T23:45:00Z
+updated: 2026-03-01T23:55:00Z
 ---
 
 ## Current Test
@@ -12,46 +12,69 @@ updated: 2026-03-01T23:10:00Z
 
 ## Tests
 
-### 1. pnpm install and both clients build
-expected: From the repo root, run `pnpm install` — completes with no errors. `cd client && pnpm build` exits 0. `cd desktop && pnpm build` exits 0.
+### 1. Login no longer throws JWK error
+expected: Open the client app (`cd client && pnpm dev`). Attempt to log in with an existing identity (or create a new account). The browser console should show NO "required JWK member kty was missing" error. The login flow completes and the app loads normally.
 result: pass
 
-### 2. App loads in browser without JS errors
-expected: Run `cd client && pnpm dev`, open the URL in a browser. The login/identity screen appears with no red console errors about missing modules or failed imports. (dissolve-core resolves at runtime via the pnpm symlink)
+### 2. Account creation works without auth key error
+expected: From the identity/onboarding screen, type a handle and attempt to create a new account. The registration flow completes without a "could not check — is the relay running?" error caused by undefined auth key. (A real relay connectivity error is fine if no relay is running — what we're checking is that the auth key error is gone.)
 result: pass
+reported: "Could not check — is the relay running? (relay not running — expected)"
 
-### 3. Single relay URL still works
-expected: With a single relay URL configured as before (e.g., `http://localhost:4000`), the app behaves exactly as it did before Phase 2 — login, send/receive messages, capability registration all work normally. No breakage from the setRelayUrl → setRelayUrls refactor.
+### 3. Messages can be sent and received
+expected: With a running relay, send a message from an existing identity. The message sends without error and appears in the chat. Received messages are decrypted and display correctly.
 result: issue
-reported: "getting 'the required JWK member kty was missing' error; when typing a handle to create a new account get 'could not check - is the relay running?'"
+reported: "useMessaging.js:377 [Dissolve] Send attempt 1 failed: undefined"
 severity: major
-
-### 4. Multi-relay URL entry persists
-expected: In the relay URL settings field, enter two URLs separated by a comma (e.g., `http://relay1:4000,http://relay2:4000`). Save/confirm. On reload, the same comma-separated string appears in the field — localStorage preserved the value.
-result: pass
-reported: "no save/confirm option — field auto-saves"
-
-### 5. Multi-relay broadcast reaches all relays
-expected: With two relay URLs configured and both relay servers running, logging in sends publishCaps requests to BOTH relay URLs — visible in browser network tab.
-result: skipped
-reason: relay server not available in this repo — separate project
 
 ## Summary
 
-total: 5
-passed: 3
+total: 3
+passed: 2
 issues: 1
 pending: 0
-skipped: 1
+skipped: 0
 
 ## Gaps
 
-- truth: "App works normally with a single relay URL — login, account creation, messaging all function as before Phase 2"
+- truth: "Messages can be sent and received correctly"
   status: failed
-  reason: "User reported: getting 'the required JWK member kty was missing' error; relay connectivity errors noted but expected when relay not running"
+  reason: "User reported: useMessaging.js:377 [Dissolve] Send attempt 1 failed: undefined"
   severity: major
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: |
+    Two separate issues:
+
+    (A) sendEnvelope returns Error not Response on relay failure.
+    client/src/protocol/relay.js sendEnvelope() uses Promise.allSettled and when
+    all relay fetches are rejected (relay unreachable), the last result's .reason
+    (a network Error object) is returned directly. useMessaging expects a Response
+    object — Error has no .ok/.status/.json() — so resp.ok is undefined (falsy),
+    resp.json() throws, resp.status is undefined, and lastError becomes the string
+    "undefined". Fix: return a mock {ok:false, status:503, json:()=>Promise.resolve({})}
+    when all promises reject.
+
+    (B) e2eePrivJwk not aliased in useIdentity return object.
+    useIdentity exposes e2eePrivKey (CryptoKey) but not e2eePrivJwk. useMessaging
+    destructures e2eePrivJwk and gets undefined. e2eeDecrypt(payload, undefined)
+    calls importEcdhPrivateKey(undefined) which throws. The catch{return} at line
+    73 swallows the error silently — all received messages fail to decrypt.
+    Fix: add e2eePrivJwk: e2eePrivKey alias to both useIdentity return objects
+    AND add instanceof CryptoKey guard to e2eeDecrypt (mirroring signObject).
+  artifacts:
+    - path: "client/src/protocol/relay.js"
+      issue: "sendEnvelope returns Error object (last rejected reason) when all relays fail — not a Response"
+    - path: "desktop/src/protocol/relay.js"
+      issue: "identical issue"
+    - path: "client/src/hooks/useIdentity.js"
+      issue: "Return object at line 369 exposes e2eePrivKey (CryptoKey) but not e2eePrivJwk alias"
+    - path: "desktop/src/hooks/useIdentity.js"
+      issue: "identical issue"
+    - path: "packages/dissolve-core/src/crypto/e2ee.js"
+      issue: "e2eeDecrypt calls importEcdhPrivateKey unconditionally — no CryptoKey guard unlike signObject"
+  missing:
+    - "relay.js sendEnvelope: return synthetic {ok:false,status:503} when results array is empty or all rejected"
+    - "client/src/hooks/useIdentity.js line 369: add e2eePrivJwk: e2eePrivKey alias"
+    - "desktop/src/hooks/useIdentity.js line 369: identical change"
+    - "packages/dissolve-core/src/crypto/e2ee.js: add instanceof CryptoKey guard to e2eeDecrypt"
   debug_session: ""
