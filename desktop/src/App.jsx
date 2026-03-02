@@ -248,7 +248,7 @@ export default function App() {
         ? await capHashFromCap(peer.cap)
         : null;
       const body = await buildBlockRequest(
-        identity.id, identity.authPubJwk, identity.authPrivJwk, id, capHash
+        identity.id, identity.authPubJwk, identity.authPrivKey, id, capHash
       );
       await blockOnRelay(identity.id, id, capHash, body);
     } catch { /* best-effort */ }
