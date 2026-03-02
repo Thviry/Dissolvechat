@@ -38,12 +38,14 @@ Plans:
   2. The monorepo builds cleanly with `pnpm install` and both clients pass their existing tests
   3. A user with two relay URLs configured can send a message that reaches a recipient connected to either relay
   4. Capability registrations are published to all configured relays automatically on login
-**Plans**: 3 plans
+**Plans**: 5 plans
 
 Plans:
 - [x] 02-01-PLAN.md — Set up pnpm workspaces, restore missing source files, create dissolve-core scaffold
 - [x] 02-02-PLAN.md — Move crypto/ into dissolve-core/src/crypto/; rewrite all imports in both clients
 - [x] 02-03-PLAN.md — Multi-relay support in relay.js (broadcast writes, first-reachable drain, multi-WS)
+- [x] 02-04-PLAN.md — Gap closure: add authPrivJwk alias to useIdentity hooks (fixes undefined signing key)
+- [ ] 02-05-PLAN.md — Gap closure: fix sendEnvelope synthetic 503 + add e2eePrivJwk alias + e2eeDecrypt CryptoKey guard
 
 ### Phase 3: Deployment & Infrastructure
 **Goal**: Anyone can deploy the relay to production with a single command, with SSL, monitoring, and full documentation
@@ -117,7 +119,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
-| 2. Architecture (Shared Core) | 4/4 | Complete   | 2026-03-02 |
+| 2. Architecture (Shared Core) | 4/5 | In progress | - |
 | 3. Deployment & Infrastructure | 0/4 | Not started | - |
 | 4. Onboarding & Docs | 0/4 | Not started | - |
 | 5. Public Beta | 0/2 | Not started | - |
