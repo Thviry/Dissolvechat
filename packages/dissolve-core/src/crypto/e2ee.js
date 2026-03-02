@@ -80,7 +80,9 @@ export async function e2eeEncrypt(plaintext, theirStaticPubJwk) {
 export async function e2eeDecrypt(cipherPayload, myStaticPrivJwk) {
   const iv = bytesFromB64u(cipherPayload.iv);
   const ct = bytesFromB64u(cipherPayload.ct);
-  const myPriv = await importEcdhPrivateKey(myStaticPrivJwk);
+  const myPriv = myStaticPrivJwk instanceof CryptoKey
+    ? myStaticPrivJwk
+    : await importEcdhPrivateKey(myStaticPrivJwk);
   const senderEphPub = await importEcdhPublicKey(cipherPayload.epk);
 
   const aesKey = await crypto.subtle.deriveKey(
