@@ -1,0 +1,80 @@
+# DissolveChat — Production Docker Compose
+# ==========================================
+# Prerequisites: Copy .env.example to .env and fill in values.
+# First run: Follow SELF_HOSTING.md for SSL certificate setup (Certbot).
+# Start: docker compose up -d --build
+# Stop:  docker compose down
+# Logs:  docker compose logs -f
+
+services:
+  relay:
+    build: ./server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN}
+      DIRECTORY_FILE: /data/directory.json
+    volumes:
+      - relay-data:/data
+    networks:
+      - internal
+    # Port 3001 is intentionally NOT mapped to the host.
+    # nginx proxies all traffic via the internal Docker network.
+    # External access to 3001 would bypass SSL and CORS — block with UFW (see SELF_HOSTING.md).
+    healthcheck:
+      test: ["CMD", "node", "-e",
+        "require('http').get('http://localhost:3001/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/dissolve.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      relay:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Runs renewal check every 12 hours (certbot renew is idempotent — only acts when < 30 days remain)
+    # Initial certificate issuance: see SELF_HOSTING.md — run certbot certonly once before docker compose up
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
+
+  # ── Optional: Tor hidden service ──────────────────────────────────
+  # Uncomment to expose the relay as a Tor v3 .onion address.
+  # Instructions: See "Tor Hidden Service" section in SELF_HOSTING.md
+  # tor:
+  #   image: torproject/tor:latest
+  #   volumes:
+  #     - ./tor/torrc:/etc/tor/torrc:ro
+  #     - tor-keys:/var/lib/tor/hidden_service
+  #   networks:
+  #     - internal
+  #   restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  relay-data:
+  # tor-keys:  # Uncomment if using Tor hidden service
