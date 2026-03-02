@@ -112,7 +112,9 @@ export async function sendEnvelope(signedEnvelope) {
     )
   );
   const ok = results.find(r => r.status === "fulfilled" && r.value.ok);
-  return ok ? ok.value : (results[results.length - 1].value ?? results[results.length - 1].reason);
+  if (ok) return ok.value;
+  const lastResult = results[results.length - 1];
+  return lastResult?.value ?? { ok: false, status: 503, json: () => Promise.resolve({}) };
 }
 
 /**
