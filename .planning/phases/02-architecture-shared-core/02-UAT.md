@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: resolved
 phase: 02-architecture-shared-core
 source: [02-04-SUMMARY.md]
 started: 2026-03-01T23:45:00Z
@@ -38,7 +38,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Messages can be sent and received correctly"
-  status: failed
+  status: resolved
   reason: "User reported: useMessaging.js:377 [Dissolve] Send attempt 1 failed: undefined"
   severity: major
   test: 3
