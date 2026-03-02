@@ -2,6 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
+status: unknown
+last_updated: "2026-03-02T22:12:00.446Z"
+progress:
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 11
+  completed_plans: 9
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: Release
 status: in_progress
 last_updated: "2026-03-02T22:10:05Z"
 progress:
@@ -52,6 +65,7 @@ Progress: [█████░░░░░] 50%
 
 *Updated after each plan completion*
 | Phase 03-deployment-infrastructure P02 | 1 min | 2 tasks | 2 files |
+| Phase 03 P01 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -77,6 +91,13 @@ Recent decisions affecting current work:
 - [Phase 02-architecture-shared-core]: Expose CryptoKey under authPrivJwk alias in useIdentity hooks to fix undefined signing key without renaming callers
 - [Phase 02]: sendEnvelope returns synthetic {ok:false,status:503} instead of raw Error when all relays reject
 - [Phase 02]: e2eePrivJwk alias added to useIdentity hooks and CryptoKey guard added to e2eeDecrypt to fix message decryption failures
+- [03-01]: node:20-slim chosen over node:20-alpine for relay — avoids musl glibc compatibility issues with native modules in production
+- [03-01]: HEALTHCHECK uses node -e (not curl) — curl not guaranteed in slim images; node binary always available
+- [03-01]: CMD ["node", "src/index.js"] directly — avoids npm start overhead and ensures correct SIGTERM delivery
+- [03-01]: relay port 3001 not host-mapped in Dockerfile — compose uses internal network only
+- [03-01]: nginx WebSocket upgrade via map block from official nginx.org docs — no hand-rolled conditional logic
+- [03-01]: proxy_http_version 1.1 on /ws location — required for WebSocket upgrade; HTTP/1.0 default silently fails
+- [03-01]: 3600s read/send timeouts on /ws — prevents nginx from closing idle WebSocket connections after 60s default
 - [03-02]: Only VITE_API_URL passed as Docker build ARG — VITE_WS_URL excluded because it is derived at runtime in relay.js
 - [03-02]: nginx config volume-mounted (not baked into image) to allow self-hoster customization without rebuilding
 
