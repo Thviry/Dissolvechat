@@ -2,52 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
-status: unknown
-last_updated: "2026-03-02T04:09:38.380Z"
-progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Release
-status: unknown
-last_updated: "2026-03-02T03:42:25.369Z"
-progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Release
-status: unknown
-last_updated: "2026-03-02T03:16:13.928Z"
-progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
----
-
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Release
 status: in_progress
-last_updated: "2026-03-01T22:31:22Z"
+last_updated: "2026-03-02T22:10:05Z"
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_phases: 6
+  completed_phases: 2
+  total_plans: 9
+  completed_plans: 8
+current_phase: 03-deployment-infrastructure
+current_plan: 03-02
 ---
 
 # Project State
@@ -57,23 +20,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Users can send and receive end-to-end encrypted messages without trusting any platform with their identity, contacts, or message content.
-**Current focus:** Phase 2 — Architecture: Shared Core
+**Current focus:** Phase 3 — Deployment Infrastructure
 
 ## Current Position
 
-Phase: 2 of 6 (Architecture: Shared Core)
-Plan: 5 of 5 in current phase (02-05 gap closure complete — Phase 02 fully DONE)
+Phase: 3 of 6 (Deployment Infrastructure)
+Plan: 2 of N in current phase (03-02 Dockerfile.client + .env.example complete)
 Status: In progress
-Last activity: 2026-03-02 — Completed 02-05 (sendEnvelope+e2eePrivJwk fix — closes UAT gap for message send/receive)
+Last activity: 2026-03-02 — Completed 03-02 (Dockerfile.client multi-stage pnpm build + .env.example self-hoster template)
 
 Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 3.5 min
-- Total execution time: 0.2 hours
+- Total plans completed: 8
+- Average duration: ~2.5 min
+- Total execution time: ~0.35 hours
 
 **By Phase:**
 
@@ -81,14 +44,14 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 01-finish-the-foundations | 2 | 7 min | 3.5 min |
 | 02-architecture-shared-core | 5 | 14.5 min | 2.9 min |
+| 03-deployment-infrastructure | 1 | 1 min | 1 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (2 min), 02-01 (3 min), 02-02 (4 min), 02-03 (4 min), 02-04 (2 min)
-- Trend: -
+- Last 5 plans: 02-01 (3 min), 02-02 (4 min), 02-03 (4 min), 02-04 (2 min), 02-05 (1.5 min), 03-02 (1 min)
+- Trend: Fast
 
 *Updated after each plan completion*
-| Phase 02-architecture-shared-core P04 | 2 | 2 tasks | 4 files |
-| Phase 02 P05 | 1.5 min | 2 tasks | 5 files |
+| Phase 03-deployment-infrastructure P02 | 1 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -114,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase 02-architecture-shared-core]: Expose CryptoKey under authPrivJwk alias in useIdentity hooks to fix undefined signing key without renaming callers
 - [Phase 02]: sendEnvelope returns synthetic {ok:false,status:503} instead of raw Error when all relays reject
 - [Phase 02]: e2eePrivJwk alias added to useIdentity hooks and CryptoKey guard added to e2eeDecrypt to fix message decryption failures
+- [03-02]: Only VITE_API_URL passed as Docker build ARG — VITE_WS_URL excluded because it is derived at runtime in relay.js
+- [03-02]: nginx config volume-mounted (not baked into image) to allow self-hoster customization without rebuilding
 
 ### Pending Todos
 
@@ -126,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 02-05-PLAN.md (sendEnvelope+e2eePrivJwk fix — closes UAT gap for message send/receive) — Phase 2 fully complete (5 of 5 plans done)
+Stopped at: Completed 03-02-PLAN.md (Dockerfile.client multi-stage pnpm build + .env.example self-hoster template)
 Resume file: None

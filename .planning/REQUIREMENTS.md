@@ -18,8 +18,8 @@
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: Relay server ships with a `docker-compose.yml` for single-command production deployment
-- [ ] **DEPLOY-02**: Environment variables for relay configuration are documented (ports, rate limits, TTLs, CORS)
+- [x] **DEPLOY-01**: Relay server ships with a `docker-compose.yml` for single-command production deployment
+- [x] **DEPLOY-02**: Environment variables for relay configuration are documented (ports, rate limits, TTLs, CORS)
 - [ ] **DEPLOY-03**: An nginx reverse proxy config example is provided for SSL termination
 - [ ] **DEPLOY-04**: Relay exposes a `/health` endpoint for monitoring
 
@@ -84,8 +84,8 @@
 | ARCH-01 | Phase 2 | Complete |
 | ARCH-02 | Phase 2 | Complete |
 | ARCH-03 | Phase 2 | Complete |
-| DEPLOY-01 | Phase 3 | Pending |
-| DEPLOY-02 | Phase 3 | Pending |
+| DEPLOY-01 | Phase 3 | Complete |
+| DEPLOY-02 | Phase 3 | Complete |
 | DEPLOY-03 | Phase 3 | Pending |
 | DEPLOY-04 | Phase 3 | Pending |
 | DOCS-01 | Phase 3 | Pending |
