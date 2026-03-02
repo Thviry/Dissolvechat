@@ -366,7 +366,7 @@ export function useIdentity() {
 
   return {
     // State
-    authPrivKey, authPubJwk, e2eePrivKey, e2eePubJwk,
+    authPrivKey, authPrivJwk: authPrivKey, authPubJwk, e2eePrivKey, e2eePubJwk,
     label, id, inboxCap, requestCap,
     discoverable, setDiscoverable,
     handle, setHandle,
