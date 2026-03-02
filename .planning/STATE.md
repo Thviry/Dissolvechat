@@ -3,6 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
 status: unknown
+last_updated: "2026-03-02T03:42:25.369Z"
+progress:
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: Release
+status: unknown
 last_updated: "2026-03-02T03:16:13.928Z"
 progress:
   total_phases: 2
@@ -36,9 +49,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 2 of 6 (Architecture: Shared Core)
-Plan: 4 of 4 in current phase (02-04 gap closure complete — Phase 02 fully DONE)
+Plan: 5 of 5 in current phase (02-05 gap closure complete — Phase 02 fully DONE)
 Status: In progress
-Last activity: 2026-03-01 — Completed 02-04 (authPrivJwk alias fix — closes UAT gap, login and signing unblocked)
+Last activity: 2026-03-02 — Completed 02-05 (sendEnvelope+e2eePrivJwk fix — closes UAT gap for message send/receive)
 
 Progress: [█████░░░░░] 50%
 
@@ -54,7 +67,7 @@ Progress: [█████░░░░░] 50%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-finish-the-foundations | 2 | 7 min | 3.5 min |
-| 02-architecture-shared-core | 4 | 13 min | 3.3 min |
+| 02-architecture-shared-core | 5 | 14.5 min | 2.9 min |
 
 **Recent Trend:**
 - Last 5 plans: 01-02 (2 min), 02-01 (3 min), 02-02 (4 min), 02-03 (4 min), 02-04 (2 min)
@@ -62,6 +75,7 @@ Progress: [█████░░░░░] 50%
 
 *Updated after each plan completion*
 | Phase 02-architecture-shared-core P04 | 2 | 2 tasks | 4 files |
+| Phase 02 P05 | 1.5 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -85,6 +99,8 @@ Recent decisions affecting current work:
 - [Phase 02-architecture-shared-core]: LoginScreen.jsx and envelopes.js also had relative crypto imports and were updated as part of the import rewrite
 - [02-03]: Promise.allSettled for broadcast writes (publishCaps/publishRequestCaps/sendEnvelope); sequential first-reachable loop for drainInbox/drainRequestInbox; one WebSocket per relay URL
 - [Phase 02-architecture-shared-core]: Expose CryptoKey under authPrivJwk alias in useIdentity hooks to fix undefined signing key without renaming callers
+- [Phase 02]: sendEnvelope returns synthetic {ok:false,status:503} instead of raw Error when all relays reject
+- [Phase 02]: e2eePrivJwk alias added to useIdentity hooks and CryptoKey guard added to e2eeDecrypt to fix message decryption failures
 
 ### Pending Todos
 
@@ -96,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed 02-04-PLAN.md (authPrivJwk gap closure) — Phase 2 fully complete (4 of 4 plans done)
+Last session: 2026-03-02
+Stopped at: Completed 02-05-PLAN.md (sendEnvelope+e2eePrivJwk fix — closes UAT gap for message send/receive) — Phase 2 fully complete (5 of 5 plans done)
 Resume file: None
