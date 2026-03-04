@@ -1,0 +1,101 @@
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* Design tokens — identical to app */
+:root {
+  --bg-void:      #060a12;
+  --bg-primary:   #090d18;
+  --bg-secondary: #0d1320;
+  --bg-tertiary:  #131b2e;
+  --bg-hover:     #1a2438;
+  --bg-active:    #1e2b44;
+
+  --text-primary:   #e0e7f5;
+  --text-secondary: #7a8fab;
+  --text-tertiary:  #374563;
+
+  --accent:        #38bdf8;
+  --accent-hover:  #7dd3fc;
+  --accent-deep:   #0ea5e9;
+  --accent-subtle: rgba(56, 189, 248, 0.10);
+  --accent-glow:   rgba(56, 189, 248, 0.22);
+
+  --success: #34d399;
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-focus:  rgba(56, 189, 248, 0.55);
+
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.60);
+  --shadow-lg: 0 12px 52px rgba(0, 0, 0, 0.75);
+
+  --font-display: "Syne", system-ui, sans-serif;
+  --font-sans:    "Outfit", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  --t-base: 160ms ease;
+  --t-slow: 260ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --max-width: 960px;
+}
+
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+/* Grid-dot hero background */
+.grid-bg {
+  background-image: radial-gradient(circle, rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Section wrapper */
+.section {
+  width: 100%;
+  padding: 80px 24px;
+}
+
+.section-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+/* Section heading */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.section-body {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  max-width: 600px;
+}
