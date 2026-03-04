@@ -278,3 +278,62 @@ a:hover { color: var(--accent-hover); }
   font-size: 0.95rem;
   line-height: 1.65;
 }
+
+/* ── How It Works ── */
+.steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 48px;
+  border-left: 1px solid var(--border);
+  padding-left: 0;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 32px 0 32px 40px;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+
+.step:last-child { border-bottom: none; }
+
+.step::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 36px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.step-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  min-width: 28px;
+  padding-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+.step-content { display: flex; flex-direction: column; gap: 8px; }
+
+.step-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.step-body {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  max-width: 560px;
+}
