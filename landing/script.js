@@ -1,6 +1,6 @@
 // ── Configuration — update before each release ─────────────────────────────
-const GITHUB_REPO     = 'YOUR_USERNAME/dissolve';  // e.g. 'jacob/dissolve'
-const RELEASE_VERSION = '0.1.0-beta';
+const GITHUB_REPO     = 'Thviry/Dissolvechat';
+const RELEASE_VERSION = '0.1.0';
 const RELEASE_ASSETS  = {
   windows: `Dissolve_${RELEASE_VERSION}_x64-setup.exe`,
   mac:     `Dissolve_${RELEASE_VERSION}_universal.dmg`,
