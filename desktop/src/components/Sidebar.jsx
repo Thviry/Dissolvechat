@@ -23,12 +23,19 @@ export default function Sidebar({
   onDiscoverabilityChange,
   shareCardData,
 }) {
+  const RELAY_OFFICIAL = "https://relay.dissolve.chat";
+  const RELAY_LOCAL    = "http://localhost:3001";
+
   const [lookupHandle, setLookupHandle] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [contactMenu, setContactMenu] = useState(null);
+  const [relayCustomMode, setRelayCustomMode] = useState(() => {
+    const url = identity.relayUrl || "";
+    return url !== "" && url !== RELAY_OFFICIAL && url !== RELAY_LOCAL;
+  });
   const importRef = useRef(null);
 
   const handleLookup = async () => {
@@ -166,20 +173,65 @@ export default function Sidebar({
 
             <div className="settings-section">
               <h4>Relay</h4>
-              <input
-                className="input-field"
-                value={identity.relayUrl || ""}
-                onChange={(e) => {
-                  identity.setRelayUrl(e.target.value);
-                  saveJson(`relay:${identity.id}`, { url: e.target.value });
-                }}
-                placeholder="Default relay (localhost:3001)"
-                style={{ fontSize: "12px" }}
-                aria-label="Custom relay URL"
-              />
-              <div className="hint-text" style={{ marginTop: "4px" }}>
-                Optional. e.g. https://relay.example.com
-              </div>
+              {(() => {
+                const current = identity.relayUrl || "";
+                const activePreset =
+                  !relayCustomMode && current === RELAY_OFFICIAL            ? "official" :
+                  !relayCustomMode && (current === RELAY_LOCAL || !current) ? "local"    :
+                  "custom";
+
+                const setPreset = (url) => {
+                  identity.setRelayUrl(url);
+                  saveJson(`relay:${identity.id}`, { url });
+                };
+
+                return (
+                  <>
+                    <div className="relay-presets">
+                      <button
+                        type="button"
+                        className={`btn btn-sm${activePreset === "official" ? " btn-primary" : " btn-secondary"}`}
+                        onClick={() => { setRelayCustomMode(false); setPreset(RELAY_OFFICIAL); }}
+                      >
+                        Official
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm${activePreset === "local" ? " btn-primary" : " btn-secondary"}`}
+                        onClick={() => { setRelayCustomMode(false); setPreset(RELAY_LOCAL); }}
+                      >
+                        Local
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm${activePreset === "custom" ? " btn-primary" : " btn-secondary"}`}
+                        onClick={() => setRelayCustomMode(true)}
+                      >
+                        Custom
+                      </button>
+                    </div>
+
+                    {activePreset === "custom" && (
+                      <>
+                        <input
+                          className="input-field"
+                          style={{ marginTop: "8px", fontSize: "12px" }}
+                          value={current}
+                          onChange={(e) => {
+                            identity.setRelayUrl(e.target.value);
+                            saveJson(`relay:${identity.id}`, { url: e.target.value });
+                          }}
+                          placeholder="https://your-relay.example.com"
+                          aria-label="Custom relay URL"
+                        />
+                        <div className="hint-text" style={{ marginTop: "4px" }}>
+                          Include protocol. e.g. https://relay.example.com
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
           </div>
