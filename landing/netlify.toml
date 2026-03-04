@@ -1,5 +1,4 @@
 [build]
-  base    = "landing"
   publish = "."
 
 [[headers]]
