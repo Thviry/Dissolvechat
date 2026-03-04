@@ -20,9 +20,10 @@ const DOWNLOAD_URLS = {
 // ── OS detection ────────────────────────────────────────────────────────────
 function detectOS() {
   const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes('win'))   return 'windows';
-  if (ua.includes('mac'))   return 'mac';
-  if (ua.includes('linux')) return 'linux';
+  if (ua.includes('win'))                          return 'windows';
+  if (ua.includes('iphone') || ua.includes('ipad')) return 'windows'; // no native app yet
+  if (ua.includes('mac'))                          return 'mac';
+  if (ua.includes('linux'))                        return 'linux';
   return 'windows'; // sensible default
 }
 
