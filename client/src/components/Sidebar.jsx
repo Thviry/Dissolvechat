@@ -166,20 +166,66 @@ export default function Sidebar({
 
             <div className="settings-section">
               <h4>Relay</h4>
-              <input
-                className="input-field"
-                value={identity.relayUrl || ""}
-                onChange={(e) => {
-                  identity.setRelayUrl(e.target.value);
-                  saveJson(`relay:${identity.id}`, { url: e.target.value });
-                }}
-                placeholder="Default relay (localhost:3001)"
-                style={{ fontSize: "12px" }}
-                aria-label="Custom relay URL"
-              />
-              <div className="hint-text" style={{ marginTop: "4px" }}>
-                Optional. e.g. https://relay.example.com
-              </div>
+              {(() => {
+                const OFFICIAL = "https://relay.dissolve.chat";
+                const LOCAL = "http://localhost:3001";
+                const current = identity.relayUrl || "";
+                const activePreset =
+                  current === OFFICIAL ? "official" :
+                  current === LOCAL    ? "local"    : "custom";
+
+                const setPreset = (url) => {
+                  identity.setRelayUrl(url);
+                  saveJson(`relay:${identity.id}`, { url });
+                };
+
+                return (
+                  <>
+                    <div className="relay-presets">
+                      <button
+                        type="button"
+                        className={`btn btn-sm${activePreset === "official" ? " btn-primary" : " btn-secondary"}`}
+                        onClick={() => setPreset(OFFICIAL)}
+                      >
+                        Official
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm${activePreset === "local" ? " btn-primary" : " btn-secondary"}`}
+                        onClick={() => setPreset(LOCAL)}
+                      >
+                        Local
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm${activePreset === "custom" ? " btn-primary" : " btn-secondary"}`}
+                        onClick={() => setPreset(current === OFFICIAL || current === LOCAL ? "" : current)}
+                      >
+                        Custom
+                      </button>
+                    </div>
+
+                    {activePreset === "custom" && (
+                      <>
+                        <input
+                          className="input-field"
+                          style={{ marginTop: "8px", fontSize: "12px" }}
+                          value={current}
+                          onChange={(e) => {
+                            identity.setRelayUrl(e.target.value);
+                            saveJson(`relay:${identity.id}`, { url: e.target.value });
+                          }}
+                          placeholder="https://your-relay.example.com"
+                          aria-label="Custom relay URL"
+                        />
+                        <div className="hint-text" style={{ marginTop: "4px" }}>
+                          Include protocol. e.g. https://relay.example.com
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
           </div>
