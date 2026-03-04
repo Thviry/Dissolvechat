@@ -2,9 +2,9 @@
 const GITHUB_REPO     = 'Thviry/Dissolvechat';
 const RELEASE_VERSION = '0.1.0-beta';
 const RELEASE_ASSETS  = {
-  windows: `Dissolve_${RELEASE_VERSION}_x64-setup.exe`,
-  mac:     `Dissolve_${RELEASE_VERSION}_universal.dmg`,
-  linux:   `Dissolve_${RELEASE_VERSION}_amd64.AppImage`,
+  windows: `Dissolve_0.1.0_x64-setup.exe`,
+  mac:     `Dissolve_0.1.0_universal.dmg`,
+  linux:   `Dissolve_0.1.0_amd64.AppImage`,
 };
 
 // ── Derived URLs ────────────────────────────────────────────────────────────
