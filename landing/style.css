@@ -107,6 +107,7 @@ a:hover { color: var(--accent-hover); }
   align-items: center;
   position: relative;
   overflow: hidden;
+  padding-top: 80px;
 }
 
 .hero::before {
@@ -435,9 +436,6 @@ a:hover { color: var(--accent-hover); }
 
 .nav-link:hover { color: var(--accent); }
 
-/* Offset hero for fixed nav */
-.hero { padding-top: 80px; }
-
 /* ── Footer ── */
 .footer {
   padding: 60px 24px;
@@ -486,4 +484,27 @@ a:hover { color: var(--accent-hover); }
 .footer-copy {
   font-size: 0.8rem;
   color: var(--text-tertiary);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .nav { padding: 14px 20px; }
+
+  .hero-title { font-size: 2.25rem; }
+
+  .hero-subtitle { font-size: 1rem; }
+
+  .hero-cta { width: 100%; }
+
+  .btn { width: 100%; justify-content: center; }
+
+  .hero-alt-links { justify-content: center; }
+
+  .pillars-grid { grid-template-columns: 1fr; }
+
+  .download-grid { grid-template-columns: 1fr; }
+
+  .step { padding-left: 28px; gap: 20px; }
+
+  .section { padding: 60px 20px; }
 }
