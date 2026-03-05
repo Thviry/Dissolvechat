@@ -25,6 +25,8 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +56,7 @@ jobs:
         with:
           workspaces: './desktop/src-tauri -> target'
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
 
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -62,7 +64,7 @@ jobs:
         with:
           projectPath: desktop
           tagName: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-          releaseName: 'Dissolve ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}'
+          releaseName: "Dissolve ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
           releaseBody: |
             Download the installer for your platform below.
 
