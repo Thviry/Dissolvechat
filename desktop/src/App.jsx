@@ -1,4 +1,4 @@
-// desktop/src/App.jsx
+// client/src/App.jsx
 // Dissolve Chat v5 — Protocol-first E2EE messenger.
 //
 // Architecture:
@@ -19,17 +19,17 @@ import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
 import { buildBlockRequest } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
-import MnemonicScreen from "./components/MnemonicScreen";
-import OnboardingScreen from "./components/OnboardingScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
 import ToastContainer from "./components/Toast";
 import PassphraseModal from "./components/PassphraseModal";
+import { IconClose } from "./components/Icons";
 import "./App.css";
 
 export default function App() {
-  const [mode, setMode] = useState("login"); // login | mnemonic | onboarding | chat
-  const [pendingMnemonic, setPendingMnemonic] = useState(null);
+  const [mode, setMode] = useState("login"); // login | chat
+  const [backupDismissed, setBackupDismissed] = useState(false);
+  const [pendingViewMnemonic, setPendingViewMnemonic] = useState(null);
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
@@ -83,12 +83,31 @@ export default function App() {
           e2eePublicJwk: card.e2eePublicJwk,
           cap: typeof card.cap === "string" ? card.cap : null,
         });
-        // Clear the fragment so it doesn't re-import on refresh
         window.history.replaceState(null, "", window.location.pathname);
         addToast(`Contact "${card.label || card.id.slice(0, 12)}" imported!`, "success");
       }
     } catch { /* ignore malformed fragments */ }
   }, [identity.isReady, identity.id, contactsMgr, addToast]);
+
+  // --- Export keyfile ---
+  const handleExportKeyfile = useCallback(async () => {
+    let passphrase;
+    try {
+      passphrase = await requestPassphrase(
+        "Export Key File",
+        "Choose a passphrase to encrypt your key file. You will need it to log in on another device.",
+        true /* withConfirm */
+      );
+    } catch {
+      return; // user cancelled
+    }
+    try {
+      await identity.exportKeyfile(passphrase, contactsMgr.contacts);
+      addToast("Key file exported successfully.", "success");
+    } catch (err) {
+      addToast("Export failed: " + err.message, "error");
+    }
+  }, [identity, contactsMgr, requestPassphrase, addToast]);
 
   // --- Check handle availability (called from LoginScreen during enrollment) ---
   const handleCheckHandle = useCallback(async (handle) => {
@@ -101,18 +120,17 @@ export default function App() {
     if (!passphrase) throw new Error("Passphrase required");
     if (!handle || handle.length < 2) throw new Error("Handle required (2+ chars)");
 
-    // Double-check availability right before creating (another user might have claimed it)
     const stillAvailable = await handleCheckHandle(handle);
     if (!stillAvailable) throw new Error("Handle was just taken — pick another");
 
     try {
-      const { mnemonic } = await identity.enroll(displayName || handle, passphrase, handle);
-      setPendingMnemonic(mnemonic);
-      setMode("mnemonic");
+      await identity.enroll(displayName || handle, passphrase, handle);
+      addToast("Key file saved to Downloads — keep it safe.", "info");
+      setMode("chat");
     } catch (err) {
       throw new Error("Enrollment failed: " + err.message);
     }
-  }, [identity, handleCheckHandle]);
+  }, [identity, handleCheckHandle, addToast]);
 
   // --- Recover ---
   const handleRecover = useCallback(async (mnemonic, displayName) => {
@@ -138,12 +156,19 @@ export default function App() {
     }
     try {
       const raw = await file.text();
-      await identity.login(raw, passphrase);
+      const result = await identity.login(raw, passphrase);
+      if (result?.importedContacts?.length > 0) {
+        for (const c of result.importedContacts) {
+          if (c.id && c.authPublicJwk && c.e2eePublicJwk) {
+            contactsMgr.addContact(c);
+          }
+        }
+      }
       setMode("chat");
     } catch (err) {
       addToast("Login failed: " + (err.message || "Wrong passphrase or corrupted file."), "error");
     }
-  }, [identity, requestPassphrase, addToast]);
+  }, [identity, contactsMgr, requestPassphrase, addToast]);
 
   // --- Logout ---
   const handleLogout = useCallback(() => {
@@ -152,26 +177,6 @@ export default function App() {
     identity.logout();
     setMode("login");
   }, [identity, contactsMgr, messaging]);
-
-  // --- Export keyfile ---
-  const handleExportKeyfile = useCallback(async () => {
-    let passphrase;
-    try {
-      passphrase = await requestPassphrase(
-        "Export Key File",
-        "Choose a passphrase to encrypt your key file. You will need it to log in on another device.",
-        true /* withConfirm */
-      );
-    } catch {
-      return; // user cancelled
-    }
-    try {
-      await identity.exportKeyfile(passphrase, contactsMgr.contacts);
-      addToast("Key file exported successfully.", "success");
-    } catch (err) {
-      addToast("Export failed: " + err.message, "error");
-    }
-  }, [identity, contactsMgr, requestPassphrase, addToast]);
 
   // --- Export contact card (includes inbox cap — share with trusted contacts) ---
   const handleExportCard = useCallback(async () => {
@@ -209,12 +214,12 @@ export default function App() {
       const raw = await file.text();
       const card = JSON.parse(raw);
       if (!card?.id || !card?.authPublicJwk || !card?.e2eePublicJwk) {
-        addToast("Invalid contact card.", "error");
+        addToast("Invalid contact card — missing required fields.", "error");
         return;
       }
       const computed = await identity.computeId(card.authPublicJwk);
       if (computed !== card.id) {
-        addToast("Contact card failed integrity check (id mismatch).", "error");
+        addToast("Contact card failed integrity check (ID mismatch).", "error");
         return;
       }
       contactsMgr.addContact({
@@ -224,7 +229,7 @@ export default function App() {
         e2eePublicJwk: card.e2eePublicJwk,
         cap: typeof card.cap === "string" ? card.cap : null,
       });
-      addToast(`Contact "${card.label || card.id.slice(0, 12)}" imported.`, "success");
+      addToast(`"${card.label || card.id.slice(0, 12)}" added to contacts.`, "success");
     } catch (err) {
       addToast("Failed to import: " + err.message, "error");
     }
@@ -258,7 +263,7 @@ export default function App() {
   const handleLookup = useCallback(async (handle) => {
     const result = await relayLookup(handle);
     if (!result) {
-      addToast("Not found (or relay offline).", "warning");
+      addToast("Handle not found, or relay is offline.", "error");
       return null;
     }
     return result;
@@ -272,7 +277,7 @@ export default function App() {
     }
     try {
       await messaging.sendRequest(recipient);
-      addToast("Request sent.", "success");
+      addToast("Contact request sent!", "success");
     } catch (err) {
       addToast("Request failed: " + err.message, "error");
     }
@@ -286,6 +291,16 @@ export default function App() {
       saveJson(`discoverable:${identity.id}`, { discoverable: disc, handle: h || "" });
     }
   }, [identity]);
+
+  // --- View recovery phrase (passphrase-gated) ---
+  const handleViewRecoveryPhrase = useCallback(async () => {
+    if (identity.mnemonic) {
+      setPendingViewMnemonic(identity.mnemonic);
+      localStorage.setItem(`backupCompleted:${identity.id}`, "true");
+    } else {
+      addToast("Recovery phrase not available in this session. Log in with your key file to access it.", "warning");
+    }
+  }, [identity, addToast]);
 
   // --- Build contact card data for sharing (link/QR) ---
   const shareCardData = useMemo(() => {
@@ -337,21 +352,10 @@ export default function App() {
     );
   }
 
-  if (mode === "mnemonic") {
-    return (
-      <MnemonicScreen
-        mnemonic={pendingMnemonic}
-        onContinue={() => {
-          setPendingMnemonic(null);
-          setMode("onboarding");
-        }}
-      />
-    );
-  }
-
-  if (mode === "onboarding") {
-    return <OnboardingScreen identity={identity} onContinue={() => setMode("chat")} />;
-  }
+  const backupCompleted = identity.id
+    ? JSON.parse(localStorage.getItem(`backupCompleted:${identity.id}`) || "false")
+    : false;
+  const showBackupBanner = identity.isReady && !backupCompleted && !backupDismissed;
 
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;
   const visibleMessages = messaging.activeId
@@ -360,6 +364,18 @@ export default function App() {
 
   return (
     <>
+      {showBackupBanner && (
+        <div className="backup-banner" role="alert">
+          <span>Back up your recovery phrase in Settings before you lose access.</span>
+          <button
+            className="backup-banner-dismiss"
+            onClick={() => setBackupDismissed(true)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="app-layout">
         <Sidebar
           identity={identity}
@@ -378,6 +394,7 @@ export default function App() {
           onLogout={handleLogout}
           onExportKeyfile={handleExportKeyfile}
           onDiscoverabilityChange={handleDiscoverabilityChange}
+          onViewRecoveryPhrase={handleViewRecoveryPhrase}
           shareCardData={shareCardData}
         />
         <ChatPanel
@@ -386,7 +403,9 @@ export default function App() {
           onSend={messaging.sendMsg}
         />
       </div>
+
       <ToastContainer toasts={toasts} />
+
       {passphraseState && (
         <PassphraseModal
           title={passphraseState.title}
@@ -395,6 +414,35 @@ export default function App() {
           onConfirm={handlePassphraseConfirm}
           onCancel={handlePassphraseCancel}
         />
+      )}
+
+      {pendingViewMnemonic && (
+        <div className="modal-backdrop" onClick={() => setPendingViewMnemonic(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div className="modal-header">
+              <h3>Recovery Phrase</h3>
+              <button className="btn-icon" onClick={() => setPendingViewMnemonic(null)} aria-label="Close">
+                <IconClose size={16} />
+              </button>
+            </div>
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginBottom: "16px" }}>
+              Write these 12 words down on paper. Do not screenshot or store in plaintext.
+            </p>
+            <div className="mnemonic-grid">
+              {pendingViewMnemonic.trim().split(/\s+/).map((word, i) => (
+                <div key={i} className="mnemonic-word">
+                  <span className="mnemonic-num">{i + 1}</span>
+                  <span className="mnemonic-text">{word}</span>
+                </div>
+              ))}
+            </div>
+            <div className="enroll-actions" style={{ marginTop: 16 }}>
+              <button className="btn btn-primary" onClick={() => setPendingViewMnemonic(null)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

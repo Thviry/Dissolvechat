@@ -19,17 +19,17 @@ import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
 import { buildBlockRequest } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
-import MnemonicScreen from "./components/MnemonicScreen";
-import OnboardingScreen from "./components/OnboardingScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
 import ToastContainer from "./components/Toast";
 import PassphraseModal from "./components/PassphraseModal";
+import { IconClose } from "./components/Icons";
 import "./App.css";
 
 export default function App() {
-  const [mode, setMode] = useState("login"); // login | mnemonic | onboarding | chat
-  const [pendingMnemonic, setPendingMnemonic] = useState(null);
+  const [mode, setMode] = useState("login"); // login | chat
+  const [backupDismissed, setBackupDismissed] = useState(false);
+  const [pendingViewMnemonic, setPendingViewMnemonic] = useState(null);
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
@@ -124,13 +124,13 @@ export default function App() {
     if (!stillAvailable) throw new Error("Handle was just taken — pick another");
 
     try {
-      const { mnemonic } = await identity.enroll(displayName || handle, passphrase, handle);
-      setPendingMnemonic(mnemonic);
-      setMode("mnemonic");
+      await identity.enroll(displayName || handle, passphrase, handle);
+      addToast("Key file saved to Downloads — keep it safe.", "info");
+      setMode("chat");
     } catch (err) {
       throw new Error("Enrollment failed: " + err.message);
     }
-  }, [identity, handleCheckHandle]);
+  }, [identity, handleCheckHandle, addToast]);
 
   // --- Recover ---
   const handleRecover = useCallback(async (mnemonic, displayName) => {
@@ -292,6 +292,16 @@ export default function App() {
     }
   }, [identity]);
 
+  // --- View recovery phrase (passphrase-gated) ---
+  const handleViewRecoveryPhrase = useCallback(async () => {
+    if (identity.mnemonic) {
+      setPendingViewMnemonic(identity.mnemonic);
+      localStorage.setItem(`backupCompleted:${identity.id}`, "true");
+    } else {
+      addToast("Recovery phrase not available in this session. Log in with your key file to access it.", "warning");
+    }
+  }, [identity, addToast]);
+
   // --- Build contact card data for sharing (link/QR) ---
   const shareCardData = useMemo(() => {
     if (!identity.isReady) return null;
@@ -342,21 +352,10 @@ export default function App() {
     );
   }
 
-  if (mode === "mnemonic") {
-    return (
-      <MnemonicScreen
-        mnemonic={pendingMnemonic}
-        onContinue={() => {
-          setPendingMnemonic(null);
-          setMode("onboarding");
-        }}
-      />
-    );
-  }
-
-  if (mode === "onboarding") {
-    return <OnboardingScreen identity={identity} onContinue={() => setMode("chat")} />;
-  }
+  const backupCompleted = identity.id
+    ? JSON.parse(localStorage.getItem(`backupCompleted:${identity.id}`) || "false")
+    : false;
+  const showBackupBanner = identity.isReady && !backupCompleted && !backupDismissed;
 
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;
   const visibleMessages = messaging.activeId
@@ -365,6 +364,18 @@ export default function App() {
 
   return (
     <>
+      {showBackupBanner && (
+        <div className="backup-banner" role="alert">
+          <span>Back up your recovery phrase in Settings before you lose access.</span>
+          <button
+            className="backup-banner-dismiss"
+            onClick={() => setBackupDismissed(true)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="app-layout">
         <Sidebar
           identity={identity}
@@ -383,6 +394,7 @@ export default function App() {
           onLogout={handleLogout}
           onExportKeyfile={handleExportKeyfile}
           onDiscoverabilityChange={handleDiscoverabilityChange}
+          onViewRecoveryPhrase={handleViewRecoveryPhrase}
           shareCardData={shareCardData}
         />
         <ChatPanel
@@ -402,6 +414,35 @@ export default function App() {
           onConfirm={handlePassphraseConfirm}
           onCancel={handlePassphraseCancel}
         />
+      )}
+
+      {pendingViewMnemonic && (
+        <div className="modal-backdrop" onClick={() => setPendingViewMnemonic(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div className="modal-header">
+              <h3>Recovery Phrase</h3>
+              <button className="btn-icon" onClick={() => setPendingViewMnemonic(null)} aria-label="Close">
+                <IconClose size={16} />
+              </button>
+            </div>
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginBottom: "16px" }}>
+              Write these 12 words down on paper. Do not screenshot or store in plaintext.
+            </p>
+            <div className="mnemonic-grid">
+              {pendingViewMnemonic.trim().split(/\s+/).map((word, i) => (
+                <div key={i} className="mnemonic-word">
+                  <span className="mnemonic-num">{i + 1}</span>
+                  <span className="mnemonic-text">{word}</span>
+                </div>
+              ))}
+            </div>
+            <div className="enroll-actions" style={{ marginTop: 16 }}>
+              <button className="btn btn-primary" onClick={() => setPendingViewMnemonic(null)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

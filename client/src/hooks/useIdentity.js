@@ -120,6 +120,7 @@ export function useIdentity() {
   const [discoverable, setDiscoverable] = useState(false);
   const [handle, setHandle] = useState("");
   const [archiveEnabled, setArchiveEnabled] = useState(false);
+  const [mnemonic, setMnemonic] = useState(null);
   const [relayUrl, setRelayUrl] = useState("");
 
   // Track whether we've attempted session restore (to avoid flash of login screen)
@@ -159,6 +160,7 @@ export function useIdentity() {
     setId(data.id);
     setInboxCap(data.inboxCap);
     setRequestCap(data.requestCap);
+    setMnemonic(data.mnemonic || null);
 
     const pref = loadJson(`discoverable:${data.id}`, { discoverable: false, handle: "" });
     setDiscoverable(!!pref.discoverable);
@@ -319,6 +321,7 @@ export function useIdentity() {
     setId("");
     setInboxCap(null);
     setRequestCap(null);
+    setMnemonic(null);
     setDiscoverable(false);
     setHandle("");
   }, []);
@@ -375,6 +378,7 @@ export function useIdentity() {
     isReady,
     sessionChecked,
     // Actions
+    mnemonic,
     enroll, login, recover, logout, computeId, exportKeyfile,
   };
 }

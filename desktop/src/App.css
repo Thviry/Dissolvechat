@@ -233,6 +233,10 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
 }
+#root {
+  display: flex;
+  flex-direction: column;
+}
 
 body {
   font-family: var(--font-sans);
@@ -588,8 +592,36 @@ code, kbd {
    ============================================================ */
 .app-layout {
   display: flex;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
+}
+
+/* ── Backup reminder banner ── */
+.backup-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.25);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  z-index: 100;
+}
+.backup-banner-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.backup-banner-dismiss:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
 }
 
 /* ============================================================

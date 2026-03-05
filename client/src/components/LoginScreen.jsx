@@ -1,6 +1,7 @@
 // client/src/components/LoginScreen.jsx
 import { useState, useRef } from "react";
 import { validateMnemonic } from "dissolve-core/crypto/seed";
+import { IconEye, IconEyeOff } from "./Icons";
 
 export default function LoginScreen({ onLogin, onEnroll, onCheckHandle, onRecover }) {
   const fileRef = useRef(null);
@@ -8,12 +9,13 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle, onRecove
 
   // ── Enrollment state ────────────────────────────────────────────────
   const [handle, setHandle] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [passphrase, setPassphrase] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
   const [handleStatus, setHandleStatus] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
   const [enrollError, setEnrollError] = useState(null);
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const checkTimer = useRef(null);
 
   // ── Recovery state ──────────────────────────────────────────────────
@@ -55,7 +57,7 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle, onRecove
     setEnrolling(true);
     setEnrollError(null);
     try {
-      await onEnroll({ handle, displayName: displayName.trim() || handle, passphrase });
+      await onEnroll({ handle, displayName: handle, passphrase });
     } catch (err) {
       setEnrollError(err.message);
     } finally {
@@ -180,40 +182,39 @@ export default function LoginScreen({ onLogin, onEnroll, onCheckHandle, onRecove
             </div>
 
             <div className="form-group">
-              <label className="form-label">Display Name</label>
-              <input
-                className="input-field"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={handle || "Optional — defaults to your handle"}
-                maxLength={64}
-              />
-            </div>
-
-            <div className="form-group">
               <label className="form-label">
                 Passphrase <span className="form-required">*</span>
               </label>
-              <input
-                className="input-field"
-                type="password"
-                value={passphrase}
-                onChange={(e) => { setPassphrase(e.target.value); setEnrollError(null); }}
-                placeholder="Encrypts your key file"
-              />
+              <div className="password-field-wrap">
+                <input
+                  className="input-field"
+                  type={showPass ? "text" : "password"}
+                  value={passphrase}
+                  onChange={(e) => { setPassphrase(e.target.value); setEnrollError(null); }}
+                  placeholder="Encrypts your key file"
+                />
+                <button type="button" className="password-toggle" onClick={() => setShowPass(v => !v)} aria-label={showPass ? "Hide passphrase" : "Show passphrase"}>
+                  {showPass ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">
                 Confirm Passphrase <span className="form-required">*</span>
               </label>
-              <input
-                className="input-field"
-                type="password"
-                value={confirmPass}
-                onChange={(e) => { setConfirmPass(e.target.value); setEnrollError(null); }}
-                placeholder="Type it again"
-              />
+              <div className="password-field-wrap">
+                <input
+                  className="input-field"
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPass}
+                  onChange={(e) => { setConfirmPass(e.target.value); setEnrollError(null); }}
+                  placeholder="Type it again"
+                />
+                <button type="button" className="password-toggle" onClick={() => setShowConfirm(v => !v)} aria-label={showConfirm ? "Hide passphrase" : "Show passphrase"}>
+                  {showConfirm ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                </button>
+              </div>
               {confirmPass && passphrase !== confirmPass && (
                 <div className="form-hint status-taken">Passphrases do not match</div>
               )}

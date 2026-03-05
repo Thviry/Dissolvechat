@@ -21,6 +21,7 @@ export default function Sidebar({
   onLogout,
   onExportKeyfile,
   onDiscoverabilityChange,
+  onViewRecoveryPhrase,
   shareCardData,
 }) {
   const RELAY_OFFICIAL = "https://relay.dissolve.chat";
@@ -93,6 +94,15 @@ export default function Sidebar({
                 </label>
                 <button className="btn btn-sm btn-secondary" onClick={onExportKeyfile}>
                   Export Keyfile
+                </button>
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <h4>Security</h4>
+              <div className="settings-actions">
+                <button className="btn btn-sm btn-secondary" onClick={onViewRecoveryPhrase}>
+                  View Recovery Phrase
                 </button>
               </div>
             </div>
