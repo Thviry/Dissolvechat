@@ -11,7 +11,7 @@
 import { signObject } from "dissolve-core/crypto/signing";
 import { WS_RECONNECT_DELAY_MS } from "../config";
 
-const DEFAULT_API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const DEFAULT_API = import.meta.env.VITE_API_URL || "https://relay.dissolve.chat";
 
 let _relayUrls = [DEFAULT_API]; // array of HTTP base URLs (no trailing slash)
 
