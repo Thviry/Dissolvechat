@@ -27,32 +27,6 @@
     "discoverable": true,
     "updatedAt": "2026-02-24T04:33:42.386Z"
   },
-  "jorky": {
-    "dissolveProtocol": 4,
-    "v": 4,
-    "id": "vQOtQF2IDdEaFRfsKnXQf_4o3qGNRZ0ncLGhbn9LFN0",
-    "label": "jonk",
-    "authPublicJwk": {
-      "kty": "EC",
-      "crv": "P-256",
-      "x": "_N4WN_Qh5KxatlnaDOEmBn5STEm_qZ3_fgTiNdNmbJU",
-      "y": "gaUtXXIN4fymVnlITF9AgjQ3UADUrfStm2bQIH-ZxtY",
-      "key_ops": [
-        "verify"
-      ],
-      "ext": true
-    },
-    "e2eePublicJwk": {
-      "kty": "EC",
-      "crv": "P-256",
-      "x": "lz6u8NKvfrfjqrN7FM-d0VGHkbi2w0KwkrOhlI5EIgo",
-      "y": "tESsf-g2-wILEJl179r9aGrpdwS9upD--dbrDJM--sU",
-      "key_ops": [],
-      "ext": true
-    },
-    "discoverable": false,
-    "updatedAt": "2026-02-24T05:09:41.949Z"
-  },
   "jonk": {
     "dissolveProtocol": 4,
     "v": 4,
@@ -132,5 +106,107 @@
     "requestCapHash": "2nq8SGj7ZyDDDvH0xbHpVaGWjRljQaMjuRT8JON_NvE",
     "discoverable": true,
     "updatedAt": "2026-02-24T05:10:27.986Z"
+  },
+  "jon": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "vQOtQF2IDdEaFRfsKnXQf_4o3qGNRZ0ncLGhbn9LFN0",
+    "label": "jonk",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "_N4WN_Qh5KxatlnaDOEmBn5STEm_qZ3_fgTiNdNmbJU",
+      "y": "gaUtXXIN4fymVnlITF9AgjQ3UADUrfStm2bQIH-ZxtY",
+      "key_ops": [
+        "verify"
+      ],
+      "ext": true
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "lz6u8NKvfrfjqrN7FM-d0VGHkbi2w0KwkrOhlI5EIgo",
+      "y": "tESsf-g2-wILEJl179r9aGrpdwS9upD--dbrDJM--sU",
+      "key_ops": [],
+      "ext": true
+    },
+    "requestCap": "9FXjXpkgGCPn8YWYtzzzWsj2uJDr8w_jcmfp_KJW7iU",
+    "requestCapHash": "eg8PpND8zMSb30HfhYC_g3pHF-39bz19lhCX969ShxU",
+    "discoverable": true,
+    "updatedAt": "2026-03-03T22:40:09.882Z"
+  },
+  "tester2": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "wgZBGOsxv-UdGw5ucoo3kyfsDZ60IBbtttRVbtFryYw",
+    "label": "tester2",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "fSwceQRUjdEE1aQx_AQTzq3LGW8lW0je8I0LiK8Eofg",
+      "y": "U-dxfaYcspm2gN1Upe-2NW-n0s0ohnfZy66WTRh0OZ4",
+      "key_ops": [
+        "verify"
+      ]
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "9PgguecviFp6kXQEAKZSNniOxuiOlzFl7W2KtwRmH2E",
+      "y": "WDzBP9xslSagiHBt_GmKa4WDCNuP0hbzCH2V75iWcTs",
+      "key_ops": []
+    },
+    "requestCap": "pXWYm41ZppoMvYtEQEXvxD_XwsxWq_h4A2kS6sb8MaM",
+    "requestCapHash": "C9xcYzCzXmibrd33vNueeS27VmZqDOhjfxkaOv30y6E",
+    "discoverable": true,
+    "updatedAt": "2026-03-04T00:09:53.369Z"
+  },
+  "tester3": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "rf63b8hbTwvU9xFXOadcs6XI9gIbelHB7saejLzOP14",
+    "label": "tester3",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "jMvmlNMjzrr-Bmn9Ue03X5IbnKT_jPDf2XPhdcxaUKM",
+      "y": "8AFC1utGWb9e2NDyUnhelo92h9D0yLUeCfW4gS9dGjU",
+      "key_ops": [
+        "verify"
+      ]
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "7NbotrBsGZf4jmbYLCYTldu-Wo2aWxPMed5x8XsbbPI",
+      "y": "6PzyrXad7-Y0G-KJo6Mf06Iv2NAqch53NRnx0j4smMw",
+      "key_ops": []
+    },
+    "discoverable": false,
+    "updatedAt": "2026-03-04T00:09:51.776Z"
+  },
+  "buttnutt": {
+    "dissolveProtocol": 4,
+    "v": 4,
+    "id": "qftPrSUBXESmiJS3bQRxoxWAXP0VzgH9lG7OjbzET8w",
+    "label": "buttnutt",
+    "authPublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "MgJF8PxZ-2F_HoNGp-odUOG5BaryCyb-N3See3yuKWE",
+      "y": "vK3qEB6AkpNnsjXMyVulDZ9AfMtTWq9UeWxESZzZnL8",
+      "key_ops": [
+        "verify"
+      ]
+    },
+    "e2eePublicJwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "0vrFKabEyjpaVoanstYxc9M9hiYLYrA9zu8gtAsPAio",
+      "y": "6kn1rZWJPUpe1Ecgwb6pXQwnvc7JWpgAqaRukq1G73E",
+      "key_ops": []
+    },
+    "discoverable": false,
+    "updatedAt": "2026-03-05T03:07:42.294Z"
   }
 }

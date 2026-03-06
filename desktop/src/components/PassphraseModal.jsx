@@ -1,7 +1,7 @@
 // client/src/components/PassphraseModal.jsx
 // Replaces native prompt() for passphrase entry. Supports optional confirm field.
 import { useState, useRef, useEffect } from "react";
-import { IconClose } from "./Icons";
+import { IconClose, IconEye, IconEyeOff } from "./Icons";
 
 export default function PassphraseModal({
   title,
@@ -12,6 +12,8 @@ export default function PassphraseModal({
 }) {
   const [passphrase, setPassphrase] = useState("");
   const [confirmValue, setConfirmValue] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -56,17 +58,22 @@ export default function PassphraseModal({
             <label className="form-label" htmlFor="pp-input">
               Passphrase
             </label>
-            <input
-              ref={inputRef}
-              id="pp-input"
-              type="password"
-              className="input-field"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="Enter passphrase…"
-              onKeyDown={handleKeyDown}
-              autoComplete={withConfirm ? "new-password" : "current-password"}
-            />
+            <div className="password-field-wrap">
+              <input
+                ref={inputRef}
+                id="pp-input"
+                type={showPass ? "text" : "password"}
+                className="input-field"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                placeholder="Enter passphrase…"
+                onKeyDown={handleKeyDown}
+                autoComplete={withConfirm ? "new-password" : "current-password"}
+              />
+              <button type="button" className="password-toggle" onClick={() => setShowPass(v => !v)} aria-label={showPass ? "Hide" : "Show"}>
+                {showPass ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+              </button>
+            </div>
           </div>
 
           {withConfirm && (
@@ -74,16 +81,21 @@ export default function PassphraseModal({
               <label className="form-label" htmlFor="pp-confirm">
                 Confirm Passphrase
               </label>
-              <input
-                id="pp-confirm"
-                type="password"
-                className="input-field"
-                value={confirmValue}
-                onChange={(e) => setConfirmValue(e.target.value)}
-                placeholder="Type it again…"
-                onKeyDown={handleKeyDown}
-                autoComplete="new-password"
-              />
+              <div className="password-field-wrap">
+                <input
+                  id="pp-confirm"
+                  type={showConfirm ? "text" : "password"}
+                  className="input-field"
+                  value={confirmValue}
+                  onChange={(e) => setConfirmValue(e.target.value)}
+                  placeholder="Type it again…"
+                  onKeyDown={handleKeyDown}
+                  autoComplete="new-password"
+                />
+                <button type="button" className="password-toggle" onClick={() => setShowConfirm(v => !v)} aria-label={showConfirm ? "Hide" : "Show"}>
+                  {showConfirm ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                </button>
+              </div>
               {mismatch && (
                 <div className="form-hint status-taken">Passphrases don't match</div>
               )}

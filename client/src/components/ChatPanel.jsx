@@ -1,5 +1,6 @@
 // client/src/components/ChatPanel.jsx
 import { useState, useRef, useEffect, useMemo } from "react";
+import { IconSend } from "./Icons";
 
 // Format a date for the separator chip
 function formatDateChip(date) {
@@ -193,7 +194,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
             disabled={!text.trim() || !peer.cap || sending}
             aria-label="Send message"
           >
-            {sending ? <span className="spinner" aria-hidden="true" /> : "Send"}
+            {sending ? <span className="spinner" aria-hidden="true" /> : <IconSend size={15} />}
           </button>
         </div>
       </div>

@@ -243,8 +243,18 @@ export function useMessaging(identity, contactsMgr) {
   useEffect(() => {
     if (!isReady || !myId) return;
     if (!archiveEnabled) {
-      archiveRef.current?.close();
-      archiveRef.current = null;
+      if (archiveRef.current) {
+        // Was open this session — clear persisted data so it can't resurface on re-enable
+        const store = archiveRef.current;
+        archiveRef.current = null;
+        store.clear().finally(() => store.close());
+      } else {
+        // Store wasn't open this session but stale data may exist from a prior session
+        // where archive was on. Wipe it so enabling archive later starts clean.
+        createMessageStore(JSON.stringify(e2eePrivJwk))
+          .then(store => store.clear().finally(() => store.close()))
+          .catch(() => {});
+      }
       setHistoryLoaded(true);
       return;
     }

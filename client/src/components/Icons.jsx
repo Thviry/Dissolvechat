@@ -64,3 +64,19 @@ export const IconSearch = ({ size = 16, ...props }) => (
     <path d="M10.5 10.5L14 14" />
   </svg>
 );
+
+export const IconEye = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" />
+    <circle cx="8" cy="8" r="2" />
+  </svg>
+);
+
+export const IconEyeOff = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M2 2l12 12" />
+    <path d="M6.7 6.7A2 2 0 0 0 8 10a2 2 0 0 0 1.3-3.3" />
+    <path d="M9.9 9.9C9.3 10.3 8.7 10.5 8 10.5c-4.5 0-7-5-7-5a12.5 12.5 0 0 1 2.9-3.3M3.6 3.6A12.5 12.5 0 0 0 1 8s2.5 5 7 5a7 7 0 0 0 2-.3" />
+    <path d="M6 3.5A7 7 0 0 1 8 3c4.5 0 7 5 7 5a12.5 12.5 0 0 1-1.6 2.3" />
+  </svg>
+);
