@@ -19,16 +19,17 @@ const logger = require("./logger");
 
 const app = express();
 const IS_DEV = process.env.NODE_ENV !== "production";
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || (IS_DEV ? "*" : undefined);
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim())
+  : (IS_DEV ? null : undefined); // null = allow all in dev
 
 // ── CORS ────────────────────────────────────────────────────────────
-// In production, restrict to actual client origin.
-if (ALLOWED_ORIGIN === "*") {
+// In production, allow specific origins (web + Tauri desktop).
+if (ALLOWED_ORIGINS === null) {
   app.use(cors());
-} else if (ALLOWED_ORIGIN) {
-  app.use(cors({ origin: ALLOWED_ORIGIN }));
+} else if (ALLOWED_ORIGINS) {
+  app.use(cors({ origin: ALLOWED_ORIGINS }));
 } else {
-  // No CORS if no origin specified in production — must be same-origin
   app.use(cors({ origin: false }));
 }
 
@@ -117,7 +118,7 @@ server.listen(PORT, () => {
   console.log(`Dissolve Relay (v4-secure, hardened) on http://localhost:${PORT}`);
   console.log(`WebSocket: ws://localhost:${PORT}/ws (authenticated)`);
   console.log(`Persistence: IN-MEMORY ONLY`);
-  console.log(`CORS: ${ALLOWED_ORIGIN || "same-origin only"}`);
+  console.log(`CORS: ${ALLOWED_ORIGINS ? ALLOWED_ORIGINS.join(", ") : (ALLOWED_ORIGINS === null ? "*" : "same-origin only")}`);
   if (IS_DEV) console.log(`Debug: http://localhost:${PORT}/debug/state`);
 });
 
