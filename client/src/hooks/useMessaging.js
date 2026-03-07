@@ -83,6 +83,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       }
 
       // Group message detection: e2ee layer contains { g: true, groupId, iv, ct }
+      // The group-decrypted inner won't have authPub — carry it from the outer envelope
       if (inner.g === true && inner.groupId) {
         const group = groupsMgr?.findGroup(inner.groupId);
         if (!group) {
@@ -90,8 +91,10 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
           return;
         }
         try {
+          const outerAuthPub = env.authPub;
           const groupPlaintext = await groupDecrypt({ iv: inner.iv, ct: inner.ct }, group.groupKey);
           inner = JSON.parse(groupPlaintext);
+          inner.authPub = outerAuthPub;
         } catch {
           console.warn("[Dissolve] Failed to decrypt group message");
           return;
