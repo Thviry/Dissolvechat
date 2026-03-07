@@ -3,3 +3,4 @@ export { b64uFromBytes, bytesFromB64u, sha256B64u, capHashFromCap, randomCap, ra
 export { encryptPrivateData, decryptPrivateData } from "./keyfile";
 export { e2eeEncrypt, e2eeDecrypt } from "./e2ee";
 export { jcs, signObject, verifyObject } from "./signing";
+export { generateGroupKey, generateGroupId, groupEncrypt, groupDecrypt, wrapGroupKey, unwrapGroupKey } from "./group";
