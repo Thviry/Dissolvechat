@@ -21,7 +21,7 @@ function formatDateChip(date) {
   });
 }
 
-export default function ChatPanel({ peer, messages, onSend }) {
+export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -29,13 +29,14 @@ export default function ChatPanel({ peer, messages, onSend }) {
   const inputRef = useRef(null);
 
   // Track which message IDs have already been rendered to avoid animating on mount
-  // or when switching contacts. seenRef.current is null until first render for a peer.
+  // or when switching contacts/groups. seenRef.current is null until first render.
   const seenRef = useRef(null);
   const prevPeerRef = useRef(null);
 
-  // When peer changes, reset seenRef so all existing messages are treated as seen
-  if (peer?.id !== prevPeerRef.current) {
-    prevPeerRef.current = peer?.id ?? null;
+  // When peer/group changes, reset seenRef so all existing messages are treated as seen
+  const currentTarget = group?.groupId ?? peer?.id ?? null;
+  if (currentTarget !== prevPeerRef.current) {
+    prevPeerRef.current = currentTarget;
     seenRef.current = null;
   }
 
@@ -53,12 +54,12 @@ export default function ChatPanel({ peer, messages, onSend }) {
     }
   }, [messages]);
 
-  // Auto-focus message input when peer changes
+  // Auto-focus message input when peer/group changes
   useEffect(() => {
-    if (peer?.cap && inputRef.current) {
+    if ((peer?.cap || group) && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [peer]);
+  }, [peer, group]);
 
   // Re-focus input on chat area click (unless clicking another input)
   const handleChatClick = (e) => {
@@ -68,11 +69,12 @@ export default function ChatPanel({ peer, messages, onSend }) {
   };
 
   const handleSend = async () => {
-    if (!text.trim() || !peer || sending) return;
+    const canSend = group ? !!text.trim() : (!!text.trim() && !!peer);
+    if (!canSend || sending) return;
     setError(null);
     setSending(true);
     try {
-      await onSend(peer.id, text);
+      await onSend(group ? group.groupId : peer.id, text);
       setText("");
     } catch (err) {
       setError(err.message);
@@ -98,41 +100,55 @@ export default function ChatPanel({ peer, messages, onSend }) {
     return result;
   }, [messages]);
 
-  if (!peer) {
+  if (!peer && !group) {
     return (
       <main className="chat-panel">
         <div className="chat-empty">
           <div className="chat-empty-icon" aria-hidden="true">◈</div>
           <h2>Dissolve Chat</h2>
-          <p>Select a contact to start a secure conversation</p>
+          <p>Select a contact or group to start a secure conversation</p>
         </div>
       </main>
     );
   }
 
+  const canSend = group ? true : !!peer?.cap;
+
   return (
     <main className="chat-panel" onClick={handleChatClick}>
       {/* Header */}
-      <div className="chat-header">
-        <div className="chat-header-avatar" aria-hidden="true">
-          {(peer.label || "?").charAt(0).toUpperCase()}
-        </div>
-        <div className="chat-header-info">
-          <div className="chat-header-name">{peer.label}</div>
-          <div className="chat-header-id" title={peer.id}>
-            {peer.id.slice(0, 24)}…
+      {group ? (
+        <div className="chat-header" onClick={onGroupInfo} style={{ cursor: "pointer" }}>
+          <div className="chat-header-avatar group-avatar" aria-hidden="true">
+            {group.groupName[0].toUpperCase()}
+          </div>
+          <div className="chat-header-info">
+            <div className="chat-header-name">{group.groupName}</div>
+            <div className="chat-header-id">{group.members.length} members</div>
           </div>
         </div>
-        {!peer.cap && (
-          <div
-            className="chat-header-warning"
-            title="Cannot send messages — no inbox capability for this contact"
-            role="status"
-          >
-            ⚠ No cap
+      ) : (
+        <div className="chat-header">
+          <div className="chat-header-avatar" aria-hidden="true">
+            {(peer.label || "?").charAt(0).toUpperCase()}
           </div>
-        )}
-      </div>
+          <div className="chat-header-info">
+            <div className="chat-header-name">{peer.label}</div>
+            <div className="chat-header-id" title={peer.id}>
+              {peer.id.slice(0, 24)}…
+            </div>
+          </div>
+          {!peer.cap && (
+            <div
+              className="chat-header-warning"
+              title="Cannot send messages — no inbox capability for this contact"
+              role="status"
+            >
+              ⚠ No cap
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Messages */}
       <div className="chat-messages" ref={scrollRef} role="log" aria-live="polite">
@@ -144,7 +160,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
           <div className="chat-no-messages">
             <span>No messages yet</span>
             <span style={{ fontSize: "11px" }}>
-              {peer.cap ? "Send the first message below" : "No inbox capability — request one first"}
+              {canSend ? "Send the first message below" : "No inbox capability — request one first"}
             </span>
           </div>
         ) : (
@@ -158,6 +174,9 @@ export default function ChatPanel({ peer, messages, onSend }) {
                 key={item.msgId}
                 className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}`}
               >
+                {group && item.dir === "in" && (
+                  <span className="group-msg-sender">{item.senderLabel}</span>
+                )}
                 <div className="chat-bubble-text">{item.text}</div>
                 <div className="chat-bubble-time" aria-label={new Date(item.ts).toLocaleString()}>
                   {new Date(item.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -179,8 +198,8 @@ export default function ChatPanel({ peer, messages, onSend }) {
             className="chat-input"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={peer.cap ? "Type a message…" : "Cannot send — no inbox capability"}
-            disabled={!peer.cap || sending}
+            placeholder={canSend ? "Type a message…" : "Cannot send — no inbox capability"}
+            disabled={!canSend || sending}
             aria-label="Message input"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -192,7 +211,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
           <button
             className="btn btn-primary btn-send"
             onClick={handleSend}
-            disabled={!text.trim() || !peer.cap || sending}
+            disabled={!text.trim() || !canSend || sending}
             aria-label="Send message"
           >
             {sending ? <span className="spinner" aria-hidden="true" /> : <IconSend size={15} />}

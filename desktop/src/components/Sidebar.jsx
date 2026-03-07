@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import ShareModal from "./ShareModal";
 import { saveJson } from "../utils/storage";
-import { IconSettings, IconLogout, IconClose, IconMore, IconSearch } from "./Icons";
+import { IconSettings, IconLogout, IconClose, IconMore, IconSearch, IconPlus, IconGroup } from "./Icons";
 
 export default function Sidebar({
   identity,
@@ -23,8 +23,13 @@ export default function Sidebar({
   onDiscoverabilityChange,
   onPresenceChange,
   onViewRecoveryPhrase,
+  backupCompleted,
   shareCardData,
   onlineIds = {},
+  groups = [],
+  activeGroupId,
+  onSelectGroup,
+  onCreateGroup,
 }) {
   const RELAY_OFFICIAL = "https://relay.dissolve.chat";
   const RELAY_LOCAL    = "http://localhost:3001";
@@ -100,6 +105,7 @@ export default function Sidebar({
               </div>
             </div>
 
+            {!backupCompleted && (
             <div className="settings-section">
               <h4>Security</h4>
               <div className="settings-actions">
@@ -108,6 +114,7 @@ export default function Sidebar({
                 </button>
               </div>
             </div>
+            )}
 
             <div className="settings-section">
               <h4>Privacy</h4>
@@ -385,6 +392,45 @@ export default function Sidebar({
                       </button>
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Groups */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-header">
+            <h3 className="section-title">Groups</h3>
+            <button
+              className="btn-icon"
+              onClick={onCreateGroup}
+              title="Create group"
+              aria-label="Create group"
+            >
+              <IconPlus size={14} />
+            </button>
+          </div>
+          {groups.length === 0 ? (
+            <p className="empty-state" style={{ padding: "0 16px" }}>No groups yet</p>
+          ) : (
+            <div className="contact-list" role="list">
+              {groups.map((g) => (
+                <div key={g.groupId} className="contact-item-wrap" role="listitem">
+                  <button
+                    className={`contact-item${activeGroupId === g.groupId ? " active" : ""}`}
+                    onClick={() => onSelectGroup(g.groupId)}
+                    aria-current={activeGroupId === g.groupId ? "true" : undefined}
+                  >
+                    <div className="contact-accent-bar" aria-hidden="true" />
+                    <div className="contact-avatar group-avatar" aria-hidden="true">
+                      {g.groupName[0].toUpperCase()}
+                    </div>
+                    <div className="contact-info">
+                      <div className="contact-name">{g.groupName}</div>
+                      <div className="contact-id">{g.members.length} members</div>
+                    </div>
+                  </button>
                 </div>
               ))}
             </div>

@@ -363,12 +363,38 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
         const history = await store.loadAll();
         if (!cancelled && history.length > 0) {
-          setMessages((prev) => {
-            const existingIds = new Set(prev.map((m) => m.msgId));
-            const newFromHistory = history.filter((m) => !existingIds.has(m.msgId));
-            const merged = [...newFromHistory, ...prev].sort((a, b) => a.ts - b.ts);
-            return merged;
-          });
+          // Partition into 1-to-1 and group messages
+          const groupIds = new Set((groupsMgr?.groups || []).map((g) => g.groupId));
+          const dmHistory = [];
+          const grpHistory = {};
+          for (const m of history) {
+            if (groupIds.has(m.peerId)) {
+              if (!grpHistory[m.peerId]) grpHistory[m.peerId] = [];
+              grpHistory[m.peerId].push(m);
+            } else {
+              dmHistory.push(m);
+            }
+          }
+          if (dmHistory.length > 0) {
+            setMessages((prev) => {
+              const existingIds = new Set(prev.map((m) => m.msgId));
+              const newFromHistory = dmHistory.filter((m) => !existingIds.has(m.msgId));
+              return [...newFromHistory, ...prev].sort((a, b) => a.ts - b.ts);
+            });
+          }
+          if (Object.keys(grpHistory).length > 0) {
+            setGroupMessages((prev) => {
+              const merged = { ...prev };
+              for (const [gid, msgs] of Object.entries(grpHistory)) {
+                const existing = merged[gid] || [];
+                const existingIds = new Set(existing.map((m) => m.msgId));
+                const newMsgs = msgs.filter((m) => !existingIds.has(m.msgId));
+                merged[gid] = [...newMsgs, ...existing].sort((a, b) => a.ts - b.ts);
+              }
+              return merged;
+            });
+            groupMessagesRef.current = { ...groupMessagesRef.current, ...grpHistory };
+          }
         }
         setHistoryLoaded(true);
       } catch (err) {
