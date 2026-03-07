@@ -16,6 +16,22 @@ import { sendEnvelope } from "../protocol/relay";
 export default function useGroupActions(identity, groupsMgr, addToast) {
 
   const createGroup = useCallback(async (groupName, initialMembers) => {
+    // Validate all members have required crypto fields before creating
+    const badMembers = initialMembers.filter(
+      (m) => !m.e2eePublicJwk?.kty || !m.authPublicJwk?.kty || typeof m.cap !== "string"
+    );
+    if (badMembers.length > 0) {
+      const names = badMembers.map((m) => m.label || m.id?.slice(0, 8)).join(", ");
+      addToast(`Cannot create group: missing key data for ${names}. Re-exchange contacts first.`, "error");
+      console.warn("[Dissolve] Bad member data:", badMembers.map((m) => ({
+        id: m.id?.slice(0, 12),
+        hasE2ee: !!m.e2eePublicJwk?.kty,
+        hasAuth: !!m.authPublicJwk?.kty,
+        hasCap: typeof m.cap === "string",
+      })));
+      return null;
+    }
+
     const groupId = generateGroupId();
     const groupKey = await generateGroupKey();
 
@@ -76,6 +92,10 @@ export default function useGroupActions(identity, groupsMgr, addToast) {
     }
     if (group.members.some((m) => m.id === newContact.id)) {
       addToast("Already in the group");
+      return;
+    }
+    if (!newContact.e2eePublicJwk?.kty || typeof newContact.cap !== "string") {
+      addToast("Cannot add: contact has incomplete key data. Re-exchange contacts first.", "error");
       return;
     }
 

@@ -78,7 +78,8 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       try {
         const decrypted = await e2eeDecrypt(env.payload, e2eePrivJwk);
         inner = JSON.parse(decrypted);
-      } catch {
+      } catch (err) {
+        console.warn("[Dissolve] e2ee decrypt failed:", err.message || err);
         return; // can't decrypt — not for us or corrupted
       }
 
@@ -87,31 +88,44 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       if (inner.g === true && inner.groupId) {
         const group = groupsMgr?.findGroup(inner.groupId);
         if (!group) {
-          console.warn("[Dissolve] Received group message for unknown group, ignoring");
+          console.warn("[Dissolve] Received group message for unknown group:", inner.groupId?.slice(0, 12));
           return;
         }
         try {
           const outerAuthPub = env.authPub;
           const groupPlaintext = await groupDecrypt({ iv: inner.iv, ct: inner.ct }, group.groupKey);
           inner = JSON.parse(groupPlaintext);
-          inner.authPub = outerAuthPub;
-        } catch {
-          console.warn("[Dissolve] Failed to decrypt group message");
+          // Carry sender identity from outer envelope into group-decrypted inner
+          if (!inner.authPub) inner.authPub = outerAuthPub;
+        } catch (err) {
+          console.warn("[Dissolve] Group decrypt failed:", err.message || err);
           return;
         }
       }
 
-      if (!inner.from || !inner.t || !inner.authPub) return;
+      if (!inner.from || !inner.t || !inner.authPub) {
+        console.warn("[Dissolve] Dropping envelope: missing from/t/authPub", { from: !!inner.from, t: inner.t, authPub: !!inner.authPub });
+        return;
+      }
 
       // Verify the outer signature matches the inner sender
       const { sig, ...outerNoSig } = env;
-      if (!sig) return;
+      if (!sig) {
+        console.warn("[Dissolve] Dropping envelope: no signature");
+        return;
+      }
       const outerOk = await verifyObject(outerNoSig, sig, inner.authPub);
-      if (!outerOk) return;
+      if (!outerOk) {
+        console.warn("[Dissolve] Dropping envelope: signature verification failed for", inner.from?.slice(0, 12));
+        return;
+      }
 
       // Verify sender identity
       const computedFromId = await computeId(inner.authPub);
-      if (computedFromId !== inner.from) return;
+      if (computedFromId !== inner.from) {
+        console.warn("[Dissolve] Dropping envelope: computeId mismatch", { computed: computedFromId?.slice(0, 12), from: inner.from?.slice(0, 12) });
+        return;
+      }
 
       // Replay protection
       const convId = inner.convId;
@@ -134,9 +148,9 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         }
       }
 
-      // If sender unknown, add to requests
+      // If sender unknown, add to requests (only if we have enough info for future contact)
       const isKnownContact = contactsRef.current.find((c) => c.id === inner.from);
-      if (!isKnownContact) {
+      if (!isKnownContact && inner.e2eePub) {
         let preview = "";
         if (inner.t === "ContactRequest") {
           preview = (typeof inner.note === "string" && inner.note.trim())
@@ -564,7 +578,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
     const { envelopes, msgId, ts } = await buildGroupMessage(
       myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk,
-      groupId, group.groupKey, group.members, text.trim()
+      inboxCap, groupId, group.groupKey, group.members, text.trim()
     );
 
     const results = await Promise.allSettled(
@@ -589,7 +603,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     if (archiveRef.current) {
       archiveRef.current.save(myId, { ...msg, peerId: groupId });
     }
-  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, groupsMgr]);
+  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, groupsMgr]);
 
   const reset = useCallback(() => {
     setMessages([]);

@@ -20,7 +20,7 @@ const PROTOCOL_VERSION = 4;
  */
 export async function buildGroupMessage(
   myId, myLabel, myAuthPubJwk, myAuthPrivJwk, myE2eePubJwk,
-  groupId, groupKeyB64, members, text
+  myInboxCap, groupId, groupKeyB64, members, text
 ) {
   const ts = Date.now();
   const msgId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
@@ -31,6 +31,9 @@ export async function buildGroupMessage(
     groupId,
     from: myId,
     senderLabel: myLabel,
+    senderCap: myInboxCap,
+    e2eePub: myE2eePubJwk,
+    authPub: myAuthPubJwk,
     msgId,
     text,
     seq,
@@ -44,6 +47,16 @@ export async function buildGroupMessage(
   const envelopes = [];
   for (const member of members) {
     if (member.id === myId) continue;
+
+    // Validate member has required keys
+    if (!member.e2eePublicJwk || !member.e2eePublicJwk.kty) {
+      console.warn("[Dissolve] Skipping group member with missing e2eePublicJwk:", member.id, member.label);
+      continue;
+    }
+    if (typeof member.cap !== "string") {
+      console.warn("[Dissolve] Skipping group member with missing cap:", member.id, member.label);
+      continue;
+    }
 
     // E2EE wrap the group ciphertext for this member
     // Include groupId in cleartext (within e2ee layer) so recipient can look up the key
