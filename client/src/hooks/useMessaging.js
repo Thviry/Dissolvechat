@@ -12,6 +12,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { randomId, capHashFromCap } from "dissolve-core/crypto";
 import { signObject, verifyObject } from "dissolve-core/crypto/signing";
 import { e2eeDecrypt } from "dissolve-core/crypto/e2ee";
+import { groupDecrypt } from "dissolve-core/crypto/group";
+import { buildGroupMessage } from "../protocol/groupEnvelopes";
 import {
   drainInbox,
   drainRequestInbox,
@@ -37,8 +39,10 @@ import { notifyIncoming, flashTitle } from "../utils/notifications";
 import { createMessageStore } from "../utils/messageStore";
 import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS } from "../config";
 
-export function useMessaging(identity, contactsMgr) {
+export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const [messages, setMessages] = useState([]);
+  const [groupMessages, setGroupMessages] = useState({});
+  const groupMessagesRef = useRef(groupMessages);
   const [activeId, setActiveId] = useState("");
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const wsRef = useRef(null);
@@ -76,6 +80,22 @@ export function useMessaging(identity, contactsMgr) {
         inner = JSON.parse(decrypted);
       } catch {
         return; // can't decrypt — not for us or corrupted
+      }
+
+      // Group message detection: e2ee layer contains { g: true, groupId, iv, ct }
+      if (inner.g === true && inner.groupId) {
+        const group = groupsMgr?.findGroup(inner.groupId);
+        if (!group) {
+          console.warn("[Dissolve] Received group message for unknown group, ignoring");
+          return;
+        }
+        try {
+          const groupPlaintext = await groupDecrypt({ iv: inner.iv, ct: inner.ct }, group.groupKey);
+          inner = JSON.parse(groupPlaintext);
+        } catch {
+          console.warn("[Dissolve] Failed to decrypt group message");
+          return;
+        }
       }
 
       if (!inner.from || !inner.t || !inner.authPub) return;
@@ -141,6 +161,75 @@ export function useMessaging(identity, contactsMgr) {
         setMessages((prev) => [...prev, msg]);
         archiveRef.current?.save(myId, msg);
         if (soundRef.current) notifyIncoming(); else flashTitle();
+      }
+
+      // --- Group message types ---
+      if (inner.t === "GroupMessage") {
+        if (inner.from === myId) return; // ignore own messages echoed back
+        const msg = {
+          dir: "in",
+          from: inner.from,
+          senderLabel: inner.senderLabel,
+          text: inner.text,
+          ts: inner.ts,
+          msgId: inner.msgId,
+        };
+        setGroupMessages((prev) => ({
+          ...prev,
+          [inner.groupId]: [...(prev[inner.groupId] || []), msg],
+        }));
+        groupMessagesRef.current = {
+          ...groupMessagesRef.current,
+          [inner.groupId]: [...(groupMessagesRef.current[inner.groupId] || []), msg],
+        };
+        if (archiveRef.current) {
+          archiveRef.current.save(myId, { ...msg, peerId: inner.groupId });
+        }
+        if (soundRef.current) notifyIncoming(); else flashTitle();
+      }
+
+      if (inner.t === "GroupInvite" && groupsMgr) {
+        const group = {
+          groupId: inner.groupId,
+          groupName: inner.groupName,
+          groupKey: inner.groupKey,
+          members: inner.members,
+          creator: inner.creator,
+          createdAt: inner.ts,
+        };
+        groupsMgr.addGroup(group);
+        addToast?.(`Added to group: ${inner.groupName}`);
+      }
+
+      if (inner.t === "GroupMemberAdded" && groupsMgr) {
+        groupsMgr.addMember(inner.groupId, inner.member);
+        addToast?.(`${inner.member.label} joined the group`);
+      }
+
+      if (inner.t === "GroupMemberRemoved" && groupsMgr) {
+        if (inner.removedId === myId) {
+          groupsMgr.removeGroup(inner.groupId);
+          addToast?.("You were removed from a group");
+        } else {
+          groupsMgr.updateGroup(inner.groupId, () => ({
+            groupKey: inner.groupKey,
+            members: inner.members,
+          }));
+          addToast?.(`A member was removed from the group`);
+        }
+      }
+
+      if (inner.t === "GroupAdminChange" && groupsMgr) {
+        groupsMgr.setMemberRole(inner.groupId, inner.targetId, inner.newRole);
+      }
+
+      if (inner.t === "GroupLeave" && groupsMgr) {
+        groupsMgr.removeMember(inner.groupId, inner.from);
+        addToast?.(`${inner.senderLabel} left the group`);
+      }
+
+      if (inner.t === "GroupNameChange" && groupsMgr) {
+        groupsMgr.renameGroup(inner.groupId, inner.groupName);
       }
 
       return;
@@ -219,7 +308,7 @@ export function useMessaging(identity, contactsMgr) {
         if (soundRef.current) notifyIncoming(); else flashTitle();
       }
     }
-  }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest]);
+  }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest, groupsMgr, addToast]);
 
   // --- Fetch and process all pending messages (authenticated) ---
   const fetchMessages = useCallback(async () => {
@@ -438,8 +527,45 @@ export function useMessaging(identity, contactsMgr) {
     await sendEnvelope(envelope).catch(() => {});
   }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap]);
 
+  // --- Send a group message (fan-out to all members) ---
+  const sendGroupMsg = useCallback(async (groupId, text) => {
+    if (!groupsMgr) return;
+    const group = groupsMgr.findGroup(groupId);
+    if (!group) return;
+
+    const { envelopes, msgId, ts } = await buildGroupMessage(
+      myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk,
+      groupId, group.groupKey, group.members, text.trim()
+    );
+
+    const results = await Promise.allSettled(
+      envelopes.map(({ envelope }) => sendEnvelope(envelope))
+    );
+
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length > 0) {
+      console.warn(`[Dissolve] Group send: ${failures.length}/${envelopes.length} failed`);
+    }
+
+    const msg = { dir: "out", from: myId, senderLabel: myLabel, text: text.trim(), ts, msgId };
+    setGroupMessages((prev) => ({
+      ...prev,
+      [groupId]: [...(prev[groupId] || []), msg],
+    }));
+    groupMessagesRef.current = {
+      ...groupMessagesRef.current,
+      [groupId]: [...(groupMessagesRef.current[groupId] || []), msg],
+    };
+
+    if (archiveRef.current) {
+      archiveRef.current.save(myId, { ...msg, peerId: groupId });
+    }
+  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, groupsMgr]);
+
   const reset = useCallback(() => {
     setMessages([]);
+    setGroupMessages({});
+    groupMessagesRef.current = {};
     setActiveId("");
     setHistoryLoaded(false);
     wsRef.current?.close();
@@ -450,7 +576,8 @@ export function useMessaging(identity, contactsMgr) {
 
   return {
     messages, activeId, setActiveId,
-    sendMsg, sendRequest, sendGrant,
+    groupMessages,
+    sendMsg, sendGroupMsg, sendRequest, sendGrant,
     reset, historyLoaded,
   };
 }
