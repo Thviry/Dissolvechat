@@ -44,7 +44,7 @@ export async function buildDirectoryPublish(handle, profile, myAuthPrivJwk) {
 /**
  * Get or increment the monotonic sequence number for a conversation.
  */
-function nextSeq(myId, convId, suffix = "") {
+export function nextSeq(myId, convId, suffix = "") {
   const key = `seq:${myId}:${convId}${suffix ? `:${suffix}` : ""}`;
   const next = (Number(localStorage.getItem(key) || "0") || 0) + 1;
   localStorage.setItem(key, String(next));
