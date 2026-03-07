@@ -78,6 +78,7 @@ export default function ChatPanel({ peer, messages, onSend }) {
       setError(err.message);
     } finally {
       setSending(false);
+      inputRef.current?.focus();
     }
   };
 
