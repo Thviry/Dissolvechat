@@ -349,6 +349,9 @@ export function useMessaging(identity, contactsMgr) {
           const ch = await capHashFromCap(inboxCap);
           const cb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [ch]);
           await publishCaps(myId, cb);
+          const rch = await capHashFromCap(requestCap);
+          const rcb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [rch]);
+          await publishRequestCaps(myId, rcb);
         } catch { /* ignore */ }
       }, CAP_REPUBLISH_INTERVAL_MS);
 
