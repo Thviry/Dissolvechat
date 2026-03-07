@@ -283,6 +283,7 @@ function registerRoutes(app, store, wss) {
       return res.status(409).json({ error: "handle_taken" });
     }
 
+    const presenceEnabled = profile.showPresence === true;
     store.publishDirectory(trimmed, {
       dissolveProtocol: 4,
       v: 4,
@@ -293,8 +294,18 @@ function registerRoutes(app, store, wss) {
       requestCap: profile.requestCap,
       requestCapHash: profile.requestCapHash,
       discoverable: profile.discoverable !== false,
-      showPresence: profile.showPresence === true,
+      showPresence: presenceEnabled,
     });
+
+    // Sync showPresence flag on any active WS connections for this identity
+    if (wss) {
+      for (const client of wss.clients) {
+        if (client.authedId === profile.id) {
+          client.showPresence = presenceEnabled;
+        }
+      }
+    }
+
     logger.directoryPublished(trimmed);
     res.json({ ok: true });
   });
