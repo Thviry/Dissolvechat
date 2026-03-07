@@ -18,9 +18,13 @@ import { signObject } from "dissolve-core/crypto/signing";
 import { downloadJson, saveJson } from "./utils/storage";
 import { lookupDirectory as relayLookup, blockOnRelay, getRelayUrl } from "./protocol/relay";
 import { buildBlockRequest, buildDirectoryPublish } from "./protocol/envelopes";
+import useGroups from "./hooks/useGroups";
+import useGroupActions from "./hooks/useGroupActions";
 import LoginScreen from "./components/LoginScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
+import CreateGroupModal from "./components/CreateGroupModal";
+import GroupInfoPanel from "./components/GroupInfoPanel";
 import ToastContainer from "./components/Toast";
 import PassphraseModal from "./components/PassphraseModal";
 import { IconClose } from "./components/Icons";
@@ -33,8 +37,14 @@ export default function App() {
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
-  const messaging = useMessaging(identity, contactsMgr);
   const { toasts, addToast } = useToast();
+  const groupsMgr = useGroups(identity.id);
+  const messaging = useMessaging(identity, contactsMgr, groupsMgr, addToast);
+  const groupActions = useGroupActions(identity, groupsMgr, addToast);
+
+  const [activeGroupId, setActiveGroupId] = useState(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
 
   // --- Presence polling ---
   const [onlineIds, setOnlineIds] = useState({});
@@ -84,6 +94,13 @@ export default function App() {
       setMode("chat");
     }
   }, [identity.sessionChecked, identity.isReady, mode]);
+
+  // Load groups when identity is ready
+  useEffect(() => {
+    if (identity.isReady && identity.id) {
+      groupsMgr.load(identity.id);
+    }
+  }, [identity.isReady, identity.id]);
 
   // --- Auto-import contact from URL fragment (#contact=base64) ---
   useEffect(() => {
@@ -189,13 +206,30 @@ export default function App() {
     }
   }, [identity, contactsMgr, requestPassphrase, addToast]);
 
+  // --- Group/peer selection (mutually exclusive) ---
+  const handleSelectGroup = useCallback((groupId) => {
+    setActiveGroupId(groupId);
+    messaging.setActiveId(null);
+    setShowGroupInfo(false);
+  }, [messaging]);
+
+  const handleSelectPeer = useCallback((peerId) => {
+    messaging.setActiveId(peerId);
+    setActiveGroupId(null);
+    setShowGroupInfo(false);
+  }, [messaging]);
+
   // --- Logout ---
   const handleLogout = useCallback(() => {
     messaging.reset();
     contactsMgr.reset();
+    groupsMgr.reset();
     identity.logout();
+    setActiveGroupId(null);
+    setShowCreateGroup(false);
+    setShowGroupInfo(false);
     setMode("login");
-  }, [identity, contactsMgr, messaging]);
+  }, [identity, contactsMgr, groupsMgr, messaging]);
 
   // --- Export contact card (includes inbox cap — share with trusted contacts) ---
   const handleExportCard = useCallback(async () => {
@@ -440,6 +474,8 @@ export default function App() {
   const visibleMessages = messaging.activeId
     ? messaging.messages.filter((m) => m.peerId === messaging.activeId)
     : [];
+  const activeGroup = activeGroupId ? groupsMgr.findGroup(activeGroupId) : null;
+  const activeGroupMessages = activeGroupId ? (messaging.groupMessages[activeGroupId] || []) : [];
 
   return (
     <>
@@ -461,7 +497,7 @@ export default function App() {
           contacts={contactsMgr.contacts}
           requests={contactsMgr.requests}
           activeId={messaging.activeId}
-          onSelectPeer={messaging.setActiveId}
+          onSelectPeer={handleSelectPeer}
           onExportCard={handleExportCard}
           onExportProfile={handleExportProfile}
           onImportContact={handleImportContact}
@@ -475,14 +511,28 @@ export default function App() {
           onDiscoverabilityChange={handleDiscoverabilityChange}
           onPresenceChange={handlePresenceChange}
           onViewRecoveryPhrase={handleViewRecoveryPhrase}
+          backupCompleted={backupCompleted}
           shareCardData={shareCardData}
           onlineIds={onlineIds}
+          groups={groupsMgr.groups}
+          activeGroupId={activeGroupId}
+          onSelectGroup={handleSelectGroup}
+          onCreateGroup={() => setShowCreateGroup(true)}
         />
-        <ChatPanel
-          peer={activePeer}
-          messages={visibleMessages}
-          onSend={messaging.sendMsg}
-        />
+        {activeGroup ? (
+          <ChatPanel
+            group={activeGroup}
+            messages={activeGroupMessages}
+            onSend={(_, text) => messaging.sendGroupMsg(activeGroupId, text)}
+            onGroupInfo={() => setShowGroupInfo(true)}
+          />
+        ) : (
+          <ChatPanel
+            peer={activePeer}
+            messages={visibleMessages}
+            onSend={messaging.sendMsg}
+          />
+        )}
       </div>
 
       <ToastContainer toasts={toasts} />
@@ -494,6 +544,29 @@ export default function App() {
           withConfirm={passphraseState.withConfirm}
           onConfirm={handlePassphraseConfirm}
           onCancel={handlePassphraseCancel}
+        />
+      )}
+
+      {showCreateGroup && (
+        <CreateGroupModal
+          contacts={contactsMgr.contacts}
+          onClose={() => setShowCreateGroup(false)}
+          onCreate={groupActions.createGroup}
+        />
+      )}
+
+      {showGroupInfo && activeGroup && (
+        <GroupInfoPanel
+          group={activeGroup}
+          myId={identity.id}
+          contacts={contactsMgr.contacts}
+          onClose={() => setShowGroupInfo(false)}
+          onAddMember={groupActions.addGroupMember}
+          onRemoveMember={groupActions.removeGroupMember}
+          onChangeRole={groupActions.changeAdminRole}
+          onRenameGroup={groupActions.renameGroup}
+          onLeaveGroup={(gid) => { groupActions.leaveGroup(gid); setActiveGroupId(null); setShowGroupInfo(false); }}
+          onDeleteGroup={(gid) => { groupActions.deleteGroup(gid); setActiveGroupId(null); setShowGroupInfo(false); }}
         />
       )}
 

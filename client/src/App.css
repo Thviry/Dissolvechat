@@ -2019,6 +2019,182 @@ textarea.input-field {
 }
 
 /* ============================================================
+   Group Chat
+   ============================================================ */
+
+.group-avatar {
+  background: var(--accent-muted, rgba(56, 189, 248, 0.15));
+  color: var(--accent);
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+}
+
+.group-msg-sender {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 2px;
+  font-family: "Outfit", sans-serif;
+}
+
+.group-member-select {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.group-member-option {
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.group-member-option:hover {
+  background: var(--bg-hover);
+}
+
+.group-info-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.group-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.group-info-header h3 {
+  margin: 0;
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+}
+
+.group-info-header h3.editable {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--text-secondary);
+}
+
+.group-info-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.group-members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.group-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.group-member-item:hover {
+  background: var(--bg-hover);
+}
+
+.group-member-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-member-name {
+  font-size: 0.85rem;
+}
+
+.group-role-badge {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+}
+
+.group-member-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.group-add-member-list {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.group-add-member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px;
+}
+
+.group-info-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.group-info-footer .btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  border-radius: var(--radius-sm);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.input-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-family: "Outfit", sans-serif;
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width: 768px) {
