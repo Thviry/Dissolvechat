@@ -123,6 +123,17 @@ export default function Sidebar({
               <label className="toggle-label">
                 <input
                   type="checkbox"
+                  checked={identity.soundEnabled}
+                  onChange={(e) => {
+                    identity.setSoundEnabled(e.target.checked);
+                    saveJson(`sound:${identity.id}`, { enabled: e.target.checked });
+                  }}
+                />
+                <span>Message notification sound</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
                   checked={identity.discoverable}
                   onChange={(e) => onDiscoverabilityChange(e.target.checked, identity.handle)}
                 />
