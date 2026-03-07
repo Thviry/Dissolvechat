@@ -14,20 +14,34 @@ function getAudioCtx() {
 export function playPing() {
   try {
     const ctx = getAudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    const t = ctx.currentTime;
 
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
+    // First tone — soft low drop
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(330, t);
+    osc1.frequency.exponentialRampToValueAtTime(280, t + 0.15);
+    gain1.gain.setValueAtTime(0.1, t);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    osc1.start(t);
+    osc1.stop(t + 0.2);
 
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.2);
+    // Second tone — rising lift (the good feeling)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(350, t + 0.12);
+    osc2.frequency.exponentialRampToValueAtTime(440, t + 0.3);
+    gain2.gain.setValueAtTime(0.001, t + 0.12);
+    gain2.gain.linearRampToValueAtTime(0.12, t + 0.18);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+    osc2.start(t + 0.12);
+    osc2.stop(t + 0.45);
   } catch {
     // Audio not available — ignore
   }

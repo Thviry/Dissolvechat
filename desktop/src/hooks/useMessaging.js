@@ -44,7 +44,7 @@ export function useMessaging(identity, contactsMgr) {
   const wsRef = useRef(null);
   const pollTimerRef = useRef(null);
   const archiveRef = useRef(null);
-  const soundRef = useRef(soundEnabled);
+  const soundRef = useRef(true);
 
   const {
     id: myId, label: myLabel,
