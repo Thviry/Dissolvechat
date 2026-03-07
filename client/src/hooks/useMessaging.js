@@ -32,6 +32,7 @@ import {
   buildInboxDrain,
 } from "../protocol/envelopes";
 import { checkAndUpdateReplay } from "../utils/storage";
+import { notifyIncoming } from "../utils/notifications";
 import { createMessageStore } from "../utils/messageStore";
 import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS } from "../config";
 
@@ -135,6 +136,7 @@ export function useMessaging(identity, contactsMgr) {
         const msg = { dir: "in", peerId: inner.from, text: inner.text, ts: inner.ts, msgId: inner.msgId || randomId() };
         setMessages((prev) => [...prev, msg]);
         archiveRef.current?.save(myId, msg);
+        notifyIncoming();
       }
 
       return;
@@ -210,6 +212,7 @@ export function useMessaging(identity, contactsMgr) {
         const archMsg = { dir: "in", peerId: env.from, text: plaintext, ts: env.ts, msgId: msg.msgId || randomId() };
         setMessages((prev) => [...prev, archMsg]);
         archiveRef.current?.save(myId, archMsg);
+        notifyIncoming();
       }
     }
   }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest]);
