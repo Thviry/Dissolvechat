@@ -16,8 +16,8 @@ import { useToast } from "dissolve-core/hooks";
 import { capHashFromCap } from "dissolve-core/crypto";
 import { signObject } from "dissolve-core/crypto/signing";
 import { downloadJson, saveJson } from "./utils/storage";
-import { lookupDirectory as relayLookup, blockOnRelay } from "./protocol/relay";
-import { buildBlockRequest } from "./protocol/envelopes";
+import { lookupDirectory as relayLookup, blockOnRelay, getRelayUrl } from "./protocol/relay";
+import { buildBlockRequest, buildDirectoryPublish } from "./protocol/envelopes";
 import LoginScreen from "./components/LoginScreen";
 import Sidebar from "./components/Sidebar";
 import ChatPanel from "./components/ChatPanel";
@@ -284,11 +284,36 @@ export default function App() {
   }, [messaging, addToast]);
 
   // --- Discoverability ---
-  const handleDiscoverabilityChange = useCallback((disc, h) => {
+  const handleDiscoverabilityChange = useCallback(async (disc, h) => {
     identity.setDiscoverable(disc);
     identity.setHandle(h);
     if (identity.id) {
       saveJson(`discoverable:${identity.id}`, { discoverable: disc, handle: h || "" });
+    }
+    // Republish directory entry to relay so lookup reflects the change
+    const trimmed = (h || "").trim().toLowerCase();
+    if (identity.isReady && trimmed) {
+      try {
+        const reqCapHash = identity.requestCap
+          ? await capHashFromCap(identity.requestCap)
+          : undefined;
+        const profile = {
+          dissolveProtocol: 4, v: 4,
+          id: identity.id,
+          label: identity.label,
+          authPublicJwk: identity.authPubJwk,
+          e2eePublicJwk: identity.e2eePubJwk,
+          requestCap: disc ? identity.requestCap : undefined,
+          requestCapHash: disc ? reqCapHash : undefined,
+          discoverable: !!disc,
+        };
+        const dirBody = await buildDirectoryPublish(trimmed, profile, identity.authPrivKey);
+        await fetch(`${getRelayUrl()}/directory/publish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dirBody),
+        });
+      } catch { /* best-effort */ }
     }
   }, [identity]);
 
