@@ -293,6 +293,7 @@ function registerRoutes(app, store, wss) {
       requestCap: profile.requestCap,
       requestCapHash: profile.requestCapHash,
       discoverable: profile.discoverable !== false,
+      showPresence: profile.showPresence === true,
     });
     logger.directoryPublished(trimmed);
     res.json({ ok: true });
@@ -323,6 +324,32 @@ function registerRoutes(app, store, wss) {
     const p = store.lookupDirectory(handle);
     if (!p) return res.status(404).json({ error: "not_found" });
     res.json({ ok: true, profile: p });
+  });
+
+  // ── GET /presence — check online status for a list of IDs ──────────
+  app.get("/presence", (req, res) => {
+    const ipKey = getIpKey(req);
+    if (!rateCheck(req, res, "ip", `${ipKey}:presence`, LIMITS.IP_LOOKUP, "/presence")) return;
+
+    const raw = String(req.query.ids || "");
+    const ids = raw.split(",").map(s => s.trim()).filter(Boolean).slice(0, 50);
+    if (ids.length === 0) return res.status(400).json({ error: "missing_ids" });
+
+    const online = {};
+    for (const id of ids) {
+      // Check if this identity has an authenticated WS AND opted in to presence
+      let connected = false;
+      if (wss) {
+        for (const client of wss.clients) {
+          if (client.authedId === id && client.readyState === 1 && client.showPresence) {
+            connected = true;
+            break;
+          }
+        }
+      }
+      if (connected) online[id] = true;
+    }
+    res.json({ ok: true, online });
   });
 
   // ── POST /send — metadata-minimal message delivery ────────────────
@@ -488,7 +515,7 @@ function notifyWs(wss, toId, type) {
  *       server verifies nonce + signature
  *       server binds socket to verified identity
  */
-function setupAuthenticatedWs(wss, wsNonces) {
+function setupAuthenticatedWs(wss, wsNonces, store) {
   wss.on("connection", (ws) => {
     ws.authedId = null;
     ws.isAlive = true;
@@ -540,6 +567,7 @@ function setupAuthenticatedWs(wss, wsNonces) {
           }
 
           ws.authedId = authedId;
+          ws.showPresence = store.hasPresence(authedId);
           ws.send(JSON.stringify({ type: "auth_ok", id: authedId }));
           logger.wsAuthSuccess(authedId);
           return;

@@ -121,6 +121,7 @@ export function useIdentity() {
   const [handle, setHandle] = useState("");
   const [archiveEnabled, setArchiveEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showPresence, setShowPresence] = useState(false);
   const [mnemonic, setMnemonic] = useState(null);
   const [relayUrl, setRelayUrl] = useState("");
 
@@ -170,6 +171,8 @@ export function useIdentity() {
     setArchiveEnabled(!!archPref.enabled);
     const soundPref = loadJson(`sound:${data.id}`, { enabled: true });
     setSoundEnabled(soundPref.enabled !== false);
+    const presencePref = loadJson(`presence:${data.id}`, { enabled: false });
+    setShowPresence(!!presencePref.enabled);
 
     const relayPref = loadJson(`relay:${data.id}`, { url: "" });
     setRelayUrl(relayPref.url || "");
@@ -378,6 +381,7 @@ export function useIdentity() {
     handle, setHandle,
     archiveEnabled, setArchiveEnabled,
     soundEnabled, setSoundEnabled,
+    showPresence, setShowPresence,
     relayUrl, setRelayUrl,
     isReady,
     sessionChecked,

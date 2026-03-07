@@ -75,7 +75,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
 
 // Set up authenticated WebSocket handling (Step 4)
-setupAuthenticatedWs(wss, wsNonces);
+setupAuthenticatedWs(wss, wsNonces, store);
 
 // ── HTTP routes ─────────────────────────────────────────────────────
 registerRoutes(app, store, wss);

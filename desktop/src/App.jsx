@@ -36,6 +36,25 @@ export default function App() {
   const messaging = useMessaging(identity, contactsMgr);
   const { toasts, addToast } = useToast();
 
+  // --- Presence polling ---
+  const [onlineIds, setOnlineIds] = useState({});
+  useEffect(() => {
+    if (!identity.isReady || contactsMgr.contacts.length === 0) return;
+    const poll = async () => {
+      try {
+        const ids = contactsMgr.contacts.map(c => c.id).join(",");
+        const resp = await fetch(`${getRelayUrl()}/presence?ids=${encodeURIComponent(ids)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          setOnlineIds(data.online || {});
+        }
+      } catch { /* ignore */ }
+    };
+    poll();
+    const timer = setInterval(poll, 20000);
+    return () => clearInterval(timer);
+  }, [identity.isReady, contactsMgr.contacts]);
+
   // --- Passphrase modal (replaces native prompt()) ---
   const passphraseResolverRef = useRef(null);
   const [passphraseState, setPassphraseState] = useState(null);
@@ -306,6 +325,41 @@ export default function App() {
           requestCap: disc ? identity.requestCap : undefined,
           requestCapHash: disc ? reqCapHash : undefined,
           discoverable: !!disc,
+          showPresence: !!identity.showPresence,
+        };
+        const dirBody = await buildDirectoryPublish(trimmed, profile, identity.authPrivKey);
+        await fetch(`${getRelayUrl()}/directory/publish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dirBody),
+        });
+      } catch { /* best-effort */ }
+    }
+  }, [identity]);
+
+  // --- Presence toggle ---
+  const handlePresenceChange = useCallback(async (enabled) => {
+    identity.setShowPresence(enabled);
+    if (identity.id) {
+      saveJson(`presence:${identity.id}`, { enabled });
+    }
+    // Republish directory so relay knows our preference
+    const trimmed = (identity.handle || "").trim().toLowerCase();
+    if (identity.isReady && trimmed) {
+      try {
+        const reqCapHash = identity.requestCap
+          ? await capHashFromCap(identity.requestCap)
+          : undefined;
+        const profile = {
+          dissolveProtocol: 4, v: 4,
+          id: identity.id,
+          label: identity.label,
+          authPublicJwk: identity.authPubJwk,
+          e2eePublicJwk: identity.e2eePubJwk,
+          requestCap: identity.discoverable ? identity.requestCap : undefined,
+          requestCapHash: identity.discoverable ? reqCapHash : undefined,
+          discoverable: !!identity.discoverable,
+          showPresence: !!enabled,
         };
         const dirBody = await buildDirectoryPublish(trimmed, profile, identity.authPrivKey);
         await fetch(`${getRelayUrl()}/directory/publish`, {
@@ -419,8 +473,10 @@ export default function App() {
           onLogout={handleLogout}
           onExportKeyfile={handleExportKeyfile}
           onDiscoverabilityChange={handleDiscoverabilityChange}
+          onPresenceChange={handlePresenceChange}
           onViewRecoveryPhrase={handleViewRecoveryPhrase}
           shareCardData={shareCardData}
+          onlineIds={onlineIds}
         />
         <ChatPanel
           peer={activePeer}

@@ -21,8 +21,10 @@ export default function Sidebar({
   onLogout,
   onExportKeyfile,
   onDiscoverabilityChange,
+  onPresenceChange,
   onViewRecoveryPhrase,
   shareCardData,
+  onlineIds = {},
 }) {
   const RELAY_OFFICIAL = "https://relay.dissolve.chat";
   const RELAY_LOCAL    = "http://localhost:3001";
@@ -130,6 +132,14 @@ export default function Sidebar({
                   }}
                 />
                 <span>Message notification sound</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={identity.showPresence}
+                  onChange={(e) => onPresenceChange(e.target.checked)}
+                />
+                <span>Show online status</span>
               </label>
               <label className="toggle-label">
                 <input
@@ -345,6 +355,7 @@ export default function Sidebar({
                     <div className="contact-accent-bar" aria-hidden="true" />
                     <div className="contact-avatar" aria-hidden="true">
                       {(c.label || "?").charAt(0).toUpperCase()}
+                      {onlineIds[c.id] && <span className="presence-dot" />}
                     </div>
                     <div className="contact-info">
                       <div className="contact-name">{c.label}</div>

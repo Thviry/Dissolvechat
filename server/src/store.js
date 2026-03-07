@@ -273,6 +273,18 @@ class Store {
     return this.directory.has(handle);
   }
 
+  // --- Presence ---
+
+  /**
+   * Check if an identity has opted in to showing presence.
+   */
+  hasPresence(id) {
+    for (const [, profile] of this.directory) {
+      if (profile.id === id && profile.showPresence === true) return true;
+    }
+    return false;
+  }
+
   // --- Stats (for /health and /debug/state) ---
 
   stats() {

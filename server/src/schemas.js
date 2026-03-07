@@ -118,6 +118,7 @@ const directoryPublishSchema = z.object({
     requestCap: capToken.optional(),
     requestCapHash: b64u(64).optional(),
     discoverable: z.boolean().optional(),
+    showPresence: z.boolean().optional(),
   }).strict(),
   sig: signature,
 }).strict();

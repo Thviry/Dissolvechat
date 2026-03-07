@@ -52,7 +52,7 @@ export function useMessaging(identity, contactsMgr) {
     e2eePubJwk, e2eePrivJwk,
     inboxCap, requestCap,
     isReady, discoverable, handle,
-    archiveEnabled, soundEnabled, relayUrl,
+    archiveEnabled, soundEnabled, showPresence, relayUrl,
     computeId,
   } = identity;
 
@@ -320,6 +320,7 @@ export function useMessaging(identity, contactsMgr) {
             requestCap: discoverable ? requestCap : undefined,
             requestCapHash: discoverable ? reqCapHash : undefined,
             discoverable: !!discoverable,
+            showPresence: !!showPresence,
           };
           const dirBody = await buildDirectoryPublish(handle.trim(), profile, authPrivJwk);
           await fetch(
@@ -362,7 +363,7 @@ export function useMessaging(identity, contactsMgr) {
       clearInterval(pollTimerRef.current);
       cleanupPromise?.then?.((cleanup) => cleanup?.());
     };
-  }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, requestCap, discoverable, handle, myLabel, fetchMessages]);
+  }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, requestCap, discoverable, showPresence, handle, myLabel, fetchMessages]);
 
   // --- Send a message ---
   const sendMsg = useCallback(async (peerId, text) => {
