@@ -111,6 +111,7 @@ export async function sendEnvelope(signedEnvelope) {
       })
     )
   );
+  // Accept both 200 (delivered) and 202 (queued) as success
   const ok = results.find(r => r.status === "fulfilled" && r.value.ok);
   if (ok) return ok.value;
   const lastResult = results[results.length - 1];
@@ -208,7 +209,7 @@ async function fetchWsChallenge(base) {
  * Create an authenticated WebSocket connection to a single relay URL.
  * Flow: fetch nonce → sign → authenticate → receive notifications.
  */
-function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify) {
+function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify, onAuthenticated) {
   let ws = null;
   let reconnectTimer = null;
   let closed = false;
@@ -252,7 +253,10 @@ function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === "auth_ok") return;
+        if (msg.type === "auth_ok") {
+          if (onAuthenticated) onAuthenticated();
+          return;
+        }
         if (msg.type === "auth_error") {
           console.warn("[Dissolve WS] Auth failed:", msg.error);
           ws.close();
@@ -296,10 +300,10 @@ function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify) {
  * Create authenticated WebSocket connections to ALL configured relay URLs.
  * Any notification from any relay triggers the onNotify callback.
  */
-export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify) {
+export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify, onAuthenticated) {
   const handles = _relayUrls.map(base => {
     const wsUrl = base.replace(/^http/, "ws") + "/ws";
-    return connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify);
+    return connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify, onAuthenticated);
   });
   return {
     close() { handles.forEach(h => h.close()); },

@@ -407,7 +407,7 @@ function registerRoutes(app, store, wss) {
       if (!store.hasRequestCap(obj.to, capHash)) {
         store.pushPending(obj.to, obj, capHash, true);
         logger.envelopeQueued(obj.to, "req");
-        return res.json({ ok: true, queued: true });
+        return res.status(202).json({ ok: true, queued: true });
       }
 
       const rateKey = `req:${obj.to}:${capHash}`;
@@ -426,7 +426,7 @@ function registerRoutes(app, store, wss) {
     if (!store.hasNormalCap(obj.to, capHash)) {
       store.pushPending(obj.to, obj, capHash, false);
       logger.envelopeQueued(obj.to, "msg");
-      return res.json({ ok: true, queued: true });
+      return res.status(202).json({ ok: true, queued: true });
     }
 
     const rateKey = `msg:${obj.to}:${senderId}`;

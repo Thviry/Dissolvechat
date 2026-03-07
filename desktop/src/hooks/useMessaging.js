@@ -301,17 +301,26 @@ export function useMessaging(identity, contactsMgr) {
 
     let destroyed = false;
 
-    const publishAndStart = async () => {
+    // Republish caps to the relay — called on startup, WS reconnect, and periodically
+    const republishCaps = async () => {
       try {
-        const capHash = await capHashFromCap(inboxCap);
-        const capsBody = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [capHash]);
-        await publishCaps(myId, capsBody);
+        const ch = await capHashFromCap(inboxCap);
+        const cb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [ch]);
+        await publishCaps(myId, cb);
+        const rch = await capHashFromCap(requestCap);
+        const rcb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [rch]);
+        await publishRequestCaps(myId, rcb);
+      } catch (err) {
+        console.warn("[Dissolve] Caps publish failed:", err.message || err);
+      }
+    };
 
-        const reqCapHash = await capHashFromCap(requestCap);
-        const reqCapsBody = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [reqCapHash]);
-        await publishRequestCaps(myId, reqCapsBody);
+    const publishAndStart = async () => {
+      await republishCaps();
 
+      try {
         if (handle?.trim()) {
+          const reqCapHash = await capHashFromCap(requestCap);
           const profile = {
             dissolveProtocol: 4, v: 4,
             id: myId, label: myLabel,
@@ -338,22 +347,19 @@ export function useMessaging(identity, contactsMgr) {
 
       fetchMessages();
 
-      wsRef.current = connectWebSocket(myId, authPubJwk, authPrivJwk, (_channel) => {
-        fetchMessages();
-      });
+      wsRef.current = connectWebSocket(myId, authPubJwk, authPrivJwk,
+        (_channel) => { fetchMessages(); },
+        () => {
+          // WS (re)authenticated — republish caps immediately so the relay
+          // has them even after a restart, then fetch any queued messages.
+          console.log("[Dissolve] WS authenticated — republishing caps");
+          republishCaps().then(() => { if (!destroyed) fetchMessages(); });
+        }
+      );
 
       pollTimerRef.current = setInterval(fetchMessages, POLL_INTERVAL_MS);
 
-      const republishTimer = setInterval(async () => {
-        try {
-          const ch = await capHashFromCap(inboxCap);
-          const cb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [ch]);
-          await publishCaps(myId, cb);
-          const rch = await capHashFromCap(requestCap);
-          const rcb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [rch]);
-          await publishRequestCaps(myId, rcb);
-        } catch { /* ignore */ }
-      }, CAP_REPUBLISH_INTERVAL_MS);
+      const republishTimer = setInterval(republishCaps, CAP_REPUBLISH_INTERVAL_MS);
 
       return () => clearInterval(republishTimer);
     };
@@ -386,6 +392,9 @@ export function useMessaging(identity, contactsMgr) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const resp = await sendEnvelope(envelope);
       if (resp.ok) {
+        if (resp.status === 202) {
+          console.warn("[Dissolve] Message queued on relay — recipient caps not yet registered");
+        }
         const outMsg = { dir: "out", peerId, text: text.trim(), ts, msgId };
         setMessages((prev) => [...prev, outMsg]);
         archiveRef.current?.save(myId, outMsg);

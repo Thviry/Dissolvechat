@@ -147,9 +147,13 @@ class Store {
 
   pushPending(toId, envelope, capHash, isRequest) {
     const arr = this.pending.get(toId) || [];
-    if (arr.length >= 50) return;
+    if (arr.length >= 200) {
+      console.warn(`[STORE] Pending queue full for ${toId.slice(0, 12)}… — dropping message`);
+      return false;
+    }
     arr.push({ envelope, capHash, isRequest, expiresAt: Date.now() + MESSAGE_TTL_MS });
     this.pending.set(toId, arr);
+    return true;
   }
 
   _flushPending(toId, capSet, isRequest) {
