@@ -138,12 +138,12 @@ export default function App() {
       return; // user cancelled
     }
     try {
-      await identity.exportKeyfile(passphrase, contactsMgr.contacts);
+      await identity.exportKeyfile(passphrase, contactsMgr.contacts, groupsMgr.groups);
       addToast("Key file exported successfully.", "success");
     } catch (err) {
       addToast("Export failed: " + err.message, "error");
     }
-  }, [identity, contactsMgr, requestPassphrase, addToast]);
+  }, [identity, contactsMgr, groupsMgr, requestPassphrase, addToast]);
 
   // --- Check handle availability (called from LoginScreen during enrollment) ---
   const handleCheckHandle = useCallback(async (handle) => {
@@ -197,6 +197,13 @@ export default function App() {
         for (const c of result.importedContacts) {
           if (c.id && c.authPublicJwk && c.e2eePublicJwk) {
             contactsMgr.addContact(c);
+          }
+        }
+      }
+      if (result?.importedGroups?.length > 0) {
+        for (const g of result.importedGroups) {
+          if (g.groupId && g.groupKey) {
+            groupsMgr.addGroup(g);
           }
         }
       }

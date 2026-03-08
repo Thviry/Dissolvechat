@@ -271,6 +271,7 @@ export function useIdentity() {
     const decrypted = await decryptPrivateData(keyFile.encryptedPrivate, passphrase);
     // Extract contacts from keyfile if present (portable contacts)
     const importedContacts = Array.isArray(decrypted.contacts) ? decrypted.contacts : [];
+    const importedGroups = Array.isArray(decrypted.groups) ? decrypted.groups : [];
     const authPub = keyFile?.auth?.publicJwk;
     const e2eePub = keyFile?.e2ee?.publicJwk;
     if (!authPub || !e2eePub) throw new Error("Missing public keys in key file");
@@ -288,7 +289,7 @@ export function useIdentity() {
       requestCap: typeof decrypted.requestCap === "string" ? decrypted.requestCap : randomCap(),
     });
 
-    return { userId, importedContacts };
+    return { userId, importedContacts, importedGroups };
   }, [computeId, activateSession]);
 
   /**
@@ -332,7 +333,7 @@ export function useIdentity() {
     setHandle("");
   }, []);
 
-  const exportKeyfile = useCallback(async (passphrase, contactsList) => {
+  const exportKeyfile = useCallback(async (passphrase, contactsList, groupsList) => {
     if (!authPrivKey || !authPubJwk || !e2eePubJwk || !id) {
       throw new Error("No active identity");
     }
@@ -351,6 +352,7 @@ export function useIdentity() {
         inboxCap,
         requestCap,
         contacts: contactsList || [],
+        groups: groupsList || [],
         // preserve mnemonic in re-exported keyfiles
         ...(sessionData.mnemonic ? { mnemonic: sessionData.mnemonic } : {}),
       },
