@@ -40,14 +40,17 @@ export function base64ToBlob(b64, mimeType) {
  * @param {string} filename
  */
 export function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Use data URI for broader compatibility (Tauri webview doesn't always support blob URL downloads)
+  const reader = new FileReader();
+  reader.onload = () => {
+    const a = document.createElement("a");
+    a.href = reader.result;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  reader.readAsDataURL(blob);
 }
 
 /**
