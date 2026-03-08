@@ -179,7 +179,7 @@ export default function Sidebar({
               <h4>Theme</h4>
               <div className="theme-picker" role="radiogroup" aria-label="Color theme">
                 {[
-                  { id: "",       label: "Midnight", color: "#6c8cff" },
+                  { id: "",       label: "Terminal", color: "#39ff14" },
                   { id: "ocean",  label: "Ocean",    color: "#4da6ff" },
                   { id: "forest", label: "Forest",   color: "#4dcc7a" },
                   { id: "ember",  label: "Ember",    color: "#ff8c4d" },

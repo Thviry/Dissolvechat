@@ -1,38 +1,38 @@
 /* ============================================================
-   DissolveChat — Design System v2 "Cold Precision"
-   Typography: Syne (display) · Outfit (UI) · JetBrains Mono (code)
-   Palette:    Cold void depths · Sky signal accent
-   Theme:      Signal meets Linear — minimal, precise, trusted
+   DissolveChat — Design System v3 "Terminal"
+   Typography: IBM Plex Mono (display) · Inter (UI) · JetBrains Mono (code)
+   Palette:    Pure black · Acid green accent
+   Theme:      Security manifesto — terminal meets editorial
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
 
 /* ============================================================
    Design tokens
    ============================================================ */
 :root {
-  /* Backgrounds — cold blue-black depths */
-  --bg-void:      #060a12;
-  --bg-primary:   #090d18;
-  --bg-secondary: #0d1320;
-  --bg-tertiary:  #131b2e;
-  --bg-hover:     #1a2438;
-  --bg-active:    #1e2b44;
-  --bg-input:     #070b14;
+  /* Backgrounds — pure blacks */
+  --bg-void:      #0a0a0a;
+  --bg-primary:   #111111;
+  --bg-secondary: #161616;
+  --bg-tertiary:  #1a1a1a;
+  --bg-hover:     #222222;
+  --bg-active:    #2a2a2a;
+  --bg-input:     #0d0d0d;
 
-  /* Text — cool off-whites */
-  --text-primary:   #e0e7f5;
-  --text-secondary: #7a8fab;
-  --text-tertiary:  #374563;
-  --text-inverse:   #060a12;
+  /* Text — neutral whites */
+  --text-primary:   #e8e8e8;
+  --text-secondary: #888888;
+  --text-tertiary:  #555555;
+  --text-inverse:   #0a0a0a;
 
-  /* Accent — sky blue: precise, technical, trustworthy */
-  --accent:        #38bdf8;
-  --accent-hover:  #7dd3fc;
-  --accent-deep:   #0ea5e9;
-  --accent-subtle: rgba(56, 189, 248, 0.10);
-  --accent-glow:   rgba(56, 189, 248, 0.22);
-  --accent-muted:  rgba(56, 189, 248, 0.05);
+  /* Accent — acid green */
+  --accent:        #39ff14;
+  --accent-hover:  #4dff33;
+  --accent-deep:   #32e612;
+  --accent-subtle: rgba(57, 255, 20, 0.10);
+  --accent-glow:   rgba(57, 255, 20, 0.22);
+  --accent-muted:  rgba(57, 255, 20, 0.05);
 
   /* Status */
   --success:         #34d399;
@@ -44,26 +44,26 @@
   --danger-subtle:   rgba(248, 113, 113, 0.10);
 
   /* Borders */
-  --border:        rgba(255, 255, 255, 0.07);
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-focus:  rgba(56, 189, 248, 0.55);
+  --border:        rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.03);
+  --border-focus:  rgba(57, 255, 20, 0.55);
 
-  /* Radius */
-  --radius-xs:   3px;
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   14px;
-  --radius-xl:   20px;
+  /* Radius — sharper */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.45);
-  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.60);
-  --shadow-lg: 0 12px 52px rgba(0, 0, 0, 0.75);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.50);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 12px 52px rgba(0, 0, 0, 0.80);
 
   /* Typography */
-  --font-display: "Syne", system-ui, sans-serif;
-  --font-sans:    "Outfit", system-ui, sans-serif;
+  --font-display: "IBM Plex Mono", "Courier New", monospace;
+  --font-sans:    "Inter", -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", "Fira Code", monospace;
 
   /* Layout */
@@ -72,8 +72,8 @@
 
   /* Transitions */
   --t-fast: 100ms ease;
-  --t-base: 160ms ease;
-  --t-slow: 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 150ms ease;
+  --t-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Theme: Ocean ── */
@@ -203,8 +203,8 @@
 }
 
 @keyframes icon-pulse {
-  0%, 100% { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.30)); }
-  50%       { filter: drop-shadow(0 0 28px rgba(56, 189, 248, 0.65)); }
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(57, 255, 20, 0.30)); }
+  50%       { filter: drop-shadow(0 0 28px rgba(57, 255, 20, 0.65)); }
 }
 
 @keyframes spin {
@@ -302,9 +302,9 @@ code, kbd {
   padding: max(48px, 8vh) 20px 48px;
   background: var(--bg-void);
   background-image:
-    linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px),
-    radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.06) 0%, transparent 65%);
+    linear-gradient(rgba(57, 255, 20, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57, 255, 20, 0.025) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 0%, rgba(57, 255, 20, 0.06) 0%, transparent 65%);
   background-size: 48px 48px, 48px 48px, 100% 100%;
 }
 
@@ -668,7 +668,7 @@ code, kbd {
   font-weight: 700;
   font-size: 13px;
   flex-shrink: 0;
-  border: 1px solid rgba(56, 189, 248, 0.20);
+  border: 1px solid rgba(57, 255, 20, 0.20);
 }
 
 .contact-avatar {
@@ -861,7 +861,7 @@ code, kbd {
 .badge {
   background: var(--accent-subtle);
   color: var(--accent);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(57, 255, 20, 0.25);
   font-size: 9px;
   font-weight: 700;
   font-family: var(--font-display);
@@ -1132,8 +1132,8 @@ code, kbd {
   position: relative;
   overflow: hidden;
   background-image:
-    linear-gradient(rgba(56, 189, 248, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.015) 1px, transparent 1px);
+    linear-gradient(rgba(57, 255, 20, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57, 255, 20, 0.015) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -1389,8 +1389,8 @@ code, kbd {
 /* Outgoing — glass effect with accent right-border */
 .chat-bubble.outgoing {
   align-self: flex-end;
-  background: rgba(56, 189, 248, 0.07);
-  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(57, 255, 20, 0.07);
+  border: 1px solid rgba(57, 255, 20, 0.16);
   border-right: 2px solid var(--accent);
   border-bottom-right-radius: var(--radius-xs);
   color: var(--text-primary);
@@ -1698,8 +1698,8 @@ textarea.input-field {
 }
 
 .toast-info {
-  border-color: rgba(56, 189, 248, 0.25);
-  background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(56, 189, 248, 0.15));
+  border-color: rgba(57, 255, 20, 0.25);
+  background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(57, 255, 20, 0.15));
 }
 
 .toast-icon {
@@ -2023,7 +2023,7 @@ textarea.input-field {
    ============================================================ */
 
 .group-avatar {
-  background: var(--accent-muted, rgba(56, 189, 248, 0.15));
+  background: var(--accent-muted, rgba(57, 255, 20, 0.15));
   color: var(--accent);
   font-family: "Syne", sans-serif;
   font-weight: 800;
