@@ -558,7 +558,7 @@ export default function App() {
           <ChatPanel
             group={activeGroup}
             messages={activeGroupMessages}
-            onSend={(_, text) => messaging.sendGroupMsg(activeGroupId, text)}
+            onSend={(_, text, file) => messaging.sendGroupMsg(activeGroupId, text, file)}
             onGroupInfo={() => setShowGroupInfo(true)}
           />
         ) : (
