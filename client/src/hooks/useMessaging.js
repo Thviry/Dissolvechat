@@ -13,7 +13,7 @@ import { randomId, capHashFromCap } from "dissolve-core/crypto";
 import { signObject, verifyObject } from "dissolve-core/crypto/signing";
 import { e2eeDecrypt } from "dissolve-core/crypto/e2ee";
 import { groupDecrypt } from "dissolve-core/crypto/group";
-import { buildGroupMessage } from "../protocol/groupEnvelopes";
+import { buildGroupMessage } from "@protocol/groupEnvelopes";
 import {
   drainInbox,
   drainRequestInbox,
@@ -24,7 +24,7 @@ import {
   getRelayUrl,
   setRelayUrls as setRelayUrlsGlobal,
   resetRelayUrl,
-} from "../protocol/relay";
+} from "@protocol/relay";
 import {
   buildCapsUpdate,
   buildMessage,
@@ -32,12 +32,12 @@ import {
   buildContactGrant,
   buildDirectoryPublish,
   buildInboxDrain,
-} from "../protocol/envelopes";
-import { checkAndUpdateReplay } from "../utils/storage";
-import { notifyIncoming, flashTitle } from "../utils/notifications";
+} from "@protocol/envelopes";
+import { checkAndUpdateReplay } from "@utils/storage";
+import { notifyIncoming, flashTitle } from "@utils/notifications";
 
-import { createMessageStore } from "../utils/messageStore";
-import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS } from "../config";
+import { createMessageStore } from "@utils/messageStore";
+import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS } from "@config";
 
 export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const [messages, setMessages] = useState([]);

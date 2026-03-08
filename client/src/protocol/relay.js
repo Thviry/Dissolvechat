@@ -9,7 +9,7 @@
 // 4. Server verifies and binds socket to identity
 
 import { signObject } from "dissolve-core/crypto/signing";
-import { WS_RECONNECT_DELAY_MS } from "../config";
+import { WS_RECONNECT_DELAY_MS } from "@config";
 
 const DEFAULT_API = import.meta.env.VITE_API_URL || "https://relay.dissolve.chat";
 

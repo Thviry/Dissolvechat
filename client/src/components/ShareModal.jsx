@@ -1,6 +1,6 @@
 // client/src/components/ShareModal.jsx
 import { useState, useMemo } from "react";
-import { generateQRSvg } from "../utils/qrcode";
+import { generateQRSvg } from "@utils/qrcode";
 import { IconClose } from "./Icons";
 
 export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile, onClose }) {

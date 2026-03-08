@@ -9,25 +9,25 @@
 // - alert()/prompt() have been replaced with Toast + PassphraseModal.
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useIdentity } from "./hooks/useIdentity";
-import { useContacts } from "./hooks/useContacts";
-import { useMessaging } from "./hooks/useMessaging";
+import { useIdentity } from "@hooks/useIdentity";
+import { useContacts } from "@hooks/useContacts";
+import { useMessaging } from "@hooks/useMessaging";
 import { useToast } from "dissolve-core/hooks";
 import { capHashFromCap } from "dissolve-core/crypto";
 import { signObject } from "dissolve-core/crypto/signing";
-import { downloadJson, saveJson } from "./utils/storage";
-import { lookupDirectory as relayLookup, blockOnRelay, getRelayUrl } from "./protocol/relay";
-import { buildBlockRequest, buildDirectoryPublish } from "./protocol/envelopes";
-import useGroups from "./hooks/useGroups";
-import useGroupActions from "./hooks/useGroupActions";
-import LoginScreen from "./components/LoginScreen";
-import Sidebar from "./components/Sidebar";
-import ChatPanel from "./components/ChatPanel";
-import CreateGroupModal from "./components/CreateGroupModal";
-import GroupInfoPanel from "./components/GroupInfoPanel";
-import ToastContainer from "./components/Toast";
-import PassphraseModal from "./components/PassphraseModal";
-import { IconClose } from "./components/Icons";
+import { downloadJson, saveJson } from "@utils/storage";
+import { lookupDirectory as relayLookup, blockOnRelay, getRelayUrl } from "@protocol/relay";
+import { buildBlockRequest, buildDirectoryPublish } from "@protocol/envelopes";
+import useGroups from "@hooks/useGroups";
+import useGroupActions from "@hooks/useGroupActions";
+import LoginScreen from "@components/LoginScreen";
+import Sidebar from "@components/Sidebar";
+import ChatPanel from "@components/ChatPanel";
+import CreateGroupModal from "@components/CreateGroupModal";
+import GroupInfoPanel from "@components/GroupInfoPanel";
+import ToastContainer from "@components/Toast";
+import PassphraseModal from "@components/PassphraseModal";
+import { IconClose } from "@components/Icons";
 import "./App.css";
 
 export default function App() {
@@ -153,7 +153,7 @@ export default function App() {
 
   // --- Check handle availability (called from LoginScreen during enrollment) ---
   const handleCheckHandle = useCallback(async (handle) => {
-    const { checkHandleAvailable } = await import("./protocol/relay");
+    const { checkHandleAvailable } = await import("@protocol/relay");
     return checkHandleAvailable(handle);
   }, []);
 

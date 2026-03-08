@@ -28,7 +28,7 @@ import {
 } from "dissolve-core/crypto";
 import { encryptPrivateData, decryptPrivateData } from "dissolve-core/crypto/keyfile";
 import { generateMnemonic, validateMnemonic, deriveIdentityFromMnemonic } from "dissolve-core/crypto/seed";
-import { downloadJson, loadJson, saveJson } from "../utils/storage";
+import { downloadJson, loadJson, saveJson } from "@utils/storage";
 
 const SESSION_KEY = "dissolve_session";
 const SESSION_AES = "dissolve_session_aes";

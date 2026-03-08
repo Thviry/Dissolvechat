@@ -2,7 +2,7 @@
 // Manages group state in localStorage. Follows useContacts patterns.
 
 import { useState, useRef, useCallback } from "react";
-import { loadJson, saveJson } from "../utils/storage";
+import { loadJson, saveJson } from "@utils/storage";
 
 const MAX_GROUP_MEMBERS = 50;
 

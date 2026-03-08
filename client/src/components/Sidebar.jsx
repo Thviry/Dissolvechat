@@ -1,7 +1,7 @@
 // client/src/components/Sidebar.jsx
 import { useState, useRef } from "react";
 import ShareModal from "./ShareModal";
-import { saveJson } from "../utils/storage";
+import { saveJson } from "@utils/storage";
 import { IconSettings, IconLogout, IconClose, IconMore, IconSearch, IconPlus, IconGroup } from "./Icons";
 
 export default function Sidebar({

@@ -10,8 +10,8 @@ import {
   buildGroupAdminChange,
   buildGroupLeave,
   buildGroupNameChange,
-} from "../protocol/groupEnvelopes";
-import { sendEnvelope } from "../protocol/relay";
+} from "@protocol/groupEnvelopes";
+import { sendEnvelope } from "@protocol/relay";
 
 export default function useGroupActions(identity, groupsMgr, addToast) {
 

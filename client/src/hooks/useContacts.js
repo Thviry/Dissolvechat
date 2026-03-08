@@ -2,7 +2,7 @@
 // Manages the local contact list and pending requests.
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { loadJson, saveJson } from "../utils/storage";
+import { loadJson, saveJson } from "@utils/storage";
 
 export function useContacts(myId) {
   const contactsKey = useMemo(() => (myId ? `contacts:${myId}` : ""), [myId]);
