@@ -30,6 +30,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const [pendingFile, setPendingFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null); // { src, name }
   const fileInputRef = useRef(null);
 
   // Track which message IDs have already been rendered to avoid animating on mount
@@ -220,22 +221,23 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
                   <span className="group-msg-sender">{item.senderLabel}</span>
                 )}
                 {item.file && INLINE_IMAGE_TYPES.has(item.file.type) && item.file.data && (
-                  <div className="chat-file-image">
+                  <div className="chat-file-card chat-file-image-card" onClick={() => setPreviewImage({ src: `data:${item.file.type};base64,${item.file.data}`, name: item.file.name })}>
                     <img
                       src={`data:${item.file.type};base64,${item.file.data}`}
                       alt={item.file.name}
-                      className="chat-inline-image"
-                      onClick={() => {
-                        window.open(`data:${item.file.type};base64,${item.file.data}`, "_blank");
-                      }}
+                      className="chat-image-thumb"
                     />
+                    <div className="chat-file-card-info">
+                      <span className="chat-file-card-name">{item.file.name}</span>
+                      <span className="chat-file-card-size">{formatFileSize(item.file.size)}</span>
+                    </div>
                     <button
-                      className="btn-icon file-download-btn"
-                      onClick={() => handleDownload(item.file)}
+                      className="btn-icon"
+                      onClick={(e) => { e.stopPropagation(); handleDownload(item.file); }}
                       aria-label={`Download ${item.file.name}`}
                       title="Download"
                     >
-                      <IconDownload size={14} />
+                      <IconDownload size={16} />
                     </button>
                   </div>
                 )}
@@ -330,6 +332,20 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
           </button>
         </div>
       </div>
+      {/* Image preview modal */}
+      {previewImage && (
+        <div className="image-preview-overlay" onClick={() => setPreviewImage(null)}>
+          <button className="image-preview-close btn-icon" onClick={() => setPreviewImage(null)} aria-label="Close preview">
+            <IconClose size={20} />
+          </button>
+          <img
+            src={previewImage.src}
+            alt={previewImage.name}
+            className="image-preview-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </main>
   );
 }

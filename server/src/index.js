@@ -59,8 +59,8 @@ app.use((_req, res, next) => {
 });
 
 // ── Body parsing ────────────────────────────────────────────────────
-// Envelope size limit — reject bodies > 4MB (supports inline file delivery up to 2MB)
-app.use(express.json({ limit: "4mb" }));
+// Envelope size limit — reject bodies > 8MB (supports inline file delivery up to 5MB)
+app.use(express.json({ limit: "8mb" }));
 
 // Request logging (dev only, uses structured logger)
 app.use((req, _res, next) => {

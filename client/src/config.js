@@ -16,7 +16,7 @@ export const WS_RECONNECT_DELAY_MS = 3_000;
 export const SEND_RETRY_BASE_DELAY_MS = 1_500;
 
 /** Maximum file size for inline relay delivery (bytes, before base64) */
-export const MAX_INLINE_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+export const MAX_INLINE_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 /** Image MIME types that render inline in chat */
 export const INLINE_IMAGE_TYPES = new Set([

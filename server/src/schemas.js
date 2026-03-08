@@ -37,7 +37,7 @@ const encryptedPayload = z.object({
     ext: z.boolean().optional(),
   }).passthrough(), // JWK may have extra fields from WebCrypto
   iv: b64u(24),       // 12 bytes = 16 base64 chars, allow margin
-  ct: b64u(16384),    // max ~12KB ciphertext
+  ct: b64u(8_000_000), // max ~6MB base64 ciphertext (supports 5MB file payloads)
 }).strict();
 
 // Identity ID (SHA-256 of JCS(authPubJwk), base64url = 43 chars)
