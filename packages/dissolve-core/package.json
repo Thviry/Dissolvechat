@@ -10,8 +10,11 @@
     "./hooks/*": "./src/hooks/*.js"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
     "@scure/bip39": ">=2.0.0",
-    "canonicalize": ">=2.0.0"
+    "canonicalize": ">=2.0.0",
+    "react": ">=18.0.0"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.0.1"
   }
 }

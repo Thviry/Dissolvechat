@@ -15,19 +15,10 @@
 
 import { generateMnemonic as bip39Generate, mnemonicToEntropy, validateMnemonic as bip39Validate } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
+import { p256 } from "@noble/curves/nist.js";
 import { b64uFromBytes } from "./encoding";
 
 const te = new TextEncoder();
-
-// PKCS#8 DER wrapper for a raw 32-byte P-256 private key scalar.
-// RFC 5958 / SEC1: OneAsymmetricKey v1 for id-ecPublicKey / secp256r1
-const P256_PKCS8_PREFIX = new Uint8Array([
-  0x30, 0x41, 0x02, 0x01, 0x00, 0x30, 0x13, 0x06,
-  0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,
-  0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03,
-  0x01, 0x07, 0x04, 0x27, 0x30, 0x25, 0x02, 0x01,
-  0x01, 0x04, 0x20,
-]); // 35 bytes
 
 // ── Public API ──────────────────────────────────────────────────────
 
@@ -72,7 +63,7 @@ export async function deriveIdentityFromMnemonic(mnemonic) {
     deriveBits(hkdfKey, salt, "requestcap"),
   ]);
 
-  // Import P-256 private keys from raw scalars
+  // Import P-256 private keys via JWK (cross-browser, works on Safari/WebKit)
   const [authPrivJwk, authPubJwk] = await importP256ScalarEcdsa(authScalar);
   const [e2eePrivJwk, e2eePubJwk] = await importP256ScalarEcdh(e2eeScalar);
 
@@ -97,54 +88,67 @@ async function deriveBits(hkdfKey, salt, info) {
 }
 
 /**
- * Build PKCS#8 DER from a raw 32-byte P-256 scalar.
+ * Compute P-256 public key coordinates (x, y) from a raw 32-byte scalar
+ * using @noble/curves, then build a JWK for WebCrypto import.
+ * This avoids PKCS#8 DER which Safari/WebKit rejects.
  */
-function scalarToPkcs8(scalarBuf) {
-  const der = new Uint8Array(P256_PKCS8_PREFIX.length + 32);
-  der.set(P256_PKCS8_PREFIX);
-  der.set(new Uint8Array(scalarBuf), P256_PKCS8_PREFIX.length);
-  return der;
+function scalarToJwk(scalarBuf) {
+  const scalarBytes = new Uint8Array(scalarBuf);
+  // Compute uncompressed public point (65 bytes: 0x04 || x(32) || y(32))
+  const pubBytes = p256.getPublicKey(scalarBytes, false);
+  const x = pubBytes.slice(1, 33);
+  const y = pubBytes.slice(33, 65);
+
+  return {
+    kty: "EC",
+    crv: "P-256",
+    x: b64uFromBytes(x),
+    y: b64uFromBytes(y),
+    d: b64uFromBytes(scalarBytes),
+  };
 }
 
 /**
- * Import a raw P-256 scalar as an ECDSA private key.
+ * Import a raw P-256 scalar as an ECDSA private key via JWK.
  * Returns [privateJwk, publicJwk].
- * Imports as extractable first to get the JWK (which carries x, y coords),
- * then the caller (activateSession) re-imports as non-extractable.
  */
 async function importP256ScalarEcdsa(scalarBuf) {
-  const der = scalarToPkcs8(scalarBuf);
+  const jwk = scalarToJwk(scalarBuf);
+  const privJwk = { ...jwk, key_ops: ["sign"] };
+
+  // Import and re-export to get the canonical JWK from WebCrypto
   const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
-    der,
+    "jwk",
+    privJwk,
     { name: "ECDSA", namedCurve: "P-256" },
-    true, // extractable so we can export JWK
+    true,
     ["sign"]
   );
-  const privJwk = await crypto.subtle.exportKey("jwk", privateKey);
+  const exportedPrivJwk = await crypto.subtle.exportKey("jwk", privateKey);
 
-  // Public JWK: same as private but without the private scalar (d)
-  const pubJwk = { kty: privJwk.kty, crv: privJwk.crv, x: privJwk.x, y: privJwk.y, key_ops: ["verify"] };
+  const pubJwk = { kty: exportedPrivJwk.kty, crv: exportedPrivJwk.crv, x: exportedPrivJwk.x, y: exportedPrivJwk.y, key_ops: ["verify"] };
 
-  return [privJwk, pubJwk];
+  return [exportedPrivJwk, pubJwk];
 }
 
 /**
- * Import a raw P-256 scalar as an ECDH private key.
+ * Import a raw P-256 scalar as an ECDH private key via JWK.
  * Returns [privateJwk, publicJwk].
  */
 async function importP256ScalarEcdh(scalarBuf) {
-  const der = scalarToPkcs8(scalarBuf);
+  const jwk = scalarToJwk(scalarBuf);
+  const privJwk = { ...jwk, key_ops: ["deriveKey"] };
+
   const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
-    der,
+    "jwk",
+    privJwk,
     { name: "ECDH", namedCurve: "P-256" },
     true,
     ["deriveKey"]
   );
-  const privJwk = await crypto.subtle.exportKey("jwk", privateKey);
+  const exportedPrivJwk = await crypto.subtle.exportKey("jwk", privateKey);
 
-  const pubJwk = { kty: privJwk.kty, crv: privJwk.crv, x: privJwk.x, y: privJwk.y, key_ops: [] };
+  const pubJwk = { kty: exportedPrivJwk.kty, crv: exportedPrivJwk.crv, x: exportedPrivJwk.x, y: exportedPrivJwk.y, key_ops: [] };
 
-  return [privJwk, pubJwk];
+  return [exportedPrivJwk, pubJwk];
 }
