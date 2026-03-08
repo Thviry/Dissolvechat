@@ -67,7 +67,7 @@ export async function deriveConvId(idA, idB) {
  */
 export async function buildMessage(
   myId, myLabel, myAuthPubJwk, myAuthPrivJwk, myE2eePubJwk,
-  myInboxCap, peer, plaintext
+  myInboxCap, peer, plaintext, file
 ) {
   const convId = await deriveConvId(myId, peer.id);
   const seq = nextSeq(myId, convId);
@@ -86,6 +86,7 @@ export async function buildMessage(
     msgId,
     text: plaintext,
     ts: Date.now(),
+    ...(file ? { file } : {}),
   };
   const payload = await e2eeEncrypt(JSON.stringify(inner), peer.e2eePublicJwk);
 

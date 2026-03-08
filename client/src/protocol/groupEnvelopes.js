@@ -20,7 +20,7 @@ const PROTOCOL_VERSION = 4;
  */
 export async function buildGroupMessage(
   myId, myLabel, myAuthPubJwk, myAuthPrivJwk, myE2eePubJwk,
-  myInboxCap, groupId, groupKeyB64, members, text
+  myInboxCap, groupId, groupKeyB64, members, text, file
 ) {
   const ts = Date.now();
   const msgId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
@@ -38,6 +38,7 @@ export async function buildGroupMessage(
     text,
     seq,
     ts,
+    ...(file ? { file } : {}),
   };
 
   // Encrypt once with shared group key
