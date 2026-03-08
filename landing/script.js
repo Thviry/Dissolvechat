@@ -1,4 +1,5 @@
 // ── Configuration — update before each release ─────────────────────────────
+'use strict';
 const GITHUB_REPO     = 'Thviry/Dissolvechat';
 const RELEASE_VERSION = '0.1.3-beta';
 const RELEASE_ASSETS  = {
@@ -21,10 +22,10 @@ const DOWNLOAD_URLS = {
 function detectOS() {
   const ua = navigator.userAgent.toLowerCase();
   if (ua.includes('win'))                          return 'windows';
-  if (ua.includes('iphone') || ua.includes('ipad')) return 'windows'; // no native app yet
+  if (ua.includes('iphone') || ua.includes('ipad')) return 'windows';
   if (ua.includes('mac'))                          return 'mac';
   if (ua.includes('linux'))                        return 'linux';
-  return 'windows'; // sensible default
+  return 'windows';
 }
 
 // ── Wire up DOM ─────────────────────────────────────────────────────────────
@@ -35,13 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hero primary button
   const heroBtn = document.getElementById('hero-download-btn');
   const heroOs  = document.getElementById('hero-os');
-  const heroVer = document.getElementById('hero-version');
   if (heroBtn && heroOs) {
     heroOs.textContent = OS_LABELS[os];
     heroBtn.href       = DOWNLOAD_URLS[os];
   }
-  if (heroVer) {
-    heroVer.textContent = `v${RELEASE_VERSION} · Open source`;
+
+  // Hero version number
+  const heroVerNum = document.getElementById('hero-version-num');
+  if (heroVerNum) {
+    heroVerNum.textContent = RELEASE_VERSION;
   }
 
   // Hero alt links
@@ -67,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // GitHub links
-  for (const id of ['nav-github', 'footer-github', 'dl-github-link']) {
+  for (const id of ['nav-github', 'nav-github-hero', 'footer-github', 'dl-github-link']) {
     const el = document.getElementById(id);
     if (el) el.href = GITHUB_RELEASES;
   }
@@ -76,5 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const licenseEl = document.getElementById('footer-license');
   if (licenseEl) {
     licenseEl.href = `https://github.com/${GITHUB_REPO}/blob/main/LICENSE`;
+  }
+
+  // ── Scroll-triggered reveal animations ──────────────────────────────────
+  const revealEls = document.querySelectorAll('.reveal-fade');
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05 });
+
+    revealEls.forEach((el) => observer.observe(el));
+  } else {
+    // Fallback: just show everything
+    revealEls.forEach((el) => el.classList.add('visible'));
   }
 });
