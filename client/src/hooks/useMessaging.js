@@ -174,7 +174,11 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
       // Show in chat
       if (inner.t === "Message") {
-        const msg = { dir: "in", peerId: inner.from, text: inner.text, ts: inner.ts, msgId: inner.msgId || randomId() };
+        const msg = {
+          dir: "in", peerId: inner.from, text: inner.text, ts: inner.ts,
+          msgId: inner.msgId || randomId(),
+          file: inner.file || undefined,
+        };
         setMessages((prev) => [...prev, msg]);
         archiveRef.current?.save(myId, msg);
         if (soundRef.current) notifyIncoming(); else flashTitle();
@@ -190,6 +194,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
           text: inner.text,
           ts: inner.ts,
           msgId: inner.msgId,
+          file: inner.file || undefined,
         };
         setGroupMessages((prev) => ({
           ...prev,
@@ -507,7 +512,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, requestCap, discoverable, showPresence, handle, myLabel, fetchMessages]);
 
   // --- Send a message ---
-  const sendMsg = useCallback(async (peerId, text) => {
+  const sendMsg = useCallback(async (peerId, text, file) => {
     const peer = contactsRef.current.find((c) => c.id === peerId) ||
                  requestsRef.current.find((r) => r.id === peerId);
     if (!peer) throw new Error("Peer not found");
@@ -517,7 +522,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
     const { envelope, msgId, ts } = await buildMessage(
       myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk,
-      inboxCap, peer, text.trim()
+      inboxCap, peer, text.trim(), file || undefined
     );
 
     let lastError = "";
@@ -527,7 +532,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         if (resp.status === 202) {
           console.warn("[Dissolve] Message queued on relay — recipient caps not yet registered");
         }
-        const outMsg = { dir: "out", peerId, text: text.trim(), ts, msgId };
+        const outMsg = { dir: "out", peerId, text: text.trim(), ts, msgId, file: file || undefined };
         setMessages((prev) => [...prev, outMsg]);
         archiveRef.current?.save(myId, outMsg);
         return;
@@ -571,14 +576,14 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap]);
 
   // --- Send a group message (fan-out to all members) ---
-  const sendGroupMsg = useCallback(async (groupId, text) => {
+  const sendGroupMsg = useCallback(async (groupId, text, file) => {
     if (!groupsMgr) return;
     const group = groupsMgr.findGroup(groupId);
     if (!group) return;
 
     const { envelopes, msgId, ts } = await buildGroupMessage(
       myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk,
-      inboxCap, groupId, group.groupKey, group.members, text.trim()
+      inboxCap, groupId, group.groupKey, group.members, text.trim(), file || undefined
     );
 
     const results = await Promise.allSettled(
@@ -590,7 +595,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       console.warn(`[Dissolve] Group send: ${failures.length}/${envelopes.length} failed`);
     }
 
-    const msg = { dir: "out", from: myId, senderLabel: myLabel, text: text.trim(), ts, msgId };
+    const msg = { dir: "out", from: myId, senderLabel: myLabel, text: text.trim(), ts, msgId, file: file || undefined };
     setGroupMessages((prev) => ({
       ...prev,
       [groupId]: [...(prev[groupId] || []), msg],
