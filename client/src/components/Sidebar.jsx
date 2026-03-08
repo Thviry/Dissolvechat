@@ -173,6 +173,22 @@ export default function Sidebar({
                   </div>
                 </div>
               )}
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={identity.offlineFiles}
+                  onChange={(e) => {
+                    identity.setOfflineFiles(e.target.checked);
+                    saveJson(`offlineFiles:${identity.id}`, { enabled: e.target.checked });
+                  }}
+                />
+                <span>Allow offline file delivery</span>
+              </label>
+              {identity.offlineFiles && (
+                <div className="hint-text" style={{ marginTop: "2px", marginBottom: "8px", paddingLeft: "24px" }}>
+                  Small files (under 256 KB) can be sent through the relay when the recipient is offline. The relay sees encrypted data only.
+                </div>
+              )}
             </div>
 
             <div className="settings-section">
