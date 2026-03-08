@@ -226,8 +226,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
                       alt={item.file.name}
                       className="chat-inline-image"
                       onClick={() => {
-                        const blob = base64ToBlob(item.file.data, item.file.type);
-                        window.open(URL.createObjectURL(blob), "_blank");
+                        window.open(`data:${item.file.type};base64,${item.file.data}`, "_blank");
                       }}
                     />
                     <button
@@ -248,6 +247,15 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
                       <span className="chat-file-card-size">{formatFileSize(item.file.size)}</span>
                     </div>
                     <IconDownload size={16} />
+                  </div>
+                )}
+                {item.file && !item.file.data && (
+                  <div className="chat-file-card">
+                    <IconFile size={20} />
+                    <div className="chat-file-card-info">
+                      <span className="chat-file-card-name">{item.file.name}</span>
+                      <span className="chat-file-card-size">File unavailable</span>
+                    </div>
                   </div>
                 )}
                 {item.text && <div className="chat-bubble-text">{item.text}</div>}

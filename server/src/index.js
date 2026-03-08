@@ -59,7 +59,7 @@ app.use((_req, res, next) => {
 });
 
 // ── Body parsing ────────────────────────────────────────────────────
-// Step 2: Envelope size limit — reject bodies > 16KB
+// Envelope size limit — reject bodies > 512KB (supports inline file delivery)
 app.use(express.json({ limit: "512kb" }));
 
 // Request logging (dev only, uses structured logger)
