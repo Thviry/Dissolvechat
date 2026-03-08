@@ -33,6 +33,7 @@ import "./App.css";
 export default function App() {
   const [mode, setMode] = useState("login"); // login | chat
   const [backupDismissed, setBackupDismissed] = useState(false);
+  const [exportDismissed, setExportDismissed] = useState(false);
   const [pendingViewMnemonic, setPendingViewMnemonic] = useState(null);
 
   const identity = useIdentity();
@@ -139,6 +140,11 @@ export default function App() {
     }
     try {
       await identity.exportKeyfile(passphrase, contactsMgr.contacts, groupsMgr.groups);
+      localStorage.setItem(`lastExportCount:${identity.id}`, JSON.stringify({
+        contacts: contactsMgr.contacts.length,
+        groups: groupsMgr.groups.length,
+      }));
+      setExportDismissed(false);
       addToast("Key file exported successfully.", "success");
     } catch (err) {
       addToast("Export failed: " + err.message, "error");
@@ -477,6 +483,16 @@ export default function App() {
     : false;
   const showBackupBanner = identity.isReady && !backupCompleted && !backupDismissed;
 
+  // Show export reminder when contacts/groups changed since last export
+  const exportCounts = identity.id
+    ? JSON.parse(localStorage.getItem(`lastExportCount:${identity.id}`) || "null")
+    : null;
+  const hasUnsavedData = identity.isReady && exportCounts && (
+    contactsMgr.contacts.length !== exportCounts.contacts ||
+    groupsMgr.groups.length !== exportCounts.groups
+  );
+  const showExportBanner = hasUnsavedData && !exportDismissed && !showBackupBanner;
+
   const activePeer = messaging.activeId ? contactsMgr.findPeer(messaging.activeId) : null;
   const visibleMessages = messaging.activeId
     ? messaging.messages.filter((m) => m.peerId === messaging.activeId)
@@ -492,6 +508,18 @@ export default function App() {
           <button
             className="backup-banner-dismiss"
             onClick={() => setBackupDismissed(true)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {showExportBanner && (
+        <div className="backup-banner" role="alert">
+          <span>You have unsaved contacts or groups. Export your key file to keep them.</span>
+          <button
+            className="backup-banner-dismiss"
+            onClick={() => setExportDismissed(true)}
             aria-label="Dismiss"
           >
             ✕
