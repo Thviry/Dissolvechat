@@ -1,6 +1,8 @@
 // client/src/components/ChatPanel.jsx
 import { useState, useRef, useEffect, useMemo } from "react";
-import { IconSend } from "./Icons";
+import { IconSend, IconAttach, IconClose, IconDownload, IconFile } from "./Icons";
+import { fileToBase64, base64ToBlob, downloadBlob, formatFileSize } from "@utils/fileUtils";
+import { MAX_INLINE_FILE_SIZE, INLINE_IMAGE_TYPES } from "@config";
 
 // Format a date for the separator chip
 function formatDateChip(date) {
@@ -27,6 +29,8 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
   const [error, setError] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const [pendingFile, setPendingFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Track which message IDs have already been rendered to avoid animating on mount
   // or when switching contacts/groups. seenRef.current is null until first render.
@@ -68,14 +72,52 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
     }
   };
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    try {
+      const data = await fileToBase64(file);
+      const previewUrl = INLINE_IMAGE_TYPES.has(file.type)
+        ? URL.createObjectURL(file)
+        : null;
+      setPendingFile({ name: file.name, type: file.type, size: file.size, data, previewUrl });
+    } catch (err) {
+      setError("Failed to read file: " + err.message);
+    }
+  };
+
+  const clearPendingFile = () => {
+    if (pendingFile?.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
+    setPendingFile(null);
+  };
+
+  const handleDownload = (file) => {
+    const blob = base64ToBlob(file.data, file.type);
+    downloadBlob(blob, file.name);
+  };
+
   const handleSend = async () => {
-    const canSend = group ? !!text.trim() : (!!text.trim() && !!peer);
-    if (!canSend || sending) return;
+    const hasText = !!text.trim();
+    const hasFile = !!pendingFile;
+    const canSendMsg = group ? (hasText || hasFile) : ((hasText || hasFile) && !!peer);
+    if (!canSendMsg || sending) return;
+
+    if (hasFile && pendingFile.size > MAX_INLINE_FILE_SIZE) {
+      setError(`File too large (max ${formatFileSize(MAX_INLINE_FILE_SIZE)}). Try a smaller file.`);
+      return;
+    }
+
     setError(null);
     setSending(true);
     try {
-      await onSend(group ? group.groupId : peer.id, text);
+      const filePayload = hasFile
+        ? { name: pendingFile.name, type: pendingFile.type, size: pendingFile.size, data: pendingFile.data }
+        : undefined;
+      await onSend(group ? group.groupId : peer.id, text, filePayload);
       setText("");
+      clearPendingFile();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -177,7 +219,38 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
                 {group && item.dir === "in" && (
                   <span className="group-msg-sender">{item.senderLabel}</span>
                 )}
-                <div className="chat-bubble-text">{item.text}</div>
+                {item.file && INLINE_IMAGE_TYPES.has(item.file.type) && item.file.data && (
+                  <div className="chat-file-image">
+                    <img
+                      src={`data:${item.file.type};base64,${item.file.data}`}
+                      alt={item.file.name}
+                      className="chat-inline-image"
+                      onClick={() => {
+                        const blob = base64ToBlob(item.file.data, item.file.type);
+                        window.open(URL.createObjectURL(blob), "_blank");
+                      }}
+                    />
+                    <button
+                      className="btn-icon file-download-btn"
+                      onClick={() => handleDownload(item.file)}
+                      aria-label={`Download ${item.file.name}`}
+                      title="Download"
+                    >
+                      <IconDownload size={14} />
+                    </button>
+                  </div>
+                )}
+                {item.file && !INLINE_IMAGE_TYPES.has(item.file.type) && item.file.data && (
+                  <div className="chat-file-card" onClick={() => handleDownload(item.file)}>
+                    <IconFile size={20} />
+                    <div className="chat-file-card-info">
+                      <span className="chat-file-card-name">{item.file.name}</span>
+                      <span className="chat-file-card-size">{formatFileSize(item.file.size)}</span>
+                    </div>
+                    <IconDownload size={16} />
+                  </div>
+                )}
+                {item.text && <div className="chat-bubble-text">{item.text}</div>}
                 <div className="chat-bubble-time" aria-label={new Date(item.ts).toLocaleString()}>
                   {new Date(item.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </div>
@@ -192,7 +265,38 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
         {error && (
           <div className="chat-error" role="alert">{error}</div>
         )}
+        {pendingFile && (
+          <div className="file-preview-bar">
+            {pendingFile.previewUrl ? (
+              <img src={pendingFile.previewUrl} alt={pendingFile.name} className="file-preview-thumb" />
+            ) : (
+              <div className="file-preview-icon"><IconFile size={20} /></div>
+            )}
+            <div className="file-preview-info">
+              <span className="file-preview-name">{pendingFile.name}</span>
+              <span className="file-preview-size">{formatFileSize(pendingFile.size)}</span>
+            </div>
+            <button className="btn-icon" onClick={clearPendingFile} aria-label="Remove attachment">
+              <IconClose size={14} />
+            </button>
+          </div>
+        )}
         <div className="chat-input-row">
+          <input
+            ref={fileInputRef}
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleFileSelect}
+          />
+          <button
+            className="btn-icon btn-attach"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!canSend || sending}
+            aria-label="Attach file"
+            title="Attach file"
+          >
+            <IconAttach size={16} />
+          </button>
           <input
             ref={inputRef}
             className="chat-input"
@@ -211,7 +315,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
           <button
             className="btn btn-primary btn-send"
             onClick={handleSend}
-            disabled={!text.trim() || !canSend || sending}
+            disabled={(!text.trim() && !pendingFile) || !canSend || sending}
             aria-label="Send message"
           >
             {sending ? <span className="spinner" aria-hidden="true" /> : <IconSend size={15} />}
