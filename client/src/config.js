@@ -14,3 +14,14 @@ export const WS_RECONNECT_DELAY_MS = 3_000;
 
 /** Base delay for send retry backoff on cap_not_allowed (ms × attempt index, 1-indexed) */
 export const SEND_RETRY_BASE_DELAY_MS = 1_500;
+
+/** Maximum file size for inline relay delivery (bytes, before base64) */
+export const MAX_INLINE_FILE_SIZE = 256 * 1024; // 256KB
+
+/** Image MIME types that render inline in chat */
+export const INLINE_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);

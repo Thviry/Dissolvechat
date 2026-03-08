@@ -120,3 +120,23 @@ export const IconTrash = ({ size = 16, ...props }) => (
     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   </svg>
 );
+
+export const IconAttach = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M13.5 7.5l-5.8 5.8a3.2 3.2 0 01-4.5-4.5L9.5 2.5a2.1 2.1 0 013 3L6.2 11.8a1.1 1.1 0 01-1.5-1.5L10.5 4.5" />
+  </svg>
+);
+
+export const IconDownload = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5" />
+    <path d="M2.5 12.5v1a1 1 0 001 1h9a1 1 0 001-1v-1" />
+  </svg>
+);
+
+export const IconFile = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M9 1.5H4a1.5 1.5 0 00-1.5 1.5v10A1.5 1.5 0 004 14.5h8a1.5 1.5 0 001.5-1.5V6L9 1.5z" />
+    <path d="M9 1.5V6h4.5" />
+  </svg>
+);
