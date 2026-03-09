@@ -26,13 +26,13 @@
 ### Documentation
 
 - [x] **DOCS-01**: `SELF_HOSTING.md` covers relay deployment end-to-end (Docker, env vars, reverse proxy, DNS)
-- [ ] **DOCS-02**: End-user guide covers: creating identity, adding contacts, seed phrase backup/recovery, switching relays
-- [ ] **DOCS-03**: README is updated to production quality with quickstart, architecture overview, and self-hosting link
+- [x] **DOCS-02**: End-user guide covers: creating identity, adding contacts, seed phrase backup/recovery, switching relays
+- [x] **DOCS-03**: README is updated to production quality with quickstart, architecture overview, and self-hosting link
 
 ### Onboarding
 
-- [ ] **ONB-01**: Landing page explains what DissolveChat is, why it's different, and how to get started (static HTML or GitHub Pages)
-- [ ] **ONB-02**: First-run flow prompts user to save/acknowledge seed phrase before entering the app
+- [x] **ONB-01**: Landing page explains what DissolveChat is, why it's different, and how to get started (static HTML or GitHub Pages)
+- [x] **ONB-02**: First-run flow prompts user to save/acknowledge seed phrase before entering the app
 
 ### Beta & Release
 
@@ -57,7 +57,7 @@
 
 ### Features
 
-- **FEAT-V2-01**: Group messaging via sender-key protocol with per-member capability revocation
+- ~~**FEAT-V2-01**: Group messaging~~ — shipped in v0.1.4-beta (client-side fan-out, 50-member cap, two-layer encryption)
 - **FEAT-V2-02**: Key rotation — periodic rotation of signing and encryption keys
 - **FEAT-V2-03**: Relay-side encrypted archive — optional long-term blob storage for cross-device history
 - **FEAT-V2-04**: Mobile native app (iOS/Android)
@@ -68,7 +68,7 @@
 |---------|--------|
 | Persistent server-side message storage | Relay is intentionally stateless; conflicts with zero-trust design |
 | OAuth / social login | Conflicts with self-sovereign identity model |
-| Group messaging | Sender-key complexity; v6 protocol change required — v2 |
+| ~~Group messaging~~ | ~~Sender-key complexity; v6 protocol change required — v2~~ Shipped in v0.1.4-beta |
 | Mobile native app | Web client works on mobile; native is post-v1.0 |
 | Distributed lock (Redis) | Single-instance relay is v1.0 target |
 | UI component deduplication | Pre-v1.0 risk outweighs benefit; only crypto/hooks shared |
@@ -89,10 +89,10 @@
 | DEPLOY-03 | Phase 3 | Complete |
 | DEPLOY-04 | Phase 3 | Complete |
 | DOCS-01 | Phase 3 | Complete |
-| DOCS-02 | Phase 4 | Pending |
-| DOCS-03 | Phase 4 | Pending |
-| ONB-01 | Phase 4 | Pending |
-| ONB-02 | Phase 4 | Pending |
+| DOCS-02 | Phase 4 | Complete |
+| DOCS-03 | Phase 4 | Complete |
+| ONB-01 | Phase 4 | Complete |
+| ONB-02 | Phase 4 | Complete |
 | BETA-01 | Phase 5 | Pending |
 | BETA-02 | Phase 5 | Pending |
 | REL-01 | Phase 6 | Pending |
@@ -105,4 +105,4 @@
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-03-01 — SEC-01 marked complete (01-01)*
+*Last updated: 2026-03-08 — Phase 4 (DOCS-02, DOCS-03, ONB-01, ONB-02) marked complete*

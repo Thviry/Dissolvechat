@@ -9,7 +9,7 @@ DissolveChat v5.16 is a working P2P encrypted chat app. This roadmap drives it f
 - [x] **Phase 1: Finish the Foundations** - Close security and configuration gaps before building on top (completed 2026-03-01)
 - [x] **Phase 2: Architecture (Shared Core)** - Extract shared logic and add multi-relay support (completed 2026-03-01)
 - [x] **Phase 3: Deployment & Infrastructure** - Make the relay self-hostable by anyone with one command (completed 2026-03-02)
-- [ ] **Phase 4: Onboarding & Docs** - A stranger can understand, install, and use DissolveChat without asking questions
+- [x] **Phase 4: Onboarding & Docs** - A stranger can understand, install, and use DissolveChat without asking questions (completed 2026-03-08)
 - [ ] **Phase 5: Public Beta** - Real users, real feedback, controlled rollout
 - [ ] **Phase 6: v1.0 Release** - Security re-audit, public announcement, tag v1.0.0
 
@@ -77,10 +77,10 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 04-01: Build landing page (static HTML or GitHub Pages)
-- [ ] 04-02: Write end-user guide (identity, contacts, seed phrase, relay switching)
-- [ ] 04-03: Implement first-run seed phrase acknowledgment flow
-- [ ] 04-04: Update README to production quality
+- [x] 04-01: Build landing page — live at dissolve.chat, redesigned 2026-03-08
+- [x] 04-02: Write end-user guide — docs/USER_GUIDE.md
+- [x] 04-03: First-run seed phrase acknowledgment — backup banner + Settings > Security modal
+- [x] 04-04: Update README to production quality
 
 ### Phase 5: Public Beta
 **Goal**: Real users exercise the core flow, feedback is collected systematically, and critical bugs are fixed before v1.0
@@ -121,6 +121,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Finish the Foundations | 2/2 | Complete   | 2026-03-01 |
 | 2. Architecture (Shared Core) | 5/5 | Complete   | 2026-03-02 |
 | 3. Deployment & Infrastructure | 4/4 | Complete    | 2026-03-02 |
-| 4. Onboarding & Docs | 0/4 | Not started | - |
+| 4. Onboarding & Docs | 4/4 | Complete | 2026-03-08 |
 | 5. Public Beta | 0/2 | Not started | - |
 | 6. v1.0 Release | 0/2 | Not started | - |

@@ -1,0 +1,39 @@
+name: Beta Feedback
+description: General feedback, questions, or impressions from using DissolveChat
+labels: ["beta-feedback"]
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows (desktop app)
+        - macOS (desktop app)
+        - Linux (desktop app)
+        - Web client
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback
+      description: What's working well? What feels off? What confused you?
+    validations:
+      required: true
+  - type: dropdown
+    id: experience
+    attributes:
+      label: Overall experience
+      options:
+        - Great — works as expected
+        - Good — minor issues
+        - Rough — significant friction
+        - Broken — couldn't complete basic tasks
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+    validations:
+      required: false

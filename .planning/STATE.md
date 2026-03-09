@@ -5,10 +5,10 @@ milestone_name: Release
 status: unknown
 last_updated: "2026-03-02T22:24:35.479Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 15
+  completed_plans: 15
 ---
 
 ---
@@ -16,14 +16,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Release
 status: in_progress
-last_updated: "2026-03-02T22:20:00Z"
+last_updated: "2026-03-08T00:00:00Z"
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-current_phase: 03-deployment-infrastructure
-current_plan: 03-04
+  completed_phases: 4
+  total_plans: 15
+  completed_plans: 15
+current_phase: 05-public-beta
+current_plan: null
 ---
 
 # Project State
@@ -33,16 +33,16 @@ current_plan: 03-04
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Users can send and receive end-to-end encrypted messages without trusting any platform with their identity, contacts, or message content.
-**Current focus:** Phase 3 — Deployment Infrastructure
+**Current focus:** Phase 5 — Public Beta
 
 ## Current Position
 
-Phase: 3 of 6 (Deployment Infrastructure) — COMPLETE
-Plan: 4 of 4 in current phase (03-04 SELF_HOSTING.md complete — Phase 03 done)
+Phase: 5 of 6 (Public Beta) — NOT STARTED
+Plan: None yet
 Status: In progress
-Last activity: 2026-03-02 — Completed 03-04 (SELF_HOSTING.md end-to-end self-hosting guide, Phase 03 complete)
+Last activity: 2026-03-08 — Completed Phase 4 (Onboarding & Docs: landing page, user guide, README, seed phrase acknowledgment)
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -120,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: Completed 03-04-PLAN.md (SELF_HOSTING.md end-to-end self-hosting guide — Phase 03 deployment infrastructure complete)
+Last session: 2026-03-08
+Stopped at: Completed Phase 4 (Onboarding & Docs) — README rewritten, USER_GUIDE.md created, landing page and seed phrase flow already shipped
 Resume file: None
