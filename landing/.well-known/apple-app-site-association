@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.chat.dissolve.app"],
+        "paths": ["/link/*", "/contact/*"]
+      }
+    ]
+  }
+}

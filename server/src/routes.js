@@ -21,6 +21,7 @@ const {
 } = require("./schemas");
 const { RateLimiter, LIMITS, getIpKey } = require("./ratelimit");
 const logger = require("./logger");
+const { sendSilentPush } = require("./push");
 
 const IS_DEV = process.env.NODE_ENV !== "production";
 const startedAt = Date.now();
@@ -448,6 +449,12 @@ function registerRoutes(app, store, wss) {
 
     store.pushMessage(obj.to, obj);
     notifyWs(wss, obj.to, "message");
+    // Send silent push if recipient has no active WS
+    const hasActiveWs = [...(wss?.clients || [])].some(c => c.authedId === obj.to && c.readyState === 1);
+    if (!hasActiveWs) {
+      const pushEntry = store.pushTokens.get(obj.to);
+      if (pushEntry) sendSilentPush(pushEntry.token).catch(() => {});
+    }
     logger.envelopeAccepted(obj.to, "msg");
     return res.json({ ok: true });
   });
@@ -500,6 +507,120 @@ function registerRoutes(app, store, wss) {
     const items = store.drainRequestInbox(toId);
     logger.requestInboxDrained(toId, items.length);
     res.json({ ok: true, items });
+  });
+
+  // ── Push tokens ─────────────────────────────────────────────────────
+
+  // POST /push-token — register device push token (signed request)
+  app.post("/push-token", async (req, res) => {
+    const ip = getIpKey(req);
+    if (!rateCheck(req, res, "ip", ip, LIMITS.SEND, "/push-token")) return;
+
+    const { id, token, platform, authPub, sig } = req.body;
+    if (!id || !token || !authPub || !sig) {
+      return res.status(400).json({ error: "missing fields" });
+    }
+    if (typeof token !== "string" || token.length > 256) {
+      return res.status(400).json({ error: "invalid token" });
+    }
+
+    const verified = await verifyOwnership(req.body, id);
+    if (!verified) return res.status(403).json({ error: "auth_failed" });
+
+    store.pushTokens.set(id, { token, platform: platform || "ios", updatedAt: Date.now() });
+    res.json({ ok: true });
+  });
+
+  // DELETE /push-token — deregister push token on logout
+  app.delete("/push-token", async (req, res) => {
+    const { id, authPub, sig } = req.body;
+    if (!id || !authPub || !sig) {
+      return res.status(400).json({ error: "missing fields" });
+    }
+
+    const verified = await verifyOwnership(req.body, id);
+    if (!verified) return res.status(403).json({ error: "auth_failed" });
+
+    store.pushTokens.delete(id);
+    res.json({ ok: true });
+  });
+
+  // ── Device linking ──────────────────────────────────────────────────
+
+  const LINK_SESSION_MAX_GLOBAL = 10;
+  const LINK_SESSION_MAX_PER_IP = 3;
+
+  // POST /link-session — desktop creates session
+  app.post("/link-session", (req, res) => {
+    const ip = getIpKey(req);
+    if (!rateCheck(req, res, "ip", ip, LIMITS.SEND, "/link-session")) return;
+
+    const { sessionId, publicKey } = req.body;
+    if (!sessionId || typeof sessionId !== "string" || sessionId.length > 128) {
+      return res.status(400).json({ error: "invalid sessionId" });
+    }
+    if (!publicKey || typeof publicKey !== "string" || publicKey.length > 512) {
+      return res.status(400).json({ error: "invalid publicKey" });
+    }
+    if (store.linkSessions.has(sessionId)) {
+      return res.status(409).json({ error: "session exists" });
+    }
+    if (store.linkSessions.size >= LINK_SESSION_MAX_GLOBAL) {
+      return res.status(503).json({ error: "too many active link sessions" });
+    }
+    // Per-IP limit
+    let ipCount = 0;
+    for (const [, s] of store.linkSessions) {
+      if (s.ip === ip) ipCount++;
+    }
+    if (ipCount >= LINK_SESSION_MAX_PER_IP) {
+      return res.status(429).json({ error: "too many link sessions from this IP" });
+    }
+
+    store.linkSessions.set(sessionId, { publicKey, createdAt: Date.now(), ip });
+    res.json({ ok: true });
+  });
+
+  // GET /link-session/:sid — poll session state
+  app.get("/link-session/:sid", (req, res) => {
+    const session = store.linkSessions.get(req.params.sid);
+    if (!session) return res.status(404).json({ error: "not found" });
+    res.json({
+      hasResponse: !!session.mobilePublicKey,
+      hasTransfer: !!session.encryptedKeyfile,
+      mobilePublicKey: session.mobilePublicKey || null,
+      encryptedKeyfile: session.encryptedKeyfile || null,
+    });
+  });
+
+  // POST /link-session/:sid/respond — mobile sends its public key
+  app.post("/link-session/:sid/respond", (req, res) => {
+    const session = store.linkSessions.get(req.params.sid);
+    if (!session) return res.status(404).json({ error: "not found" });
+    const { publicKey } = req.body;
+    if (!publicKey || typeof publicKey !== "string" || publicKey.length > 512) {
+      return res.status(400).json({ error: "invalid publicKey" });
+    }
+    session.mobilePublicKey = publicKey;
+    res.json({ ok: true });
+  });
+
+  // POST /link-session/:sid/transfer — desktop uploads encrypted keyfile
+  app.post("/link-session/:sid/transfer", (req, res) => {
+    const session = store.linkSessions.get(req.params.sid);
+    if (!session) return res.status(404).json({ error: "not found" });
+    const { encryptedKeyfile } = req.body;
+    if (!encryptedKeyfile || typeof encryptedKeyfile !== "string" || encryptedKeyfile.length > 100_000) {
+      return res.status(400).json({ error: "invalid encryptedKeyfile" });
+    }
+    session.encryptedKeyfile = encryptedKeyfile;
+    res.json({ ok: true });
+  });
+
+  // DELETE /link-session/:sid — cleanup
+  app.delete("/link-session/:sid", (req, res) => {
+    store.linkSessions.delete(req.params.sid);
+    res.json({ ok: true });
   });
 }
 

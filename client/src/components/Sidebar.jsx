@@ -1,6 +1,7 @@
 // client/src/components/Sidebar.jsx
 import { useState, useRef } from "react";
 import ShareModal from "./ShareModal";
+import LinkDeviceModal from "./LinkDeviceModal";
 import { saveJson } from "@utils/storage";
 import { IconSettings, IconLogout, IconClose, IconMore, IconSearch, IconPlus, IconGroup } from "./Icons";
 
@@ -39,6 +40,7 @@ export default function Sidebar({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showLinkDevice, setShowLinkDevice] = useState(false);
   const [contactMenu, setContactMenu] = useState(null);
   const [relayCustomMode, setRelayCustomMode] = useState(() => {
     const url = identity.relayUrl || "";
@@ -272,8 +274,28 @@ export default function Sidebar({
               })()}
             </div>
 
+            <div className="settings-section">
+              <h4>Device</h4>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => { setShowLinkDevice(true); setShowSettings(false); }}
+              >
+                Link to Mobile
+              </button>
+              <div className="hint-text" style={{ marginTop: "4px" }}>
+                Transfer your identity to the DissolveChat mobile app via QR code.
+              </div>
+            </div>
+
           </div>
         </div>
+      )}
+
+      {showLinkDevice && (
+        <LinkDeviceModal
+          identity={identity}
+          onClose={() => setShowLinkDevice(false)}
+        />
       )}
 
       {/* ── Identity header ── */}

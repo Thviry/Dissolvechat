@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "DissolveChat",
+    "slug": "dissolvechat",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "dissolve",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "bundleIdentifier": "chat.dissolve.app",
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:dissolve.chat"
+      ],
+      "infoPlist": {
+        "NSCameraUsageDescription": "DissolveChat uses the camera to scan QR codes for device linking.",
+        "NSFaceIDUsageDescription": "DissolveChat uses Face ID to unlock your encrypted session."
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-camera",
+      "expo-notifications",
+      "expo-local-authentication",
+      "expo-document-picker",
+      "expo-haptics",
+      "expo-clipboard"
+    ]
+  }
+}

@@ -32,6 +32,12 @@ class Store {
     // Rate limiting: key -> { count, resetAt }
     this.rateLimits = new Map();
 
+    // Link sessions for device linking: sessionId -> { publicKey, mobilePublicKey?, encryptedKeyfile?, createdAt, ip }
+    this.linkSessions = new Map();
+
+    // Push tokens: identityId -> { token, platform, updatedAt }
+    this.pushTokens = new Map();
+
     // Pending queue: messages sent before recipient registered caps.
     // toId -> Array<{ envelope, capHash, isRequest, expiresAt }>
     this.pending = new Map();
@@ -73,6 +79,10 @@ class Store {
       const filtered = items.filter((i) => i.expiresAt > now);
       if (filtered.length === 0) this.pending.delete(id);
       else this.pending.set(id, filtered);
+    }
+    // Link sessions expire after 5 minutes
+    for (const [sid, session] of this.linkSessions) {
+      if (now - session.createdAt > 5 * 60 * 1000) this.linkSessions.delete(sid);
     }
   }
 
