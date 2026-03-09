@@ -30,9 +30,9 @@ Native iOS app for DissolveChat built with React Native. Shares crypto and proto
 
 ## Architecture
 
-### Framework: React Native
+### Framework: Expo (React Native)
 
-React Native with the New Architecture (Fabric renderer, TurboModules). Not Expo — we need direct access to iOS Keychain, native crypto, and APNs.
+Expo SDK with EAS Build for cloud iOS compilation. Enables full iOS development from Windows — no Mac required. Expo's SDK covers all required native APIs (Keychain, APNs, Face ID, SQLite, camera). EAS Build compiles on cloud Macs and delivers TestFlight/App Store builds.
 
 ### Code Reuse
 
@@ -278,28 +278,38 @@ MAX_INLINE_FILE_SIZE = 5_242_880     // 5MB (same as desktop)
 
 ## Dependencies
 
-### React Native Packages
+### Expo + React Native Packages
 
 ```
-react-native                    Core framework
-@react-navigation/native        Navigation
-@react-navigation/bottom-tabs   Tab bar
-@react-navigation/native-stack  Stack navigation
-react-native-keychain           iOS Keychain access
-@react-native-async-storage/async-storage  Preferences
-react-native-sqlite-storage     Encrypted message archive
-react-native-camera             QR code scanning
-react-native-push-notification-ios  Local + remote notifications
-react-native-haptic-feedback    Haptic on send
-react-native-document-picker    Keyfile import
-react-native-share              Keyfile export
-react-native-fs                 File system access
+expo                            Expo SDK
+expo-router                     File-based navigation (built on React Navigation)
+expo-secure-store               iOS Keychain access
+expo-sqlite                     SQLite message archive
+expo-camera                     QR code scanning
+expo-notifications              APNs push + local notifications
+expo-local-authentication       Face ID / Touch ID
+expo-document-picker            Keyfile import
+expo-sharing                    Keyfile export
+expo-file-system                File system access
+expo-haptics                    Haptic feedback
+expo-crypto                     Native crypto utilities
+@react-native-async-storage/async-storage  Preferences (Expo-compatible)
 ```
+
+### Build & Deploy
+
+```
+eas-cli                         EAS Build + Submit CLI
+```
+
+- EAS Build compiles iOS on cloud Macs (no local Xcode needed)
+- EAS Submit pushes to TestFlight / App Store
+- Development builds install on physical iPhone for testing over network
 
 ### Crypto
 
 - `dissolve-core` (workspace package) — all crypto primitives
-- WebCrypto polyfill if needed for Hermes engine (`react-native-quick-crypto` provides native crypto)
+- `react-native-quick-crypto` for WebCrypto polyfill on Hermes engine
 - `@scure/bip39` and `@noble/curves` already work in React Native
 
 ---
