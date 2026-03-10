@@ -215,3 +215,67 @@ export async function buildInboxDrain(myId, myAuthPubJwk, myAuthPrivJwk) {
   obj.sig = await signObject(obj, myAuthPrivJwk);
   return obj;
 }
+
+/**
+ * Build a signed DeliveryReceipt envelope.
+ * Sent automatically when messages are received — confirms delivery to sender.
+ */
+export async function buildDeliveryReceipt(
+  myId, myAuthPubJwk, myAuthPrivJwk, myE2eePubJwk,
+  myInboxCap, peer, messageIds
+) {
+  const inner = {
+    t: "DeliveryReceipt",
+    alg: "ECDH-P256+AES256GCM",
+    from: myId,
+    senderCap: myInboxCap,
+    e2eePub: myE2eePubJwk,
+    authPub: myAuthPubJwk,
+    messageIds,
+    ts: Date.now(),
+  };
+  const payload = await e2eeEncrypt(JSON.stringify(inner), peer.e2eePublicJwk);
+
+  const obj = {
+    p: 4,
+    to: peer.id,
+    cap: peer.cap,
+    ch: "msg",
+    authPub: myAuthPubJwk,
+    payload,
+  };
+  obj.sig = await signObject(obj, myAuthPrivJwk);
+  return { envelope: obj };
+}
+
+/**
+ * Build a signed ReadReceipt envelope.
+ * Sent when messages are viewed in the active chat (opt-in, reciprocal).
+ */
+export async function buildReadReceipt(
+  myId, myAuthPubJwk, myAuthPrivJwk, myE2eePubJwk,
+  myInboxCap, peer, messageIds
+) {
+  const inner = {
+    t: "ReadReceipt",
+    alg: "ECDH-P256+AES256GCM",
+    from: myId,
+    senderCap: myInboxCap,
+    e2eePub: myE2eePubJwk,
+    authPub: myAuthPubJwk,
+    messageIds,
+    ts: Date.now(),
+  };
+  const payload = await e2eeEncrypt(JSON.stringify(inner), peer.e2eePublicJwk);
+
+  const obj = {
+    p: 4,
+    to: peer.id,
+    cap: peer.cap,
+    ch: "msg",
+    authPub: myAuthPubJwk,
+    payload,
+  };
+  obj.sig = await signObject(obj, myAuthPrivJwk);
+  return { envelope: obj };
+}
