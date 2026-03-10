@@ -76,10 +76,16 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
 
   // --- Update message status (for receipts) ---
+  const STATUS_ORDER = { sending: 0, sent: 1, queued: 2, delivered: 3, read: 4, failed: -1 };
   const updateMessageStatus = useCallback((messageIds, status) => {
-    setMessages((prev) => prev.map((m) =>
-      messageIds.includes(m.msgId) ? { ...m, status } : m
-    ));
+    setMessages((prev) => prev.map((m) => {
+      if (!messageIds.includes(m.msgId)) return m;
+      // Only upgrade status, never downgrade (e.g. don't go from "read" back to "delivered")
+      const current = STATUS_ORDER[m.status] ?? -1;
+      const next = STATUS_ORDER[status] ?? -1;
+      if (next <= current) return m;
+      return { ...m, status };
+    }));
     if (archiveRef.current) {
       for (const id of messageIds) {
         const msg = messagesRef.current.find((m) => m.msgId === id);
@@ -704,6 +710,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   // --- Dismiss a failed message ---
   const dismissMsg = useCallback((msgId) => {
     setMessages((prev) => prev.filter((m) => m.msgId !== msgId));
+    archiveRef.current?.delete(msgId);
   }, []);
 
   // --- Send contact request ---

@@ -199,6 +199,22 @@ export async function createMessageStore(identityId) {
     },
 
     /**
+     * Delete a single message from the archive by msgId.
+     */
+    async delete(msgId) {
+      try {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).delete(msgId);
+        await new Promise((resolve, reject) => {
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (err) {
+        console.warn("[Archive] Failed to delete message:", err.message);
+      }
+    },
+
+    /**
      * Clear all archived messages for this identity.
      */
     async clear() {
