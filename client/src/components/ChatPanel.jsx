@@ -34,7 +34,7 @@ function MessageStatus({ status }) {
     case "delivered":
       return <span className="msg-status delivered"><IconCheckDouble size={12} /></span>;
     case "read":
-      return <span className="msg-status read"><IconCheckDouble size={12} /></span>;
+      return <span className="msg-status read">Read</span>;
     case "failed":
       return <span className="msg-status failed"><IconAlert size={12} /></span>;
     default:

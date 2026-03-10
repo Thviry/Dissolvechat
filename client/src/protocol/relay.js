@@ -15,6 +15,9 @@ const DEFAULT_API = import.meta.env.VITE_API_URL || "https://relay.dissolve.chat
 
 let _relayUrls = [DEFAULT_API]; // array of HTTP base URLs (no trailing slash)
 
+// Rate-limit backoff state (shared across all relay calls)
+let _rateLimitedUntil = 0; // timestamp when we can retry after a 429
+
 /**
  * Get the current relay API URL (first relay, for backward compat).
  */
@@ -52,6 +55,13 @@ export function resetRelayUrl() {
 }
 
 /**
+ * Check if we're currently rate-limited by the relay.
+ */
+export function isRateLimited() {
+  return Date.now() < _rateLimitedUntil;
+}
+
+/**
  * Make a JSON request to the relay.
  * @param {string} base - Base URL of the relay
  * @param {string} path - Path to request
@@ -63,6 +73,12 @@ async function relayFetch(base, path, options = {}) {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+  if (resp.status === 429) {
+    const retryAfter = resp.headers.get("Retry-After");
+    const delaySec = retryAfter ? Math.min(parseInt(retryAfter, 10) || 10, 60) : 10;
+    _rateLimitedUntil = Date.now() + delaySec * 1000;
+    console.warn(`[Dissolve] 429 on ${path} — backing off ${delaySec}s`);
+  }
   return resp;
 }
 
@@ -213,9 +229,14 @@ function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify, o
   let ws = null;
   let reconnectTimer = null;
   let closed = false;
+  let reconnectAttempts = 0;
 
   async function connect() {
     if (closed) return;
+    if (Date.now() < _rateLimitedUntil) {
+      scheduleReconnect();
+      return;
+    }
 
     let nonce;
     try {
@@ -254,6 +275,7 @@ function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify, o
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === "auth_ok") {
+          reconnectAttempts = 0; // reset backoff on successful auth
           if (onAuthenticated) onAuthenticated();
           return;
         }
@@ -282,7 +304,10 @@ function connectSingleWS(wsUrl, base, myId, authPubJwk, authPrivJwk, onNotify, o
   function scheduleReconnect() {
     if (closed) return;
     clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(connect, WS_RECONNECT_DELAY_MS);
+    // Exponential backoff: 3s, 6s, 12s, 24s, max 30s
+    const delay = Math.min(WS_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempts), 30_000);
+    reconnectAttempts++;
+    reconnectTimer = setTimeout(connect, delay);
   }
 
   connect();

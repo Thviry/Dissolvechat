@@ -4,10 +4,10 @@
 // For relay URLs, see VITE_API_URL / VITE_WS_URL in .env
 
 /** How often to poll the relay for new messages when WebSocket is unavailable (ms) */
-export const POLL_INTERVAL_MS = 5_000;
+export const POLL_INTERVAL_MS = 10_000;
 
 /** How often to republish capability hashes to keep the relay inbox active (ms) */
-export const CAP_REPUBLISH_INTERVAL_MS = 30_000;
+export const CAP_REPUBLISH_INTERVAL_MS = 60_000;
 
 /** Delay before retrying a WebSocket connection after disconnect (ms) */
 export const WS_RECONNECT_DELAY_MS = 3_000;

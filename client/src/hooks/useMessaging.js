@@ -24,6 +24,7 @@ import {
   getRelayUrl,
   setRelayUrls as setRelayUrlsGlobal,
   resetRelayUrl,
+  isRateLimited,
 } from "@protocol/relay";
 import {
   buildCapsUpdate,
@@ -53,6 +54,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const pollTimerRef = useRef(null);
   const archiveRef = useRef(null);
   const soundRef = useRef(true);
+  const fetchMessagesRef = useRef(null);
 
   const {
     id: myId, label: myLabel,
@@ -108,11 +110,13 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         myId, authPubJwk, authPrivJwk, e2eePubJwk,
         inboxCap, peer, messageIds
       );
-      await sendEnvelope(envelope);
-      // Mark these messages so we don't resend receipts
-      setMessages((prev) => prev.map((m) =>
-        messageIds.includes(m.msgId) ? { ...m, readReceiptSent: true } : m
-      ));
+      const resp = await sendEnvelope(envelope);
+      if (resp.ok) {
+        // Mark these messages so we don't resend receipts
+        setMessages((prev) => prev.map((m) =>
+          messageIds.includes(m.msgId) ? { ...m, readReceiptSent: true } : m
+        ));
+      }
     } catch (err) {
       console.warn("[Dissolve] Failed to send read receipt:", err.message);
     }
@@ -450,6 +454,9 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     } catch { /* ignore */ }
   }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, handleIncoming, contactsRef, requestsRef]);
 
+  // Keep ref updated so the main effect can use the latest fetchMessages without re-running
+  useEffect(() => { fetchMessagesRef.current = fetchMessages; }, [fetchMessages]);
+
   // --- Sync relay URL(s) when identity settings change ---
   useEffect(() => {
     if (relayUrl && relayUrl.trim()) {
@@ -556,6 +563,10 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
     // Republish caps to the relay — called on startup, WS reconnect, and periodically
     const republishCaps = async () => {
+      if (isRateLimited()) {
+        console.warn("[Dissolve] Skipping caps republish — rate-limited");
+        return;
+      }
       try {
         const ch = await capHashFromCap(inboxCap);
         const cb = await buildCapsUpdate(myId, authPubJwk, authPrivJwk, [ch]);
@@ -568,8 +579,12 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       }
     };
 
+    let isInitialWsConnect = true;
+
     const publishAndStart = async () => {
+      if (destroyed) return;
       await republishCaps();
+      if (destroyed) return;
 
       try {
         if (handle?.trim()) {
@@ -598,19 +613,38 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
       if (destroyed) return;
 
-      fetchMessages();
+      fetchMessagesRef.current?.();
+
+      // Debounced fetch — batches rapid WS notifications into a single drain
+      let wsDebounceTimer = null;
+      const debouncedFetch = () => {
+        if (destroyed) return;
+        clearTimeout(wsDebounceTimer);
+        wsDebounceTimer = setTimeout(() => {
+          if (!destroyed && !isRateLimited()) fetchMessagesRef.current?.();
+        }, 500);
+      };
 
       wsRef.current = connectWebSocket(myId, authPubJwk, authPrivJwk,
-        (_channel) => { fetchMessages(); },
+        (_channel) => { debouncedFetch(); },
         () => {
-          // WS (re)authenticated — republish caps immediately so the relay
-          // has them even after a restart, then fetch any queued messages.
-          console.log("[Dissolve] WS authenticated — republishing caps");
-          republishCaps().then(() => { if (!destroyed) fetchMessages(); });
+          if (isInitialWsConnect) {
+            // Caps already published by publishAndStart — just fetch messages
+            isInitialWsConnect = false;
+            if (!destroyed) fetchMessagesRef.current?.();
+            return;
+          }
+          // WS REconnected after disconnect — republish caps
+          console.log("[Dissolve] WS reconnected — republishing caps");
+          republishCaps().then(() => { if (!destroyed) fetchMessagesRef.current?.(); });
         }
       );
 
-      pollTimerRef.current = setInterval(fetchMessages, POLL_INTERVAL_MS);
+      if (destroyed) return;
+
+      pollTimerRef.current = setInterval(() => {
+        if (!isRateLimited()) fetchMessagesRef.current?.();
+      }, POLL_INTERVAL_MS);
 
       const republishTimer = setInterval(republishCaps, CAP_REPUBLISH_INTERVAL_MS);
 
@@ -625,7 +659,8 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       clearInterval(pollTimerRef.current);
       cleanupPromise?.then?.((cleanup) => cleanup?.());
     };
-  }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, requestCap, discoverable, showPresence, handle, myLabel, fetchMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, requestCap, discoverable, showPresence, handle, myLabel]);
 
   // --- Send a message ---
   const sendMsg = useCallback(async (peerId, text, file) => {

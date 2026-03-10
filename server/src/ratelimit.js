@@ -47,15 +47,15 @@ class RateLimiter {
 // These can be overridden via environment variables.
 
 const LIMITS = {
-  // IP-based (per minute)
-  IP_SEND:          parseInt(process.env.LIMIT_IP_SEND)          || 60,
-  IP_DRAIN:         parseInt(process.env.LIMIT_IP_DRAIN)         || 120,
-  IP_CAPS:          parseInt(process.env.LIMIT_IP_CAPS)          || 20,
-  IP_DIRECTORY:     parseInt(process.env.LIMIT_IP_DIRECTORY)     || 20,
+  // IP-based (per minute) — sized for ≤5 users behind one NAT
+  IP_SEND:          parseInt(process.env.LIMIT_IP_SEND)          || 120,
+  IP_DRAIN:         parseInt(process.env.LIMIT_IP_DRAIN)         || 240,
+  IP_CAPS:          parseInt(process.env.LIMIT_IP_CAPS)          || 40,
+  IP_DIRECTORY:     parseInt(process.env.LIMIT_IP_DIRECTORY)     || 30,
   IP_LOOKUP:        parseInt(process.env.LIMIT_IP_LOOKUP)        || 60,
   IP_HANDLE_CHECK:  parseInt(process.env.LIMIT_IP_HANDLE_CHECK) || 10,
-  IP_PRESENCE:      parseInt(process.env.LIMIT_IP_PRESENCE)     || 20,
-  IP_WS_CONNECT:    parseInt(process.env.LIMIT_IP_WS_CONNECT)   || 10,
+  IP_PRESENCE:      parseInt(process.env.LIMIT_IP_PRESENCE)     || 30,
+  IP_WS_CONNECT:    parseInt(process.env.LIMIT_IP_WS_CONNECT)   || 20,
   IP_BLOCK_REVOKE:  parseInt(process.env.LIMIT_IP_BLOCK_REVOKE) || 10,
 
   // Identity-based (per minute)
