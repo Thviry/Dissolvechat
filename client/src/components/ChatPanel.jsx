@@ -26,23 +26,21 @@ function formatDateChip(date) {
 function MessageStatus({ status }) {
   switch (status) {
     case "sending":
-      return <span className="msg-status sending"><IconClock size={12} /></span>;
+      return <span className="msg-status sending">Sending</span>;
     case "queued":
-      return <span className="msg-status queued"><IconClock size={12} /></span>;
+      return <span className="msg-status queued">Queued</span>;
     case "sent":
-      return <span className="msg-status sent"><IconCheck size={12} /></span>;
+      return <span className="msg-status sent">Sent</span>;
     case "delivered":
-      return <span className="msg-status delivered"><IconCheckDouble size={12} /></span>;
-    case "read":
-      return <span className="msg-status read">Read</span>;
+      return <span className="msg-status delivered">Delivered</span>;
     case "failed":
-      return <span className="msg-status failed"><IconAlert size={12} /></span>;
+      return <span className="msg-status failed">Failed</span>;
     default:
       return null;
   }
 }
 
-export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, onSendReadReceipts }) {
+export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -91,25 +89,6 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
       inputRef.current.focus();
     }
   };
-
-  // v1: Read receipts only for 1-to-1 chats. Group read receipts would require
-  // sending receipts to each sender, which scales poorly with group size.
-  const readTimerRef = useRef(null);
-  useEffect(() => {
-    if (!peer || !onSendReadReceipts) return;
-    // Collect unread incoming message IDs
-    const unreadIds = messages
-      .filter((m) => m.dir === "in" && m.msgId && !m.readReceiptSent)
-      .map((m) => m.msgId);
-    if (!unreadIds.length) return;
-
-    clearTimeout(readTimerRef.current);
-    readTimerRef.current = setTimeout(() => {
-      onSendReadReceipts(peer.id, unreadIds);
-    }, 500);
-
-    return () => clearTimeout(readTimerRef.current);
-  }, [messages, peer, onSendReadReceipts]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];

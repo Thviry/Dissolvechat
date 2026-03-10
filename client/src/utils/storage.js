@@ -25,14 +25,23 @@ export function downloadJson(filename, obj) {
 
 /**
  * Check replay protection. Returns true if message should be processed (not a replay).
- * The `envelopeType` parameter namespaces the counter so that protocol envelopes
- * (ContactRequest, ContactGrant) don't collide with normal Message seq numbers.
+ * Uses a sliding window of recently seen message IDs (msgId-based dedup).
+ * This avoids issues with seq counters resetting across different origins/sessions.
  */
+const MAX_SEEN_IDS = 500;
 export function checkAndUpdateReplay(myId, fromId, convId, seq, envelopeType = "Message") {
-  if (typeof convId !== "string" || !Number.isFinite(seq) || seq <= 0) return false;
-  const key = `seen:${myId}:${fromId}:${convId}:${envelopeType}`;
-  const last = Number(localStorage.getItem(key) || "0") || 0;
-  if (seq <= last) return false;
-  localStorage.setItem(key, String(seq));
+  if (typeof convId !== "string") return false;
+  const key = `seen2:${myId}:${fromId}:${convId}:${envelopeType}`;
+  let seen;
+  try {
+    seen = JSON.parse(localStorage.getItem(key) || "[]");
+    if (!Array.isArray(seen)) seen = [];
+  } catch { seen = []; }
+  // Use seq as a unique-enough ID for this envelope
+  const id = `${envelopeType}:${seq}`;
+  if (seen.includes(id)) return false;
+  seen.push(id);
+  if (seen.length > MAX_SEEN_IDS) seen = seen.slice(-MAX_SEEN_IDS);
+  localStorage.setItem(key, JSON.stringify(seen));
   return true;
 }

@@ -153,17 +153,6 @@ export default function Sidebar({
               <label className="toggle-label">
                 <input
                   type="checkbox"
-                  checked={identity.readReceiptsEnabled}
-                  onChange={(e) => {
-                    identity.setReadReceiptsEnabled(e.target.checked);
-                    saveJson(`readReceipts:${identity.id}`, { enabled: e.target.checked });
-                  }}
-                />
-                <span>Send read receipts</span>
-              </label>
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
                   checked={identity.discoverable}
                   onChange={(e) => onDiscoverabilityChange(e.target.checked, identity.handle)}
                 />

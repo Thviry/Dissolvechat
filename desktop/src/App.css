@@ -1453,10 +1453,6 @@ code, kbd {
   color: rgba(255, 255, 255, 0.4);
 }
 
-.msg-status.read {
-  color: var(--accent);
-}
-
 .msg-status.failed {
   color: var(--danger);
 }

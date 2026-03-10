@@ -144,10 +144,17 @@ export async function drainInbox(toId, signedBody) {
         method: "POST",
         body: JSON.stringify(signedBody),
       });
-      if (!resp.ok) continue;
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => "");
+        console.warn(`[Dissolve] drainInbox ${resp.status}:`, errText);
+        continue;
+      }
       const data = await resp.json();
       return Array.isArray(data.items) ? data.items : [];
-    } catch { continue; }
+    } catch (err) {
+      console.warn("[Dissolve] drainInbox error:", err.message);
+      continue;
+    }
   }
   return [];
 }
@@ -162,10 +169,17 @@ export async function drainRequestInbox(toId, signedBody) {
         method: "POST",
         body: JSON.stringify(signedBody),
       });
-      if (!resp.ok) continue;
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => "");
+        console.warn(`[Dissolve] drainRequestInbox ${resp.status}:`, errText);
+        continue;
+      }
       const data = await resp.json();
       return Array.isArray(data.items) ? data.items : [];
-    } catch { continue; }
+    } catch (err) {
+      console.warn("[Dissolve] drainRequestInbox error:", err.message);
+      continue;
+    }
   }
   return [];
 }

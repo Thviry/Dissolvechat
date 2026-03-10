@@ -568,7 +568,6 @@ export default function App() {
             onSend={messaging.sendMsg}
             onRetry={messaging.retryMsg}
             onDismiss={messaging.dismissMsg}
-            onSendReadReceipts={messaging.sendReadReceipts}
           />
         )}
       </div>

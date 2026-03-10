@@ -34,7 +34,6 @@ import {
   buildDirectoryPublish,
   buildInboxDrain,
   buildDeliveryReceipt,
-  buildReadReceipt,
 } from "@protocol/envelopes";
 import { checkAndUpdateReplay } from "@utils/storage";
 import { notifyIncoming, flashTitle } from "@utils/notifications";
@@ -63,12 +62,8 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     inboxCap, requestCap,
     isReady, discoverable, handle,
     archiveEnabled, soundEnabled, showPresence, relayUrl,
-    readReceiptsEnabled,
     computeId,
   } = identity;
-
-  const readReceiptsEnabledRef = useRef(readReceiptsEnabled);
-  useEffect(() => { readReceiptsEnabledRef.current = readReceiptsEnabled; }, [readReceiptsEnabled]);
 
   const {
     contactsRef, requestsRef,
@@ -97,35 +92,16 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   }, [myId]);
 
   // --- Send read receipts ---
-  const sendReadReceipts = useCallback(async (peerId, messageIds) => {
-    if (!readReceiptsEnabledRef.current) return;
-    if (!messageIds.length) return;
-
-    const peer = contactsRef.current.find((c) => c.id === peerId) ||
-                 requestsRef.current.find((r) => r.id === peerId);
-    if (!peer || typeof peer.cap !== "string") return;
-
-    try {
-      const { envelope } = await buildReadReceipt(
-        myId, authPubJwk, authPrivJwk, e2eePubJwk,
-        inboxCap, peer, messageIds
-      );
-      const resp = await sendEnvelope(envelope);
-      if (resp.ok) {
-        // Mark these messages so we don't resend receipts
-        setMessages((prev) => prev.map((m) =>
-          messageIds.includes(m.msgId) ? { ...m, readReceiptSent: true } : m
-        ));
-      }
-    } catch (err) {
-      console.warn("[Dissolve] Failed to send read receipt:", err.message);
-    }
-  }, [myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, contactsRef, requestsRef]);
-
   // --- Process incoming envelope (v4-secure format) ---
   const handleIncoming = useCallback(async (env) => {
-    if (!env || env.p !== 4) return;
-    if (env.to !== myId) return;
+    if (!env || env.p !== 4) {
+      console.warn("[Dissolve] Dropping envelope: missing or wrong protocol", env?.p);
+      return;
+    }
+    if (env.to !== myId) {
+      console.warn("[Dissolve] Dropping envelope: to mismatch", { envTo: env.to?.slice(0, 12), myId: myId?.slice(0, 12) });
+      return;
+    }
 
     // ── New secure format: opaque `payload` ──
     if (env.payload) {
@@ -247,9 +223,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       }
 
       if (inner.t === "ReadReceipt") {
-        if (readReceiptsEnabledRef.current && Array.isArray(inner.messageIds)) {
-          updateMessageStatus(inner.messageIds, "read");
-        }
+        // Read receipts removed — silently ignore
         return;
       }
 
@@ -451,7 +425,9 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
           console.warn("[Dissolve] Failed to send delivery receipt:", err.message);
         }
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("[Dissolve] fetchMessages failed:", err.message || err);
+    }
   }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, handleIncoming, contactsRef, requestsRef]);
 
   // Keep ref updated so the main effect can use the latest fetchMessages without re-running
@@ -820,7 +796,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     messages, activeId, setActiveId,
     groupMessages,
     sendMsg, sendGroupMsg, sendRequest, sendGrant,
-    retryMsg, dismissMsg, updateMessageStatus, sendReadReceipts,
+    retryMsg, dismissMsg, updateMessageStatus,
     reset, historyLoaded,
   };
 }
