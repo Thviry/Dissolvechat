@@ -494,17 +494,30 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
               dmHistory.push(m);
             }
           }
-          if (dmHistory.length > 0) {
+          // Normalize archived messages: default outgoing status to "sent" for old messages
+          const normalizedDm = dmHistory.map((m) => ({
+            ...m,
+            status: m.status || (m.dir === "out" ? "sent" : undefined),
+          }));
+          if (normalizedDm.length > 0) {
             setMessages((prev) => {
               const existingIds = new Set(prev.map((m) => m.msgId));
-              const newFromHistory = dmHistory.filter((m) => !existingIds.has(m.msgId));
+              const newFromHistory = normalizedDm.filter((m) => !existingIds.has(m.msgId));
               return [...newFromHistory, ...prev].sort((a, b) => a.ts - b.ts);
             });
           }
-          if (Object.keys(grpHistory).length > 0) {
+          // Normalize archived group messages: default outgoing status to "sent"
+          const normalizedGrp = {};
+          for (const [gid, msgs] of Object.entries(grpHistory)) {
+            normalizedGrp[gid] = msgs.map((m) => ({
+              ...m,
+              status: m.status || (m.dir === "out" ? "sent" : undefined),
+            }));
+          }
+          if (Object.keys(normalizedGrp).length > 0) {
             setGroupMessages((prev) => {
               const merged = { ...prev };
-              for (const [gid, msgs] of Object.entries(grpHistory)) {
+              for (const [gid, msgs] of Object.entries(normalizedGrp)) {
                 const existing = merged[gid] || [];
                 const existingIds = new Set(existing.map((m) => m.msgId));
                 const newMsgs = msgs.filter((m) => !existingIds.has(m.msgId));
@@ -512,7 +525,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
               }
               return merged;
             });
-            groupMessagesRef.current = { ...groupMessagesRef.current, ...grpHistory };
+            groupMessagesRef.current = { ...groupMessagesRef.current, ...normalizedGrp };
           }
         }
         setHistoryLoaded(true);

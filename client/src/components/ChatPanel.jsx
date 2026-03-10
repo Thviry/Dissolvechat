@@ -92,6 +92,8 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
     }
   };
 
+  // v1: Read receipts only for 1-to-1 chats. Group read receipts would require
+  // sending receipts to each sender, which scales poorly with group size.
   const readTimerRef = useRef(null);
   useEffect(() => {
     if (!peer || !onSendReadReceipts) return;
