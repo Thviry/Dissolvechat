@@ -33,6 +33,7 @@ import {
   buildDirectoryPublish,
   buildInboxDrain,
   buildDeliveryReceipt,
+  buildReadReceipt,
 } from "@protocol/envelopes";
 import { checkAndUpdateReplay } from "@utils/storage";
 import { notifyIncoming, flashTitle } from "@utils/notifications";
@@ -86,6 +87,30 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       }
     }
   }, [myId]);
+
+  // --- Send read receipts ---
+  const sendReadReceipts = useCallback(async (peerId, messageIds) => {
+    if (!readReceiptsEnabledRef.current) return;
+    if (!messageIds.length) return;
+
+    const peer = contactsRef.current.find((c) => c.id === peerId) ||
+                 requestsRef.current.find((r) => r.id === peerId);
+    if (!peer || typeof peer.cap !== "string") return;
+
+    try {
+      const { envelope } = await buildReadReceipt(
+        myId, authPubJwk, authPrivJwk, e2eePubJwk,
+        inboxCap, peer, messageIds
+      );
+      await sendEnvelope(envelope);
+      // Mark these messages so we don't resend receipts
+      setMessages((prev) => prev.map((m) =>
+        messageIds.includes(m.msgId) ? { ...m, readReceiptSent: true } : m
+      ));
+    } catch (err) {
+      console.warn("[Dissolve] Failed to send read receipt:", err.message);
+    }
+  }, [myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, contactsRef, requestsRef]);
 
   // --- Process incoming envelope (v4-secure format) ---
   const handleIncoming = useCallback(async (env) => {
@@ -740,7 +765,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     messages, activeId, setActiveId,
     groupMessages,
     sendMsg, sendGroupMsg, sendRequest, sendGrant,
-    retryMsg, dismissMsg, updateMessageStatus,
+    retryMsg, dismissMsg, updateMessageStatus, sendReadReceipts,
     reset, historyLoaded,
   };
 }

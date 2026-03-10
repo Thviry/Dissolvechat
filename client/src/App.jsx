@@ -566,6 +566,9 @@ export default function App() {
             peer={activePeer}
             messages={visibleMessages}
             onSend={messaging.sendMsg}
+            onRetry={messaging.retryMsg}
+            onDismiss={messaging.dismissMsg}
+            onSendReadReceipts={messaging.sendReadReceipts}
           />
         )}
       </div>

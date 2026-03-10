@@ -1,6 +1,6 @@
 // client/src/components/ChatPanel.jsx
-import { useState, useRef, useEffect, useMemo } from "react";
-import { IconSend, IconAttach, IconClose, IconDownload, IconFile } from "./Icons";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { IconSend, IconAttach, IconClose, IconDownload, IconFile, IconCheck, IconCheckDouble, IconClock, IconRetry, IconAlert } from "./Icons";
 import { fileToBase64, base64ToBlob, downloadBlob, formatFileSize } from "@utils/fileUtils";
 import { MAX_INLINE_FILE_SIZE, INLINE_IMAGE_TYPES } from "@config";
 
@@ -23,7 +23,26 @@ function formatDateChip(date) {
   });
 }
 
-export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }) {
+function MessageStatus({ status }) {
+  switch (status) {
+    case "sending":
+      return <span className="msg-status sending"><IconClock size={12} /></span>;
+    case "queued":
+      return <span className="msg-status queued"><IconClock size={12} /></span>;
+    case "sent":
+      return <span className="msg-status sent"><IconCheck size={12} /></span>;
+    case "delivered":
+      return <span className="msg-status delivered"><IconCheckDouble size={12} /></span>;
+    case "read":
+      return <span className="msg-status read"><IconCheckDouble size={12} /></span>;
+    case "failed":
+      return <span className="msg-status failed"><IconAlert size={12} /></span>;
+    default:
+      return null;
+  }
+}
+
+export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, onSendReadReceipts }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -72,6 +91,23 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
       inputRef.current.focus();
     }
   };
+
+  const readTimerRef = useRef(null);
+  useEffect(() => {
+    if (!peer || !onSendReadReceipts) return;
+    // Collect unread incoming message IDs
+    const unreadIds = messages
+      .filter((m) => m.dir === "in" && m.msgId && !m.readReceiptSent)
+      .map((m) => m.msgId);
+    if (!unreadIds.length) return;
+
+    clearTimeout(readTimerRef.current);
+    readTimerRef.current = setTimeout(() => {
+      onSendReadReceipts(peer.id, unreadIds);
+    }, 500);
+
+    return () => clearTimeout(readTimerRef.current);
+  }, [messages, peer, onSendReadReceipts]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -213,9 +249,9 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
                 <span className="chat-date-chip">{item.label}</span>
               </div>
             ) : (
+              <React.Fragment key={item.msgId}>
               <div
-                key={item.msgId}
-                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}`}
+                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${item.status === "failed" ? " failed" : ""}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}`}
               >
                 {group && item.dir === "in" && (
                   <span className="group-msg-sender">{item.senderLabel}</span>
@@ -263,8 +299,20 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo }
                 {item.text && <div className="chat-bubble-text">{item.text}</div>}
                 <div className="chat-bubble-time" aria-label={new Date(item.ts).toLocaleString()}>
                   {new Date(item.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {item.dir === "out" && <MessageStatus status={item.status} />}
                 </div>
               </div>
+              {item.dir === "out" && item.status === "failed" && (
+                <div className="msg-failed-actions">
+                  <button className="msg-retry-btn" onClick={() => onRetry?.(item.msgId)}>
+                    <IconRetry size={12} /> Retry
+                  </button>
+                  <button className="msg-dismiss-btn" onClick={() => onDismiss?.(item.msgId)}>
+                    <IconClose size={12} />
+                  </button>
+                </div>
+              )}
+              </React.Fragment>
             )
           )
         )}

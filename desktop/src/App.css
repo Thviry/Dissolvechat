@@ -1428,6 +1428,88 @@ code, kbd {
   opacity: 0.55;
 }
 
+/* Message status indicators */
+.msg-status {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.msg-status.sending {
+  color: rgba(255, 255, 255, 0.3);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.msg-status.queued {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.msg-status.sent {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.msg-status.delivered {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.msg-status.read {
+  color: var(--accent);
+}
+
+.msg-status.failed {
+  color: var(--danger);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Failed message actions */
+.msg-failed-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 2px;
+  padding-right: 4px;
+}
+
+.msg-retry-btn,
+.msg-dismiss-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.msg-retry-btn {
+  color: var(--accent);
+}
+
+.msg-retry-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.msg-dismiss-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.msg-dismiss-btn:hover {
+  color: var(--danger);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Failed bubble styling */
+.chat-bubble.failed {
+  opacity: 0.5;
+}
+
 /* Input area */
 .chat-input-area {
   padding: 10px 20px 14px;
