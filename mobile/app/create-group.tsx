@@ -4,6 +4,7 @@ import { useContext, useState, useEffect } from 'react';
 import { AuthContext, ThemeContext } from './_layout';
 import { fonts } from '../src/theme/fonts';
 import { appStorage } from '../src/adapters/storage';
+import { buildGroupInvite, sendEnvelope } from '../src/adapters/relay';
 
 interface Contact {
   id: string;
@@ -45,18 +46,61 @@ export default function CreateGroupScreen() {
 
     setCreating(true);
     try {
-      // TODO: Wire up createGroup from useGroups hook
-      // For now, create group locally
+      // Generate group key and create group
+      const { generateGroupKey } = await import('dissolve-core/crypto/group');
+      const groupKeyB64 = await generateGroupKey();
       const groupId = `grp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      // Build member list with full key data
+      const allContacts = await appStorage.getJson<any[]>(`contacts:${auth.id}`) || [];
+      const memberObjs = Array.from(selected).map(memberId => {
+        const c = allContacts.find((ct: any) => ct.id === memberId);
+        return {
+          id: memberId,
+          label: c?.label || c?.handle || memberId.slice(0, 8),
+          e2eePublicJwk: c?.e2eePublicJwk,
+          authPublicJwk: c?.authPublicJwk,
+          cap: c?.cap,
+          role: 'member' as const,
+        };
+      });
+
+      // Add self as admin
+      const selfMember = {
+        id: auth.id,
+        label: auth.label,
+        e2eePublicJwk: auth.e2eePubJwk,
+        authPublicJwk: auth.authPubJwk,
+        cap: auth.inboxCap,
+        role: 'admin' as const,
+      };
+      const allMembers = [selfMember, ...memberObjs];
+
+      // Save group locally
       const groups = await appStorage.getJson<any[]>(`groups:${auth.id}`) || [];
       groups.push({
         groupId,
         name: groupName.trim(),
-        members: [auth.id, ...Array.from(selected)],
+        groupKey: groupKeyB64,
+        members: allMembers,
         admins: [auth.id],
+        creator: auth.id,
         createdAt: Date.now(),
       });
       await appStorage.setJson(`groups:${auth.id}`, groups);
+
+      // Send invite to each member
+      await Promise.allSettled(
+        memberObjs.filter(m => m.e2eePublicJwk && m.cap).map(async (member) => {
+          const { envelope } = await buildGroupInvite(
+            auth.id, auth.label, auth.authPubJwk, auth.authPrivKey,
+            auth.e2eePubJwk, auth.inboxCap,
+            groupId, groupName.trim(), groupKeyB64,
+            allMembers, auth.id, member
+          );
+          return sendEnvelope(envelope);
+        })
+      );
 
       router.replace(`/chat/${groupId}`);
     } catch (err: any) {

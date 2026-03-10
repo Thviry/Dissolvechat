@@ -1,10 +1,14 @@
-import { View, Text, SectionList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, SectionList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useContext, useState, useEffect, useCallback } from 'react';
 import { AuthContext, ThemeContext } from '../_layout';
 import { ContactRow } from '../../src/components/ContactRow';
 import { fonts } from '../../src/theme/fonts';
 import { appStorage } from '../../src/adapters/storage';
+import {
+  buildContactGrant,
+  sendEnvelope,
+} from '../../src/adapters/relay';
 
 interface Contact {
   id: string;
@@ -49,12 +53,56 @@ export default function ContactsScreen() {
       : []),
   ];
 
-  const handleAccept = async (_requestId: string) => {
-    // TODO: Wire up sendGrant via relay
+  const handleAccept = async (requestId: string) => {
+    try {
+      const storedReqs = await appStorage.getJson<any[]>(`requests:${auth.id}`) || [];
+      const req = storedReqs.find((r: any) => r.id === requestId);
+      if (!req?.e2eePublicJwk || !req?.cap) {
+        Alert.alert('Error', 'Missing contact data — cannot accept request.');
+        return;
+      }
+
+      const envelope = await buildContactGrant(
+        auth.id,
+        auth.label,
+        auth.authPubJwk,
+        auth.authPrivKey,
+        auth.e2eePubJwk,
+        auth.inboxCap,
+        { id: req.id, e2eePublicJwk: req.e2eePublicJwk, cap: req.cap }
+      );
+      await sendEnvelope(envelope);
+
+      // Move from requests to contacts
+      const updatedReqs = storedReqs.filter((r: any) => r.id !== requestId);
+      await appStorage.setJson(`requests:${auth.id}`, updatedReqs);
+
+      const contacts = await appStorage.getJson<any[]>(`contacts:${auth.id}`) || [];
+      contacts.push({
+        id: req.id,
+        label: req.label || req.handle,
+        handle: req.handle,
+        e2eePublicJwk: req.e2eePublicJwk,
+        authPublicJwk: req.authPublicJwk,
+        cap: req.cap,
+        granted: true,
+      });
+      await appStorage.setJson(`contacts:${auth.id}`, contacts);
+      loadContacts();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to accept request');
+    }
   };
 
-  const handleDecline = async (_requestId: string) => {
-    // TODO: Wire up decline via relay
+  const handleDecline = async (requestId: string) => {
+    try {
+      const storedReqs = await appStorage.getJson<any[]>(`requests:${auth.id}`) || [];
+      const updatedReqs = storedReqs.filter((r: any) => r.id !== requestId);
+      await appStorage.setJson(`requests:${auth.id}`, updatedReqs);
+      loadContacts();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to decline request');
+    }
   };
 
   return (

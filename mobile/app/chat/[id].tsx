@@ -14,6 +14,11 @@ import { MessageBubble } from '../../src/components/MessageBubble';
 import { ChatInput } from '../../src/components/ChatInput';
 import { fonts } from '../../src/theme/fonts';
 import { appStorage } from '../../src/adapters/storage';
+import {
+  buildMessage,
+  buildGroupMessage,
+  sendEnvelope,
+} from '../../src/adapters/relay';
 
 interface Message {
   msgId: string;
@@ -74,8 +79,34 @@ export default function ChatScreen() {
       };
       setMessages(prev => [...prev, newMsg]);
 
-      // TODO: Wire up actual sendMsg / sendGroupMsg via relay
-      // For now, messages are local-only until relay integration
+      if (isGroup) {
+        // Group message: encrypt with group key, fan out to members
+        const groups = await appStorage.getJson<any[]>(`groups:${auth.id}`) || [];
+        const group = groups.find((g: any) => g.groupId === id);
+        if (group?.groupKey && group?.members) {
+          const { envelopes } = await buildGroupMessage(
+            auth.id, auth.label, auth.authPubJwk, auth.authPrivKey,
+            auth.e2eePubJwk, auth.inboxCap,
+            id!, group.groupKey, group.members, text, file
+          );
+          await Promise.allSettled(
+            envelopes.map((e: any) => sendEnvelope(e.envelope))
+          );
+        }
+      } else {
+        // 1-to-1 message: encrypt for peer
+        const contacts = await appStorage.getJson<any[]>(`contacts:${auth.id}`) || [];
+        const peer = contacts.find((c: any) => (c.id || c.peerId) === id);
+        if (peer?.e2eePublicJwk && peer?.cap) {
+          const { envelope } = await buildMessage(
+            auth.id, auth.label, auth.authPubJwk, auth.authPrivKey,
+            auth.e2eePubJwk, auth.inboxCap,
+            { id: peer.id || peer.peerId, e2eePublicJwk: peer.e2eePublicJwk, cap: peer.cap },
+            text, file
+          );
+          await sendEnvelope(envelope);
+        }
+      }
     } catch (err) {
       console.warn('[Chat] Send failed:', err);
     } finally {

@@ -3,7 +3,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useContext, useState, useEffect } from 'react';
 import { AuthContext, ThemeContext } from './_layout';
 import { fonts } from '../src/theme/fonts';
-import { lookupDirectory } from '../src/adapters/relay';
+import {
+  lookupDirectory,
+  buildContactRequest,
+  sendEnvelope,
+} from '../src/adapters/relay';
 
 export default function AddContactScreen() {
   const router = useRouter();
@@ -55,7 +59,32 @@ export default function AddContactScreen() {
     if (!result) return;
     setSending(true);
     try {
-      // TODO: Wire up sendRequest via relay protocol
+      const envelope = await buildContactRequest(
+        auth.id,
+        auth.label,
+        auth.authPubJwk,
+        auth.authPrivKey,
+        auth.e2eePubJwk,
+        auth.inboxCap,
+        {
+          id: result.id,
+          e2eePublicJwk: result.e2eePublicJwk || result.e2ee?.publicJwk,
+          requestCap: result.requestCap,
+        }
+      );
+      await sendEnvelope(envelope);
+
+      // Save as outgoing request locally
+      const requests = await (await import('../src/adapters/storage')).appStorage.getJson<any[]>(`requests:${auth.id}`) || [];
+      requests.push({
+        id: result.id,
+        label: result.label || result.handle,
+        handle: result.handle,
+        e2eePublicJwk: result.e2eePublicJwk || result.e2ee?.publicJwk,
+        dir: 'outgoing',
+      });
+      await (await import('../src/adapters/storage')).appStorage.setJson(`requests:${auth.id}`, requests);
+
       Alert.alert('Request Sent', `Contact request sent to @${result.handle || handle}`);
       router.back();
     } catch (err: any) {

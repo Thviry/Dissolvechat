@@ -4,6 +4,11 @@ import { useContext, useState, useEffect } from 'react';
 import { AuthContext, ThemeContext } from '../_layout';
 import { fonts } from '../../src/theme/fonts';
 import { appStorage } from '../../src/adapters/storage';
+import {
+  buildGroupMemberRemoved,
+  buildGroupLeave,
+  sendEnvelope,
+} from '../../src/adapters/relay';
 
 interface GroupData {
   groupId: string;
@@ -63,14 +68,43 @@ export default function GroupInfoScreen() {
           text: 'Remove',
           style: 'destructive',
           onPress: async () => {
-            // TODO: Wire up removeGroupMember via relay
-            const groups = await appStorage.getJson<GroupData[]>(`groups:${auth.id}`) || [];
-            const idx = groups.findIndex((g) => g.groupId === id);
-            if (idx >= 0) {
-              groups[idx].members = groups[idx].members.filter((m) => m !== memberId);
-              groups[idx].admins = groups[idx].admins.filter((m) => m !== memberId);
+            try {
+              const groups = await appStorage.getJson<any[]>(`groups:${auth.id}`) || [];
+              const idx = groups.findIndex((g: any) => g.groupId === id);
+              if (idx < 0) return;
+
+              const grp = groups[idx];
+              // Generate rotated group key
+              const { generateGroupKey } = await import('dissolve-core/crypto/group');
+              const newGroupKey = await generateGroupKey();
+
+              // Update local state
+              const updatedMembers = (grp.members || []).filter((m: any) =>
+                typeof m === 'string' ? m !== memberId : m.id !== memberId
+              );
+              groups[idx].members = updatedMembers;
+              groups[idx].admins = (grp.admins || []).filter((a: string) => a !== memberId);
+              groups[idx].groupKey = newGroupKey;
               await appStorage.setJson(`groups:${auth.id}`, groups);
               setGroup({ ...groups[idx] });
+
+              // Notify remaining members via relay
+              await Promise.allSettled(
+                updatedMembers
+                  .filter((m: any) => {
+                    const mid = typeof m === 'string' ? m : m.id;
+                    return mid !== auth.id && m.e2eePublicJwk && m.cap;
+                  })
+                  .map(async (member: any) => {
+                    const { envelope } = await buildGroupMemberRemoved(
+                      auth.id, auth.label, auth.authPubJwk, auth.authPrivKey,
+                      id!, memberId, newGroupKey, updatedMembers, member
+                    );
+                    return sendEnvelope(envelope);
+                  })
+              );
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to remove member');
             }
           },
         },
@@ -88,11 +122,35 @@ export default function GroupInfoScreen() {
           text: 'Leave',
           style: 'destructive',
           onPress: async () => {
-            // TODO: Wire up leaveGroup via relay
-            const groups = await appStorage.getJson<GroupData[]>(`groups:${auth.id}`) || [];
-            const filtered = groups.filter((g) => g.groupId !== id);
-            await appStorage.setJson(`groups:${auth.id}`, filtered);
-            router.replace('/(tabs)/chats');
+            try {
+              const groups = await appStorage.getJson<any[]>(`groups:${auth.id}`) || [];
+              const grp = groups.find((g: any) => g.groupId === id);
+
+              // Notify other members via relay
+              if (grp?.members) {
+                await Promise.allSettled(
+                  (grp.members || [])
+                    .filter((m: any) => {
+                      const mid = typeof m === 'string' ? m : m.id;
+                      return mid !== auth.id && m.e2eePublicJwk && m.cap;
+                    })
+                    .map(async (member: any) => {
+                      const { envelope } = await buildGroupLeave(
+                        auth.id, auth.label, auth.authPubJwk, auth.authPrivKey,
+                        id!, member
+                      );
+                      return sendEnvelope(envelope);
+                    })
+                );
+              }
+
+              // Remove group locally
+              const filtered = groups.filter((g: any) => g.groupId !== id);
+              await appStorage.setJson(`groups:${auth.id}`, filtered);
+              router.replace('/(tabs)/chats');
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to leave group');
+            }
           },
         },
       ]
@@ -159,8 +217,7 @@ export default function GroupInfoScreen() {
         <TouchableOpacity
           style={[styles.addMemberBtn, { borderColor: theme.accent }]}
           onPress={() => {
-            // TODO: Navigate to add member screen
-            Alert.alert('Coming Soon', 'Add member functionality will be wired up with relay integration.');
+            router.push({ pathname: '/add-contact', params: { groupId: id } });
           }}
         >
           <Text style={[styles.addMemberText, { color: theme.accent, fontFamily: fonts.bodySemiBold }]}>

@@ -23,6 +23,11 @@ import {
   setBiometricEnabled,
   authenticateWithBiometrics,
 } from '../../src/adapters/biometrics';
+import {
+  buildDirectoryPublish,
+  publishDirectoryEntry,
+} from '../../src/adapters/relay';
+import { clearArchive } from '../../src/adapters/messageStore';
 
 const themeNames: { key: ThemeName; label: string }[] = [
   { key: 'terminal', label: 'Terminal' },
@@ -107,13 +112,49 @@ export default function SettingsScreen() {
       discoverable: value,
       handle: auth.handle,
     });
-    // TODO: republish directory entry to relay
+    // Republish directory entry to relay
+    if (auth.handle && auth.authPrivKey) {
+      try {
+        const profile = {
+          id: auth.id,
+          label: auth.label,
+          authPublicJwk: auth.authPubJwk,
+          e2eePublicJwk: auth.e2eePubJwk,
+          cap: auth.inboxCap,
+          requestCap: auth.requestCap,
+          discoverable: value,
+          showPresence: auth.showPresence,
+        };
+        const signed = await buildDirectoryPublish(auth.handle, profile, auth.authPrivKey);
+        await publishDirectoryEntry(signed.handle, signed.profile, signed.sig);
+      } catch (err) {
+        console.warn('[Settings] Failed to republish directory:', err);
+      }
+    }
   }, [auth]);
 
   const handlePresenceToggle = useCallback(async (value: boolean) => {
     auth.setShowPresence(value);
     await appStorage.setJson(`presence:${auth.id}`, { enabled: value });
-    // TODO: republish directory entry to relay
+    // Republish directory entry to relay with updated presence
+    if (auth.handle && auth.authPrivKey) {
+      try {
+        const profile = {
+          id: auth.id,
+          label: auth.label,
+          authPublicJwk: auth.authPubJwk,
+          e2eePublicJwk: auth.e2eePubJwk,
+          cap: auth.inboxCap,
+          requestCap: auth.requestCap,
+          discoverable: auth.discoverable,
+          showPresence: value,
+        };
+        const signed = await buildDirectoryPublish(auth.handle, profile, auth.authPrivKey);
+        await publishDirectoryEntry(signed.handle, signed.profile, signed.sig);
+      } catch (err) {
+        console.warn('[Settings] Failed to republish directory:', err);
+      }
+    }
   }, [auth]);
 
   const handleSoundToggle = useCallback(async (value: boolean) => {
@@ -134,7 +175,7 @@ export default function SettingsScreen() {
             onPress: async () => {
               auth.setArchiveEnabled(false);
               await appStorage.setJson(`archive:${auth.id}`, { enabled: false });
-              // TODO: clear SQLite archive
+              await clearArchive();
             },
           },
         ]
