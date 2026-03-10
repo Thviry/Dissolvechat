@@ -32,6 +32,7 @@ import {
   buildContactGrant,
   buildDirectoryPublish,
   buildInboxDrain,
+  buildDeliveryReceipt,
 } from "@protocol/envelopes";
 import { checkAndUpdateReplay } from "@utils/storage";
 import { notifyIncoming, flashTitle } from "@utils/notifications";
@@ -41,6 +42,8 @@ import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS }
 
 export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const [messages, setMessages] = useState([]);
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
   const [groupMessages, setGroupMessages] = useState({});
   const groupMessagesRef = useRef(groupMessages);
   const [activeId, setActiveId] = useState("");
@@ -57,8 +60,12 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     inboxCap, requestCap,
     isReady, discoverable, handle,
     archiveEnabled, soundEnabled, showPresence, relayUrl,
+    readReceiptsEnabled,
     computeId,
   } = identity;
+
+  const readReceiptsEnabledRef = useRef(readReceiptsEnabled);
+  useEffect(() => { readReceiptsEnabledRef.current = readReceiptsEnabled; }, [readReceiptsEnabled]);
 
   const {
     contactsRef, requestsRef,
@@ -66,6 +73,19 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   } = contactsMgr;
 
   useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
+
+  // --- Update message status (for receipts) ---
+  const updateMessageStatus = useCallback((messageIds, status) => {
+    setMessages((prev) => prev.map((m) =>
+      messageIds.includes(m.msgId) ? { ...m, status } : m
+    ));
+    if (archiveRef.current) {
+      for (const id of messageIds) {
+        const msg = messagesRef.current.find((m) => m.msgId === id);
+        if (msg) archiveRef.current.save(myId, { ...msg, status });
+      }
+    }
+  }, [myId]);
 
   // --- Process incoming envelope (v4-secure format) ---
   const handleIncoming = useCallback(async (env) => {
@@ -183,6 +203,21 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         });
       }
 
+      // --- Receipt envelope types ---
+      if (inner.t === "DeliveryReceipt") {
+        if (Array.isArray(inner.messageIds)) {
+          updateMessageStatus(inner.messageIds, "delivered");
+        }
+        return;
+      }
+
+      if (inner.t === "ReadReceipt") {
+        if (readReceiptsEnabledRef.current && Array.isArray(inner.messageIds)) {
+          updateMessageStatus(inner.messageIds, "read");
+        }
+        return;
+      }
+
       // Show in chat
       if (inner.t === "Message") {
         const msg = {
@@ -193,6 +228,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         setMessages((prev) => [...prev, msg]);
         archiveRef.current?.save(myId, msg);
         if (soundRef.current) notifyIncoming(); else flashTitle();
+        return { from: inner.from, msgId: msg.msgId };
       }
 
       // --- Group message types ---
@@ -219,6 +255,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
           archiveRef.current.save(myId, { ...msg, peerId: inner.groupId });
         }
         if (soundRef.current) notifyIncoming(); else flashTitle();
+        return { from: inner.from, msgId: inner.msgId };
       }
 
       if (inner.t === "GroupInvite" && groupsMgr) {
@@ -341,22 +378,46 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         if (soundRef.current) notifyIncoming(); else flashTitle();
       }
     }
-  }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest, groupsMgr, addToast]);
+  }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest, groupsMgr, addToast, updateMessageStatus]);
 
   // --- Fetch and process all pending messages (authenticated) ---
   const fetchMessages = useCallback(async () => {
     if (!isReady) return;
     try {
-      // Build signed drain requests (Fix #1)
       const drainBody = await buildInboxDrain(myId, authPubJwk, authPrivJwk);
 
       const items = await drainInbox(myId, drainBody);
-      for (const env of items) await handleIncoming(env);
+      const processedMsgs = [];
+      for (const env of items) {
+        const result = await handleIncoming(env);
+        if (result) processedMsgs.push(result);
+      }
 
       const reqItems = await drainRequestInbox(myId, drainBody);
       for (const env of reqItems) await handleIncoming(env);
+
+      // Send batched delivery receipts
+      const receiptsByPeer = {};
+      for (const { from, msgId } of processedMsgs) {
+        if (!receiptsByPeer[from]) receiptsByPeer[from] = [];
+        receiptsByPeer[from].push(msgId);
+      }
+      for (const [peerId, messageIds] of Object.entries(receiptsByPeer)) {
+        const peer = contactsRef.current.find((c) => c.id === peerId) ||
+                     requestsRef.current.find((r) => r.id === peerId);
+        if (!peer || typeof peer.cap !== "string") continue;
+        try {
+          const { envelope } = await buildDeliveryReceipt(
+            myId, authPubJwk, authPrivJwk, e2eePubJwk,
+            inboxCap, peer, messageIds
+          );
+          await sendEnvelope(envelope);
+        } catch (err) {
+          console.warn("[Dissolve] Failed to send delivery receipt:", err.message);
+        }
+      }
     } catch { /* ignore */ }
-  }, [isReady, myId, authPubJwk, authPrivJwk, handleIncoming]);
+  }, [isReady, myId, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, handleIncoming, contactsRef, requestsRef]);
 
   // --- Sync relay URL(s) when identity settings change ---
   useEffect(() => {
@@ -536,16 +597,16 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       inboxCap, peer, text.trim(), file || undefined
     );
 
+    const outMsg = { dir: "out", peerId, text: text.trim(), ts, msgId, file: file || undefined, status: "sending" };
+    setMessages((prev) => [...prev, outMsg]);
+
     let lastError = "";
     for (let attempt = 0; attempt < 3; attempt++) {
       const resp = await sendEnvelope(envelope);
       if (resp.ok) {
-        if (resp.status === 202) {
-          console.warn("[Dissolve] Message queued on relay — recipient caps not yet registered");
-        }
-        const outMsg = { dir: "out", peerId, text: text.trim(), ts, msgId, file: file || undefined };
-        setMessages((prev) => [...prev, outMsg]);
-        archiveRef.current?.save(myId, outMsg);
+        const newStatus = resp.status === 202 ? "queued" : "sent";
+        setMessages((prev) => prev.map((m) => m.msgId === msgId ? { ...m, status: newStatus } : m));
+        archiveRef.current?.save(myId, { ...outMsg, status: newStatus });
         return;
       }
 
@@ -558,12 +619,54 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         await new Promise((r) => setTimeout(r, SEND_RETRY_BASE_DELAY_MS * (attempt + 1)));
         continue;
       }
-
       break;
     }
 
-    throw new Error(`Send failed: ${lastError}`);
+    setMessages((prev) => prev.map((m) => m.msgId === msgId ? { ...m, status: "failed", error: lastError } : m));
   }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, contactsRef, requestsRef]);
+
+  // --- Retry a failed message ---
+  const retryMsg = useCallback(async (msgId) => {
+    const msg = messagesRef.current.find((m) => m.msgId === msgId);
+    if (!msg || msg.status !== "failed") return;
+
+    const peer = contactsRef.current.find((c) => c.id === msg.peerId) ||
+                 requestsRef.current.find((r) => r.id === msg.peerId);
+    if (!peer || typeof peer.cap !== "string") return;
+
+    setMessages((prev) => prev.map((m) => m.msgId === msgId ? { ...m, status: "sending", error: undefined } : m));
+
+    const { envelope } = await buildMessage(
+      myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk,
+      inboxCap, peer, msg.text, msg.file || undefined
+    );
+
+    let lastError = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const resp = await sendEnvelope(envelope);
+      if (resp.ok) {
+        const newStatus = resp.status === 202 ? "queued" : "sent";
+        setMessages((prev) => prev.map((m) => m.msgId === msgId ? { ...m, status: newStatus, error: undefined } : m));
+        archiveRef.current?.save(myId, { ...msg, status: newStatus });
+        return;
+      }
+      let errData;
+      try { errData = await resp.json(); } catch { errData = {}; }
+      lastError = errData.error || `${resp.status}`;
+      if (errData.error === "cap_not_allowed" || errData.error === "request_cap_not_allowed") {
+        await new Promise((r) => setTimeout(r, SEND_RETRY_BASE_DELAY_MS * (attempt + 1)));
+        continue;
+      }
+      break;
+    }
+
+    setMessages((prev) => prev.map((m) => m.msgId === msgId ? { ...m, status: "failed", error: lastError } : m));
+  }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, contactsRef, requestsRef]);
+
+  // --- Dismiss a failed message ---
+  const dismissMsg = useCallback((msgId) => {
+    setMessages((prev) => prev.filter((m) => m.msgId !== msgId));
+  }, []);
 
   // --- Send contact request ---
   const sendRequest = useCallback(async (recipient) => {
@@ -637,6 +740,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     messages, activeId, setActiveId,
     groupMessages,
     sendMsg, sendGroupMsg, sendRequest, sendGrant,
+    retryMsg, dismissMsg, updateMessageStatus,
     reset, historyLoaded,
   };
 }
