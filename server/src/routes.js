@@ -313,7 +313,7 @@ function registerRoutes(app, store, wss) {
 // ── GET /directory/available — check if handle is unclaimed ────────
   app.get("/directory/available", (req, res) => {
     const ipKey = getIpKey(req);
-    if (!rateCheck(req, res, "ip", `${ipKey}:lookup`, LIMITS.IP_LOOKUP, "/directory/available")) return;
+    if (!rateCheck(req, res, "ip", `${ipKey}:handlecheck`, LIMITS.IP_HANDLE_CHECK, "/directory/available")) return;
 
     const handle = String(req.query.handle || "").trim().toLowerCase();
     if (!handle || !/^[a-z0-9_-]{1,32}$/.test(handle)) {
@@ -341,10 +341,10 @@ function registerRoutes(app, store, wss) {
   // ── GET /presence — check online status for a list of IDs ──────────
   app.get("/presence", (req, res) => {
     const ipKey = getIpKey(req);
-    if (!rateCheck(req, res, "ip", `${ipKey}:presence`, LIMITS.IP_LOOKUP, "/presence")) return;
+    if (!rateCheck(req, res, "ip", `${ipKey}:presence`, LIMITS.IP_PRESENCE, "/presence")) return;
 
     const raw = String(req.query.ids || "");
-    const ids = raw.split(",").map(s => s.trim()).filter(Boolean).slice(0, 50);
+    const ids = raw.split(",").map(s => s.trim()).filter(Boolean).slice(0, 20);
     if (ids.length === 0) return res.status(400).json({ error: "missing_ids" });
 
     const online = {};
@@ -525,7 +525,7 @@ function registerRoutes(app, store, wss) {
     }
 
     const verified = await verifyOwnership(req.body, id);
-    if (!verified) return res.status(403).json({ error: "auth_failed" });
+    if (!verified.ok) return res.status(403).json({ error: "auth_failed" });
 
     store.pushTokens.set(id, { token, platform: platform || "ios", updatedAt: Date.now() });
     res.json({ ok: true });
@@ -539,7 +539,7 @@ function registerRoutes(app, store, wss) {
     }
 
     const verified = await verifyOwnership(req.body, id);
-    if (!verified) return res.status(403).json({ error: "auth_failed" });
+    if (!verified.ok) return res.status(403).json({ error: "auth_failed" });
 
     store.pushTokens.delete(id);
     res.json({ ok: true });
@@ -583,6 +583,8 @@ function registerRoutes(app, store, wss) {
 
   // GET /link-session/:sid — poll session state
   app.get("/link-session/:sid", (req, res) => {
+    const ip = getIpKey(req);
+    if (!rateCheck(req, res, "ip", ip, LIMITS.SEND, "/link-session/:sid")) return;
     const session = store.linkSessions.get(req.params.sid);
     if (!session) return res.status(404).json({ error: "not found" });
     res.json({
@@ -595,6 +597,8 @@ function registerRoutes(app, store, wss) {
 
   // POST /link-session/:sid/respond — mobile sends its public key
   app.post("/link-session/:sid/respond", (req, res) => {
+    const ip = getIpKey(req);
+    if (!rateCheck(req, res, "ip", ip, LIMITS.SEND, "/link-session/:sid/respond")) return;
     const session = store.linkSessions.get(req.params.sid);
     if (!session) return res.status(404).json({ error: "not found" });
     const { publicKey } = req.body;
@@ -607,6 +611,8 @@ function registerRoutes(app, store, wss) {
 
   // POST /link-session/:sid/transfer — desktop uploads encrypted keyfile
   app.post("/link-session/:sid/transfer", (req, res) => {
+    const ip = getIpKey(req);
+    if (!rateCheck(req, res, "ip", ip, LIMITS.SEND, "/link-session/:sid/transfer")) return;
     const session = store.linkSessions.get(req.params.sid);
     if (!session) return res.status(404).json({ error: "not found" });
     const { encryptedKeyfile } = req.body;

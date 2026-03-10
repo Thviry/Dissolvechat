@@ -22,6 +22,9 @@ export default defineConfig({
   // Produce relative paths so Tauri can load from disk
   base: "./",
 
+  // Share the client's public directory (fonts, icons, etc.)
+  publicDir: path.resolve(__dirname, "../client/public"),
+
   resolve: {
     alias: {
       "@components": path.resolve(__dirname, "../client/src/components"),

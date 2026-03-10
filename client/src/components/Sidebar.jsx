@@ -258,8 +258,15 @@ export default function Sidebar({
                           style={{ marginTop: "8px", fontSize: "12px" }}
                           value={current}
                           onChange={(e) => {
-                            identity.setRelayUrl(e.target.value);
-                            saveJson(`relay:${identity.id}`, { url: e.target.value });
+                            const url = e.target.value;
+                            identity.setRelayUrl(url);
+                            saveJson(`relay:${identity.id}`, { url });
+                          }}
+                          onBlur={(e) => {
+                            const url = e.target.value.trim();
+                            if (url && !url.startsWith("https://") && !url.startsWith("http://localhost")) {
+                              addToast("Custom relay should use HTTPS for security", "warning");
+                            }
                           }}
                           placeholder="https://your-relay.example.com"
                           aria-label="Custom relay URL"

@@ -76,6 +76,7 @@ export async function buildMessage(
   // Everything the recipient needs goes into the encrypted payload
   const inner = {
     t: "Message",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     senderCap: myInboxCap,
@@ -115,6 +116,7 @@ export async function buildContactRequest(
 
   const inner = {
     t: "ContactRequest",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     senderCap: myInboxCap,
@@ -163,6 +165,7 @@ export async function buildContactGrant(
 
   const inner = {
     t: "ContactGrant",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     senderCap: myInboxCap,

@@ -53,6 +53,8 @@ const LIMITS = {
   IP_CAPS:          parseInt(process.env.LIMIT_IP_CAPS)          || 20,
   IP_DIRECTORY:     parseInt(process.env.LIMIT_IP_DIRECTORY)     || 20,
   IP_LOOKUP:        parseInt(process.env.LIMIT_IP_LOOKUP)        || 60,
+  IP_HANDLE_CHECK:  parseInt(process.env.LIMIT_IP_HANDLE_CHECK) || 10,
+  IP_PRESENCE:      parseInt(process.env.LIMIT_IP_PRESENCE)     || 20,
   IP_WS_CONNECT:    parseInt(process.env.LIMIT_IP_WS_CONNECT)   || 10,
   IP_BLOCK_REVOKE:  parseInt(process.env.LIMIT_IP_BLOCK_REVOKE) || 10,
 

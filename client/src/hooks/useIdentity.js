@@ -41,7 +41,7 @@ async function getOrCreateSessionAesKey() {
   const existing = sessionStorage.getItem(SESSION_AES);
   if (existing) {
     const raw = bytesFromB64u(existing);
-    return crypto.subtle.importKey("raw", raw, "AES-GCM", true, ["encrypt", "decrypt"]);
+    return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
   }
   const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
   const exported = new Uint8Array(await crypto.subtle.exportKey("raw", key));
@@ -338,6 +338,7 @@ export function useIdentity() {
       throw new Error("No active identity");
     }
     if (!passphrase) throw new Error("Passphrase required");
+    if (passphrase.length < 8) throw new Error("Passphrase must be at least 8 characters");
 
     // Private keys are non-extractable, so retrieve JWKs from the encrypted session
     const sessionData = await decryptSession();

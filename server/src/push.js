@@ -40,17 +40,11 @@ function generateApnsJwt() {
   const payload = Buffer.from(JSON.stringify({ iss: APNS_TEAM_ID, iat: now })).toString("base64url");
   const signingInput = `${header}.${payload}`;
 
-  const sign = crypto.createSign("SHA256");
-  sign.update(signingInput);
-  const sig = sign.sign(key);
-
-  // Convert DER signature to raw r||s format for ES256
-  const r = sig.subarray(4, 4 + sig[3]);
-  const s = sig.subarray(4 + sig[3] + 2);
-  const rawSig = Buffer.concat([
-    Buffer.alloc(32 - r.length), r,
-    Buffer.alloc(32 - s.length), s,
-  ]).toString("base64url");
+  const rawSig = crypto.sign(
+    "SHA256",
+    Buffer.from(signingInput),
+    { key, dsaEncoding: "ieee-p1363" }
+  ).toString("base64url");
 
   cachedJwt = `${signingInput}.${rawSig}`;
   cachedJwtExpiry = now + 3000; // Cache for ~50 minutes (APNs allows 60)

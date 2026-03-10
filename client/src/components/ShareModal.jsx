@@ -1,5 +1,5 @@
 // client/src/components/ShareModal.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { generateQRSvg } from "@utils/qrcode";
 import { IconClose } from "./Icons";
 
@@ -123,7 +123,17 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
               {qrSvg ? (
                 <div
                   className="share-qr-container"
-                  dangerouslySetInnerHTML={{ __html: qrSvg }}
+                  ref={(el) => {
+                    if (el) {
+                      const parser = new DOMParser();
+                      const doc = parser.parseFromString(qrSvg, "image/svg+xml");
+                      const svg = doc.documentElement;
+                      if (svg.nodeName === "svg") {
+                        el.innerHTML = "";
+                        el.appendChild(document.importNode(svg, true));
+                      }
+                    }
+                  }}
                   aria-label="QR code for contact card"
                 />
               ) : (

@@ -59,7 +59,7 @@ async function deriveArchiveKey(identitySecret) {
     {
       name: "HKDF",
       hash: "SHA-256",
-      salt: te.encode("dissolve-message-archive-v1"),
+      salt: te.encode(`dissolve-archive-v1:${identitySecret}`),
       info: te.encode("dissolve-archive"),
     },
     baseKey,

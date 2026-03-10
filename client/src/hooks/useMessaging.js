@@ -127,6 +127,17 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         return;
       }
 
+      // Timestamp validation — reject messages with timestamps too far in past or future
+      if (inner.ts) {
+        const now = Date.now();
+        const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+        const MAX_FUTURE = 5 * 60 * 1000; // 5 minutes (clock skew tolerance)
+        if (inner.ts < now - MAX_AGE || inner.ts > now + MAX_FUTURE) {
+          console.warn("[Dissolve] Dropping envelope: timestamp out of range", { ts: inner.ts, now });
+          return;
+        }
+      }
+
       // Replay protection
       const convId = inner.convId;
       const seq = Number(inner.seq || 0);

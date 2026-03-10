@@ -28,6 +28,7 @@ export async function buildGroupMessage(
 
   const inner = {
     t: "GroupMessage",
+    alg: "ECDH-P256+AES256GCM",
     groupId,
     from: myId,
     senderLabel: myLabel,
@@ -103,6 +104,7 @@ export async function buildGroupInvite(
 
   const inner = {
     t: "GroupInvite",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     senderCap: myInboxCap,
@@ -141,13 +143,17 @@ export async function buildGroupMemberAdded(
 ) {
   const ts = Date.now();
 
+  const seq = nextSeq(myId, `${groupId}:control`);
   const inner = {
     t: "GroupMemberAdded",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     e2eePub: myE2eePubJwk,
     authPub: myAuthPubJwk,
     groupId,
+    convId: groupId,
+    seq,
     member: {
       id: newMember.id,
       label: newMember.label,
@@ -182,12 +188,16 @@ export async function buildGroupMemberRemoved(
 ) {
   const ts = Date.now();
 
+  const seq = nextSeq(myId, `${groupId}:control`);
   const inner = {
     t: "GroupMemberRemoved",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     authPub: myAuthPubJwk,
     groupId,
+    convId: groupId,
+    seq,
     removedId: removedMemberId,
     groupKey: newGroupKeyB64,
     members: updatedMembers.map((m) => ({
@@ -219,12 +229,16 @@ export async function buildGroupAdminChange(
 ) {
   const ts = Date.now();
 
+  const seq = nextSeq(myId, `${groupId}:control`);
   const inner = {
     t: "GroupAdminChange",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     authPub: myAuthPubJwk,
     groupId,
+    convId: groupId,
+    seq,
     targetId,
     newRole,
     ts,
@@ -252,12 +266,16 @@ export async function buildGroupLeave(
 ) {
   const ts = Date.now();
 
+  const seq = nextSeq(myId, `${groupId}:control`);
   const inner = {
     t: "GroupLeave",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     authPub: myAuthPubJwk,
     groupId,
+    convId: groupId,
+    seq,
     ts,
   };
 
@@ -283,12 +301,16 @@ export async function buildGroupNameChange(
 ) {
   const ts = Date.now();
 
+  const seq = nextSeq(myId, `${groupId}:control`);
   const inner = {
     t: "GroupNameChange",
+    alg: "ECDH-P256+AES256GCM",
     from: myId,
     senderLabel: myLabel,
     authPub: myAuthPubJwk,
     groupId,
+    convId: groupId,
+    seq,
     groupName: newName,
     ts,
   };
