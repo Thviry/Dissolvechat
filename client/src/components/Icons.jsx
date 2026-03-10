@@ -140,3 +140,30 @@ export const IconFile = ({ size = 16, ...props }) => (
     <path d="M9 1.5V6h4.5" />
   </svg>
 );
+
+export const IconCheck = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M3 8.5l3.5 3.5L13 4" />
+  </svg>
+);
+
+export const IconCheckDouble = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M1.5 8.5l3.5 3.5L11.5 5" />
+    <path d="M5.5 8.5l3.5 3.5L15.5 5" />
+  </svg>
+);
+
+export const IconClock = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M8 4.5V8l2.5 1.5" />
+  </svg>
+);
+
+export const IconRetry = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M2 8a6 6 0 0111.5-2.5M14 2v3.5h-3.5" />
+    <path d="M14 8a6 6 0 01-11.5 2.5M2 14v-3.5h3.5" />
+  </svg>
+);
