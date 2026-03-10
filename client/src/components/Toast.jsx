@@ -8,7 +8,7 @@ export default function ToastContainer({ toasts }) {
   return (
     <div className="toast-container" role="region" aria-label="Notifications" aria-live="polite">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast toast-${t.type}`} role="alert">
+        <div key={t.id} className={`toast toast-${t.type}${t.exiting ? " toast-exiting" : ""}`} role="alert">
           <span className="toast-icon" aria-hidden="true">{icons[t.type] ?? "◈"}</span>
           <span className="toast-message">{t.message}</span>
         </div>

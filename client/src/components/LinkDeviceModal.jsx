@@ -140,8 +140,8 @@ export default function LinkDeviceModal({ identity, onClose }) {
   }, []);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
         <div className="modal-header">
           <h3>Link to Mobile</h3>
           <button className="btn-icon" onClick={onClose} aria-label="Close">

@@ -211,6 +211,37 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(12px) scale(0.96);
+  }
+}
+
+@keyframes presence-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.5); }
+  50%      { box-shadow: 0 0 8px rgba(34, 197, 94, 0.8), 0 0 12px rgba(34, 197, 94, 0.3); }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+@keyframes banner-slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes status-fade {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -279,14 +310,20 @@ code, kbd {
 /* ============================================================
    Scrollbar
    ============================================================ */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.10);
   border-radius: 4px;
+  transition: background 0.2s;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--accent-glow);
+}
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
 }
 
 /* ============================================================
@@ -560,6 +597,11 @@ code, kbd {
   display: flex;
   align-items: center;
   gap: 5px;
+  transition: color var(--t-base);
+}
+
+.form-hint span {
+  animation: status-fade 0.2s ease;
 }
 
 .form-error {
@@ -607,8 +649,9 @@ code, kbd {
   border-bottom: 1px solid rgba(251, 191, 36, 0.25);
   color: var(--text-secondary);
   font-size: 13px;
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   z-index: 100;
+  animation: banner-slide-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .backup-banner-dismiss {
   background: none;
@@ -694,10 +737,11 @@ code, kbd {
   right: 0;
   width: 9px;
   height: 9px;
-  background: #22c55e;
+  background: var(--success);
   border-radius: 50%;
-  border: 2px solid var(--bg-sidebar);
+  border: 2px solid var(--bg-secondary);
   box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+  animation: presence-pulse 3s ease-in-out infinite;
 }
 
 .identity-details {
@@ -815,10 +859,40 @@ code, kbd {
 }
 
 .toggle-label input[type="checkbox"] {
-  accent-color: var(--accent);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background var(--t-base), border-color var(--t-base);
+}
+
+.toggle-label input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
   width: 14px;
   height: 14px;
-  flex-shrink: 0;
+  background: var(--text-tertiary);
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+}
+
+.toggle-label input[type="checkbox"]:checked::after {
+  transform: translateX(16px);
+  background: var(--accent);
 }
 
 .hint-text {
@@ -948,7 +1022,7 @@ code, kbd {
   text-align: left;
   width: 100%;
   font-family: var(--font-sans);
-  transition: background var(--t-fast);
+  transition: background var(--t-base);
   border-radius: var(--radius-md);
   position: relative;
 }
@@ -1037,6 +1111,12 @@ code, kbd {
   border-radius: var(--radius-md);
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
+  transition: border-color var(--t-base), background var(--t-base);
+}
+
+.request-item:hover {
+  border-color: rgba(255, 255, 255, 0.10);
+  background: var(--bg-hover);
 }
 
 .request-header {
@@ -1434,6 +1514,8 @@ code, kbd {
   align-items: center;
   margin-left: 4px;
   vertical-align: middle;
+  transition: color 0.3s ease, opacity 0.3s ease;
+  animation: status-fade 0.3s ease;
 }
 
 .msg-status.sending {
@@ -1503,7 +1585,9 @@ code, kbd {
 
 /* Failed bubble styling */
 .chat-bubble.failed {
-  opacity: 0.5;
+  opacity: 0.65;
+  border-color: rgba(248, 113, 113, 0.30);
+  background: rgba(248, 113, 113, 0.06);
 }
 
 /* Input area */
@@ -1577,7 +1661,7 @@ code, kbd {
 .btn-attach {
   flex-shrink: 0;
   color: var(--text-secondary);
-  transition: color 0.15s;
+  transition: color var(--t-base);
 }
 .btn-attach:hover:not(:disabled) {
   color: var(--accent);
@@ -1891,6 +1975,11 @@ textarea.input-field {
   max-width: 340px;
   animation: toast-enter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(12px);
+  pointer-events: auto;
+}
+
+.toast.toast-exiting {
+  animation: toast-exit 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .toast-success {
@@ -2236,7 +2325,7 @@ textarea.input-field {
 .group-avatar {
   background: var(--accent-muted, rgba(57, 255, 20, 0.15));
   color: var(--accent);
-  font-family: "Syne", sans-serif;
+  font-family: var(--font-display);
   font-weight: 800;
 }
 
@@ -2253,7 +2342,7 @@ textarea.input-field {
   font-weight: 600;
   color: var(--accent);
   margin-bottom: 2px;
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-display);
 }
 
 .group-member-select {
@@ -2293,7 +2382,7 @@ textarea.input-field {
 
 .group-info-header h3 {
   margin: 0;
-  font-family: "Syne", sans-serif;
+  font-family: var(--font-display);
   font-weight: 800;
 }
 
@@ -2402,7 +2491,76 @@ textarea.input-field {
   font-size: 0.8rem;
   color: var(--text-secondary);
   margin-bottom: 6px;
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* ============================================================
+   Skeleton loading placeholders
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 400px 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-contact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: var(--radius-xs);
+}
+
+.skeleton-line-short {
+  width: 60%;
+}
+
+.skeleton-line-long {
+  width: 85%;
+}
+
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+/* ============================================================
+   Password toggle polish
+   ============================================================ */
+.password-field-wrap:focus-within {
+  --_pw-border: var(--border-focus);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.9);
+}
+
+/* ============================================================
+   Modal scrollbar styling
+   ============================================================ */
+.modal-card::-webkit-scrollbar { width: 4px; }
+.modal-card::-webkit-scrollbar-track { background: transparent; }
+.modal-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
 }
 
 /* ============================================================
