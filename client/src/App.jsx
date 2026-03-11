@@ -568,6 +568,7 @@ export default function App() {
             messages={activeGroupMessages}
             onSend={(_, text, file) => messaging.sendGroupMsg(activeGroupId, text, file)}
             onGroupInfo={() => setShowGroupInfo(true)}
+            identityId={identity.id}
           />
         ) : (
           <ChatPanel
@@ -576,6 +577,7 @@ export default function App() {
             onSend={messaging.sendMsg}
             onRetry={messaging.retryMsg}
             onDismiss={messaging.dismissMsg}
+            identityId={identity.id}
           />
         )}
       </div>

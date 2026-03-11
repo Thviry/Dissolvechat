@@ -52,7 +52,7 @@ function idToHue(id) {
   return Math.abs(hash) % 360;
 }
 
-export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss }) {
+export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -479,7 +479,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
             {showEmoji && (
               <EmojiPicker
                 onSelect={handleEmojiSelect}
-                identityId={group ? group.groupId : peer?.id}
+                identityId={identityId}
                 onClose={() => setShowEmoji(false)}
               />
             )}
