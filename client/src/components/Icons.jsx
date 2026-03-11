@@ -167,3 +167,24 @@ export const IconRetry = ({ size = 16, ...props }) => (
     <path d="M14 8a6 6 0 01-11.5 2.5M2 14v-3.5h3.5" />
   </svg>
 );
+
+export const IconEmoji = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <circle cx="8" cy="8" r="6.5" />
+    <path d="M5.5 6.5v.5M10.5 6.5v.5" />
+    <path d="M5.5 9.5a3.5 3.5 0 005 0" />
+  </svg>
+);
+
+export const IconCopy = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <rect x="5.5" y="5.5" width="8" height="8" rx="1" />
+    <path d="M10.5 5.5V3a1 1 0 00-1-1H3a1 1 0 00-1 1v6.5a1 1 0 001 1h2.5" />
+  </svg>
+);
+
+export const IconStar = ({ size = 16, filled = false, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M8 1.5l2 4 4.5.7-3.3 3.1.8 4.5L8 11.5l-4 2.3.8-4.5L1.5 6.2l4.5-.7z" />
+  </svg>
+);
