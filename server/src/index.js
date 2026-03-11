@@ -58,6 +58,11 @@ app.use((_req, res, next) => {
   next();
 });
 
+// ── Trust proxy (Caddy reverse proxy) ───────────────────────────────
+// Required so req.ip uses the real client IP from X-Forwarded-For
+// instead of always seeing 127.0.0.1. Value 1 = trust one hop.
+app.set("trust proxy", 1);
+
 // ── Body parsing ────────────────────────────────────────────────────
 // Envelope size limit — reject bodies > 8MB (supports inline file delivery up to 5MB)
 app.use(express.json({ limit: "8mb" }));

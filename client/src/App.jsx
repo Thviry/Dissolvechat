@@ -222,7 +222,7 @@ export default function App() {
   // --- Group/peer selection (mutually exclusive) ---
   const handleSelectGroup = useCallback((groupId) => {
     setActiveGroupId(groupId);
-    messaging.setActiveId(null);
+    messaging.setActiveId(groupId); // clears unread for this group
     setShowGroupInfo(false);
   }, [messaging]);
 
@@ -305,9 +305,15 @@ export default function App() {
   const handleAcceptRequest = useCallback(async (id) => {
     const req = contactsMgr.acceptRequest(id);
     if (req) {
-      await messaging.sendGrant(req);
+      try {
+        await messaging.sendGrant(req);
+      } catch (err) {
+        // Grant failed — put request back so user can retry
+        contactsMgr.addOrUpdateRequest(req);
+        addToast("Failed to accept request. Try again.", "error");
+      }
     }
-  }, [contactsMgr, messaging]);
+  }, [contactsMgr, messaging, addToast]);
 
   // --- Block peer ---
   const handleBlockPeer = useCallback(async (id) => {
@@ -553,6 +559,8 @@ export default function App() {
           activeGroupId={activeGroupId}
           onSelectGroup={handleSelectGroup}
           onCreateGroup={() => setShowCreateGroup(true)}
+          unreadCounts={messaging.unreadCounts}
+          lastMessages={messaging.lastMessages}
         />
         {activeGroup ? (
           <ChatPanel

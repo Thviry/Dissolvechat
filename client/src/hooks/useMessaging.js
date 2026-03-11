@@ -49,6 +49,14 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const groupMessagesRef = useRef(groupMessages);
   const [activeId, setActiveId] = useState("");
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`unread:${identity.id}`) || "{}");
+    } catch { return {}; }
+  });
+  const [lastMessages, setLastMessages] = useState({});
+  const activeIdRef = useRef(activeId);
+  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
   const wsRef = useRef(null);
   const pollTimerRef = useRef(null);
   const archiveRef = useRef(null);
@@ -169,11 +177,11 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         }
       }
 
-      // Replay protection
-      const convId = inner.convId;
-      const seq = Number(inner.seq || 0);
-      if (convId && seq) {
-        if (!checkAndUpdateReplay(myId, inner.from, convId, seq, inner.t)) return;
+      // Replay protection (keyed on msgId — unique per message, survives device recovery)
+      const convId = inner.convId || inner.groupId;
+      const msgId = inner.msgId;
+      if (convId && msgId) {
+        if (!checkAndUpdateReplay(myId, inner.from, convId, msgId, inner.t)) return;
       }
 
       // Handle by type
@@ -236,6 +244,19 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         };
         setMessages((prev) => [...prev, msg]);
         archiveRef.current?.save(myId, msg);
+        // Track unread count (skip if this peer's chat is active)
+        if (activeIdRef.current !== inner.from) {
+          setUnreadCounts((prev) => {
+            const updated = { ...prev, [inner.from]: (prev[inner.from] || 0) + 1 };
+            localStorage.setItem(`unread:${myId}`, JSON.stringify(updated));
+            return updated;
+          });
+        }
+        // Track last message preview
+        setLastMessages((prev) => ({
+          ...prev,
+          [inner.from]: { text: inner.file ? "Attachment" : (inner.text || "").slice(0, 80), ts: inner.ts },
+        }));
         if (soundRef.current) notifyIncoming(); else flashTitle();
         return { from: inner.from, msgId: msg.msgId };
       }
@@ -263,6 +284,19 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         if (archiveRef.current) {
           archiveRef.current.save(myId, { ...msg, peerId: inner.groupId });
         }
+        // Track unread count for group
+        if (activeIdRef.current !== inner.groupId) {
+          setUnreadCounts((prev) => {
+            const updated = { ...prev, [inner.groupId]: (prev[inner.groupId] || 0) + 1 };
+            localStorage.setItem(`unread:${myId}`, JSON.stringify(updated));
+            return updated;
+          });
+        }
+        // Track last message preview for group
+        setLastMessages((prev) => ({
+          ...prev,
+          [inner.groupId]: { text: inner.file ? "Attachment" : (inner.text || "").slice(0, 80), ts: inner.ts },
+        }));
         if (soundRef.current) notifyIncoming(); else flashTitle();
         return { from: inner.from, msgId: inner.msgId };
       }
@@ -329,8 +363,8 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
       if (!ok) return;
 
       const convId = msg.convId;
-      const seq = Number(msg.seq || 0);
-      if (!checkAndUpdateReplay(myId, env.from, convId, seq, env.t)) return;
+      const legacyMsgId = msg.msgId || `legacy:${msg.seq || 0}`;
+      if (!checkAndUpdateReplay(myId, env.from, convId, legacyMsgId, env.t)) return;
 
       let plaintext = "";
       try {
@@ -654,6 +688,11 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
     const outMsg = { dir: "out", peerId, text: text.trim(), ts, msgId, file: file || undefined, status: "sending" };
     setMessages((prev) => [...prev, outMsg]);
+    // Update last message preview for this peer
+    setLastMessages((prev) => ({
+      ...prev,
+      [peerId]: { text: file ? "Attachment" : text.trim().slice(0, 80), ts },
+    }));
 
     let lastError = "";
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -742,7 +781,11 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     const envelope = await buildContactGrant(
       myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, recipient
     );
-    await sendEnvelope(envelope).catch(() => {});
+    const resp = await sendEnvelope(envelope);
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      throw new Error(`Grant failed: ${resp.status} ${errText}`);
+    }
   }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap]);
 
   // --- Send a group message (fan-out to all members) ---
@@ -778,7 +821,26 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     if (archiveRef.current) {
       archiveRef.current.save(myId, { ...msg, peerId: groupId });
     }
+    // Update last message preview for this group
+    setLastMessages((prev) => ({
+      ...prev,
+      [groupId]: { text: file ? "Attachment" : text.trim().slice(0, 80), ts },
+    }));
   }, [myId, myLabel, authPubJwk, authPrivJwk, e2eePubJwk, inboxCap, groupsMgr]);
+
+  // --- Select a peer/group and clear its unread count ---
+  const selectPeer = useCallback((peerId) => {
+    setActiveId(peerId);
+    activeIdRef.current = peerId;
+    if (peerId && unreadCounts[peerId]) {
+      setUnreadCounts((prev) => {
+        const updated = { ...prev };
+        delete updated[peerId];
+        localStorage.setItem(`unread:${myId}`, JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [myId, unreadCounts]);
 
   const reset = useCallback(() => {
     setMessages([]);
@@ -786,6 +848,8 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     groupMessagesRef.current = {};
     setActiveId("");
     setHistoryLoaded(false);
+    setUnreadCounts({});
+    setLastMessages({});
     wsRef.current?.close();
     clearInterval(pollTimerRef.current);
     archiveRef.current?.close();
@@ -793,10 +857,11 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   }, []);
 
   return {
-    messages, activeId, setActiveId,
+    messages, activeId, setActiveId: selectPeer,
     groupMessages,
     sendMsg, sendGroupMsg, sendRequest, sendGrant,
     retryMsg, dismissMsg, updateMessageStatus,
     reset, historyLoaded,
+    unreadCounts, lastMessages,
   };
 }

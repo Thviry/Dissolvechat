@@ -67,13 +67,12 @@ const LIMITS = {
 };
 
 /**
- * Extract client IP from request (trust X-Forwarded-For if behind proxy).
- * We hash the IP to avoid storing raw IPs in memory (anonymity-first).
+ * Extract client IP from request.
+ * Relies on Express's req.ip (respects "trust proxy" setting) instead of
+ * reading X-Forwarded-For directly, which is spoofable.
  */
 function getIpKey(req) {
-  const raw = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
-  // We don't store the raw IP — we use it as a map key, which is fine
-  // since the map is ephemeral and never logged.
+  const raw = req.ip || "unknown";
   return `ip:${raw}`;
 }
 

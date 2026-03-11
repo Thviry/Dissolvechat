@@ -12,6 +12,10 @@ import { nextSeq } from "./envelopes";
 
 const PROTOCOL_VERSION = 4;
 
+function newMsgId() {
+  return crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+}
+
 /**
  * Build a group message envelope set (one per member).
  * Encrypts text once with groupKey, then wraps for each member.
@@ -23,7 +27,7 @@ export async function buildGroupMessage(
   myInboxCap, groupId, groupKeyB64, members, text, file
 ) {
   const ts = Date.now();
-  const msgId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+  const msgId = newMsgId();
   const seq = nextSeq(myId, groupId);
 
   const inner = {
@@ -111,6 +115,8 @@ export async function buildGroupInvite(
     e2eePub: myE2eePubJwk,
     authPub: myAuthPubJwk,
     groupId,
+    convId: groupId,
+    msgId: newMsgId(),
     groupName,
     groupKey: groupKeyB64,
     members: memberList,
@@ -153,6 +159,7 @@ export async function buildGroupMemberAdded(
     authPub: myAuthPubJwk,
     groupId,
     convId: groupId,
+    msgId: newMsgId(),
     seq,
     member: {
       id: newMember.id,
@@ -197,6 +204,7 @@ export async function buildGroupMemberRemoved(
     authPub: myAuthPubJwk,
     groupId,
     convId: groupId,
+    msgId: newMsgId(),
     seq,
     removedId: removedMemberId,
     groupKey: newGroupKeyB64,
@@ -238,6 +246,7 @@ export async function buildGroupAdminChange(
     authPub: myAuthPubJwk,
     groupId,
     convId: groupId,
+    msgId: newMsgId(),
     seq,
     targetId,
     newRole,
@@ -275,6 +284,7 @@ export async function buildGroupLeave(
     authPub: myAuthPubJwk,
     groupId,
     convId: groupId,
+    msgId: newMsgId(),
     seq,
     ts,
   };
@@ -310,6 +320,7 @@ export async function buildGroupNameChange(
     authPub: myAuthPubJwk,
     groupId,
     convId: groupId,
+    msgId: newMsgId(),
     seq,
     groupName: newName,
     ts,

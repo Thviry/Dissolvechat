@@ -26,10 +26,11 @@ export function downloadJson(filename, obj) {
 /**
  * Check replay protection. Returns true if message should be processed (not a replay).
  * Uses a sliding window of recently seen message IDs (msgId-based dedup).
- * This avoids issues with seq counters resetting across different origins/sessions.
+ * Keyed on msgId (random per-message) instead of seq to avoid false dedup
+ * when a sender recovers on a new device and their seq counter resets.
  */
 const MAX_SEEN_IDS = 500;
-export function checkAndUpdateReplay(myId, fromId, convId, seq, envelopeType = "Message") {
+export function checkAndUpdateReplay(myId, fromId, convId, msgId, envelopeType = "Message") {
   if (typeof convId !== "string") return false;
   const key = `seen2:${myId}:${fromId}:${convId}:${envelopeType}`;
   let seen;
@@ -37,10 +38,8 @@ export function checkAndUpdateReplay(myId, fromId, convId, seq, envelopeType = "
     seen = JSON.parse(localStorage.getItem(key) || "[]");
     if (!Array.isArray(seen)) seen = [];
   } catch { seen = []; }
-  // Use seq as a unique-enough ID for this envelope
-  const id = `${envelopeType}:${seq}`;
-  if (seen.includes(id)) return false;
-  seen.push(id);
+  if (seen.includes(msgId)) return false;
+  seen.push(msgId);
   if (seen.length > MAX_SEEN_IDS) seen = seen.slice(-MAX_SEEN_IDS);
   localStorage.setItem(key, JSON.stringify(seen));
   return true;

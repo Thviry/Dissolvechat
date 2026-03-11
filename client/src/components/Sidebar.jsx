@@ -31,6 +31,8 @@ export default function Sidebar({
   activeGroupId,
   onSelectGroup,
   onCreateGroup,
+  unreadCounts = {},
+  lastMessages = {},
 }) {
   const RELAY_OFFICIAL = "https://relay.dissolve.chat";
   const RELAY_LOCAL    = "http://localhost:3001";
@@ -395,8 +397,14 @@ export default function Sidebar({
                     </div>
                     <div className="contact-info">
                       <div className="contact-name">{c.label}</div>
-                      <div className="contact-id">{c.id.slice(0, 20)}…</div>
+                      {lastMessages[c.id]
+                        ? <div className="contact-preview">{lastMessages[c.id].text}</div>
+                        : <div className="contact-id">{c.id.slice(0, 20)}…</div>
+                      }
                     </div>
+                    {unreadCounts[c.id] > 0 && (
+                      <span className="unread-badge">{unreadCounts[c.id]}</span>
+                    )}
                   </button>
                   <button
                     className="btn-icon contact-menu-btn"
@@ -457,8 +465,14 @@ export default function Sidebar({
                     </div>
                     <div className="contact-info">
                       <div className="contact-name">{g.groupName}</div>
-                      <div className="contact-id">{g.members.length} members</div>
+                      {lastMessages[g.groupId]
+                        ? <div className="contact-preview">{lastMessages[g.groupId].text}</div>
+                        : <div className="contact-id">{g.members.length} members</div>
+                      }
                     </div>
+                    {unreadCounts[g.groupId] > 0 && (
+                      <span className="unread-badge">{unreadCounts[g.groupId]}</span>
+                    )}
                   </button>
                 </div>
               ))}
