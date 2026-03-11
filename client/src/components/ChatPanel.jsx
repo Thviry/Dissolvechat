@@ -1,6 +1,8 @@
 // client/src/components/ChatPanel.jsx
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { IconSend, IconAttach, IconClose, IconDownload, IconFile, IconCheck, IconCheckDouble, IconClock, IconRetry, IconAlert } from "./Icons";
+import { IconSend, IconAttach, IconClose, IconDownload, IconFile, IconCheck, IconCheckDouble, IconClock, IconRetry, IconAlert, IconEmoji, IconCopy } from "./Icons";
+import EmojiPicker from "./EmojiPicker";
+import { parseLinks } from "@utils/linkify";
 import { fileToBase64, base64ToBlob, downloadBlob, formatFileSize } from "@utils/fileUtils";
 import { MAX_INLINE_FILE_SIZE, INLINE_IMAGE_TYPES } from "@config";
 
@@ -40,7 +42,17 @@ function MessageStatus({ status }) {
   }
 }
 
-export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss }) {
+// Generate a stable hue (0-360) from an ID string
+function idToHue(id) {
+  if (!id) return 0;
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
+}
+
+export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -49,6 +61,10 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
   const [pendingFile, setPendingFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null); // { src, name }
   const fileInputRef = useRef(null);
+  const [showScrollFab, setShowScrollFab] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [linkConfirm, setLinkConfirm] = useState(null);
+  const [copiedMsgId, setCopiedMsgId] = useState(null);
 
   // Track which message IDs have already been rendered to avoid animating on mount
   // or when switching contacts/groups. seenRef.current is null until first render.
@@ -69,12 +85,31 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
     seenRef.current = ids;
   });
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (only if already near bottom)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (nearBottom) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
+
+  // Track scroll position for FAB visibility
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollFab(gap > 200);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [currentTarget]);
+
+  const scrollToBottom = () => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  };
 
   // Auto-focus message input when peer/group changes
   useEffect(() => {
@@ -88,6 +123,68 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
     if (e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && inputRef.current) {
       inputRef.current.focus();
     }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? text.length;
+    const end = el.selectionEnd ?? text.length;
+    const newText = text.slice(0, start) + emoji + text.slice(end);
+    setText(newText);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const handleLinkClick = (e, url) => {
+    e.preventDefault();
+    setLinkConfirm({ url });
+  };
+
+  const handleLinkConfirmOpen = () => {
+    const url = linkConfirm.url;
+    setLinkConfirm(null);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCopy = async (msgId, msgText) => {
+    try {
+      await navigator.clipboard.writeText(msgText);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = msgText;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedMsgId(msgId);
+    setTimeout(() => setCopiedMsgId((cur) => cur === msgId ? null : cur), 1500);
+  };
+
+  const renderMessageText = (messageText) => {
+    const segments = parseLinks(messageText);
+    return segments.map((seg, i) =>
+      seg.type === "link" ? (
+        <a
+          key={i}
+          className="chat-link"
+          href={seg.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => handleLinkClick(e, seg.href)}
+        >
+          {seg.value}
+        </a>
+      ) : (
+        <span key={i}>{seg.value}</span>
+      )
+    );
   };
 
   const handleFileSelect = async (e) => {
@@ -136,6 +233,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
       await onSend(group ? group.groupId : peer.id, text, filePayload);
       setText("");
       clearPendingFile();
+      if (inputRef.current) inputRef.current.style.height = "auto";
     } catch (err) {
       setError(err.message);
     } finally {
@@ -144,18 +242,26 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
     }
   };
 
-  // Build flat list interleaved with date separator objects
+  // Build flat list interleaved with date separator objects + grouping
   const items = useMemo(() => {
     const result = [];
     let lastDateStr = null;
+    let prevSender = null;
+    let prevTs = 0;
     for (const msg of messages) {
       const d = new Date(msg.ts);
       const dateStr = d.toDateString();
       if (dateStr !== lastDateStr) {
         result.push({ type: "separator", key: `sep-${dateStr}`, label: formatDateChip(d) });
         lastDateStr = dateStr;
+        prevSender = null;
       }
-      result.push({ type: "message", ...msg });
+      // Group consecutive messages from same sender within 2 minutes
+      const sender = msg.dir === "out" ? "__self__" : (msg.senderId || msg.dir);
+      const grouped = sender === prevSender && (msg.ts - prevTs) < 120000;
+      result.push({ type: "message", grouped, ...msg });
+      prevSender = sender;
+      prevTs = msg.ts;
     }
     return result;
   }, [messages]);
@@ -164,9 +270,13 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
     return (
       <main className="chat-panel">
         <div className="chat-empty">
+          <div className="chat-empty-watermark" aria-hidden="true">◈</div>
           <div className="chat-empty-icon" aria-hidden="true">◈</div>
           <h2>Dissolve Chat</h2>
           <p>Select a contact or group to start a secure conversation</p>
+          <div className="chat-empty-shortcuts">
+            <kbd>Enter</kbd> send &nbsp; <kbd>Shift+Enter</kbd> new line
+          </div>
         </div>
       </main>
     );
@@ -189,7 +299,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
         </div>
       ) : (
         <div className="chat-header">
-          <div className="chat-header-avatar" aria-hidden="true">
+          <div className="chat-header-avatar" aria-hidden="true" data-hue style={{ "--avatar-hue": idToHue(peer.id) }}>
             {(peer.label || "?").charAt(0).toUpperCase()}
           </div>
           <div className="chat-header-info">
@@ -211,6 +321,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
       )}
 
       {/* Messages */}
+      <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <div className="chat-messages" ref={scrollRef} role="log" aria-live="polite">
         <div className="chat-ephemeral-notice" role="note">
           ◇ End-to-end encrypted · Enable "Save messages locally" in settings to keep history
@@ -232,8 +343,18 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
             ) : (
               <React.Fragment key={item.msgId}>
               <div
-                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${item.status === "failed" ? " failed" : ""}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}`}
+                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${item.status === "failed" ? " failed" : ""}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}${item.grouped ? " grouped" : ""}`}
               >
+                {item.text && (
+                  <button
+                    className={`chat-bubble-copy${copiedMsgId === item.msgId ? " copied" : ""}`}
+                    onClick={(e) => { e.stopPropagation(); handleCopy(item.msgId, item.text); }}
+                    aria-label="Copy message"
+                    title={copiedMsgId === item.msgId ? "Copied!" : "Copy"}
+                  >
+                    {copiedMsgId === item.msgId ? <IconCheck size={12} /> : <IconCopy size={12} />}
+                  </button>
+                )}
                 {group && item.dir === "in" && (
                   <span className="group-msg-sender">{item.senderLabel}</span>
                 )}
@@ -277,7 +398,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
                     </div>
                   </div>
                 )}
-                {item.text && <div className="chat-bubble-text">{item.text}</div>}
+                {item.text && <div className="chat-bubble-text">{renderMessageText(item.text)}</div>}
                 <div className="chat-bubble-time" aria-label={new Date(item.ts).toLocaleString()}>
                   {new Date(item.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   {item.dir === "out" && <MessageStatus status={item.status} />}
@@ -297,6 +418,15 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
             )
           )
         )}
+      </div>
+      <button
+        className={`scroll-fab${showScrollFab ? " visible" : ""}`}
+        onClick={scrollToBottom}
+        aria-label="Scroll to bottom"
+        title="Scroll to bottom"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+      </button>
       </div>
 
       {/* Input area */}
@@ -336,14 +466,39 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
           >
             <IconAttach size={16} />
           </button>
-          <input
+          <div style={{ position: "relative" }}>
+            <button
+              className="btn-icon btn-emoji"
+              onClick={() => setShowEmoji(!showEmoji)}
+              disabled={!canSend || sending}
+              aria-label="Emoji picker"
+              title="Emoji"
+            >
+              <IconEmoji size={16} />
+            </button>
+            {showEmoji && (
+              <EmojiPicker
+                onSelect={handleEmojiSelect}
+                identityId={identityId}
+                onClose={() => setShowEmoji(false)}
+              />
+            )}
+          </div>
+          <textarea
             ref={inputRef}
             className="chat-input"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              // JS fallback for auto-grow if field-sizing not supported
+              const el = e.target;
+              el.style.height = "auto";
+              el.style.height = Math.min(el.scrollHeight, 120) + "px";
+            }}
             placeholder={canSend ? "Type a message…" : "Cannot send — no inbox capability"}
             disabled={!canSend || sending}
             aria-label="Message input"
+            rows={1}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -373,6 +528,19 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
             className="image-preview-img"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
+      )}
+      {linkConfirm && (
+        <div className="link-confirm-overlay" onClick={() => setLinkConfirm(null)}>
+          <div className="link-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Opening external link</h3>
+            <div className="link-confirm-url">{linkConfirm.url}</div>
+            <p className="link-confirm-warn">You will leave Dissolve.</p>
+            <div className="link-confirm-actions">
+              <button className="btn btn-secondary" onClick={() => setLinkConfirm(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleLinkConfirmOpen}>Open</button>
+            </div>
+          </div>
         </div>
       )}
     </main>
