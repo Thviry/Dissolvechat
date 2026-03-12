@@ -32,7 +32,7 @@ Four new envelope types sent through the existing E2EE envelope system. The rela
 | `VoiceOffer` | Caller → Callee | `callId` (UUID), `sdp` (SDP offer string) |
 | `VoiceAnswer` | Callee → Caller | `callId`, `sdp` (SDP answer string) |
 | `VoiceIce` | Bidirectional | `callId`, `candidate` (ICE candidate object) |
-| `VoiceEnd` | Bidirectional | `callId`, `reason` (`hangup` \| `decline` \| `timeout` \| `missed`) |
+| `VoiceEnd` | Bidirectional | `callId`, `reason` (`hangup` \| `decline` \| `timeout` \| `missed` \| `busy` \| `error`) |
 
 ### Signaling Flow
 
@@ -43,6 +43,20 @@ Four new envelope types sent through the existing E2EE envelope system. The rela
 5. If accepted, callee generates SDP answer → sends `VoiceAnswer` envelope back
 6. ICE candidates trickle through `VoiceIce` envelopes in both directions
 7. `VoiceEnd` terminates from either side
+
+### Glare Resolution (Simultaneous Calls)
+
+If both parties press "call" at the same time, both send `VoiceOffer` envelopes. Resolution: the party with the **lexicographically lower identity ID** becomes the callee. On receiving a `VoiceOffer` while in `offering` state:
+- Compare identity IDs. If your ID is lower, discard your outbound offer and accept the incoming one (transition to `incoming`).
+- If your ID is higher, ignore the incoming offer — the other party will accept yours.
+
+### Busy Handling
+
+If a `VoiceOffer` arrives while already in a `connected` call, auto-respond with `VoiceEnd` reason `busy`. Caller sees "User is on another call" toast.
+
+### Replay Protection Note
+
+Each voice envelope (including every `VoiceIce` candidate) gets a unique random `msgId`. This is critical — the existing `checkAndUpdateReplay` in `useMessaging.js` deduplicates by `msgId`. Reusing `callId` as `msgId` would cause all ICE candidates after the first to be silently dropped.
 
 ### Envelope Builder Conventions
 
@@ -77,8 +91,12 @@ TURN credentials are short-lived HMAC tokens fetched from the relay immediately 
 idle → offering → ringing → connected → ended
                 → declined → ended
                 → timeout (30s) → ended
+                → incoming (glare, lower ID) → connected → ended
 idle → incoming → connected → ended
                 → declined → ended
+                → timeout (35s callee safety net) → ended
+connected → disconnected → reconnecting (5s) → connected
+                                              → ended (error)
 ```
 
 ### Module API
@@ -102,8 +120,14 @@ idle → incoming → connected → ended
 
 ### Timeouts
 
-- **Ring timeout**: 30 seconds on caller side — auto-sends `VoiceEnd` with reason `timeout`
-- **ICE connection timeout**: 15 seconds — if no media path established, end call with error toast
+- **Ring timeout (caller)**: 30 seconds — auto-sends `VoiceEnd` with reason `timeout`
+- **Ring timeout (callee)**: 35 seconds — safety net if caller's `VoiceEnd` is delayed/lost. Auto-dismisses incoming call UI.
+- **ICE connection timeout**: 15 seconds — if no media path established, end call with `VoiceEnd` reason `error`, show error toast
+- **Mid-call disconnection**: On `iceconnectionstatechange` → `disconnected`, wait 5 seconds for recovery. If state reaches `failed`, end call with reason `error` and show "Call dropped" toast.
+
+### Audio Codec
+
+Opus is the default WebRTC voice codec in all modern browsers/WebViews and will be negotiated automatically. No SDP munging needed.
 
 ### Cleanup
 
@@ -126,7 +150,7 @@ Runs on the existing IONOS VPS (`74.208.170.22`) alongside the relay server.
 
 - **Method**: Time-limited HMAC credentials (RFC 5389 long-term, ephemeral variant)
 - **Shared secret**: Environment variable shared between relay server and coturn config
-- **New server endpoint**: `GET /turn-credentials` (authenticated — requires valid auth signature)
+- **New server endpoint**: `POST /turn-credentials` (authenticated — see Section 5 for auth model)
   - Returns: `{ username, credential, ttl: 300, urls: ["turn:relay.dissolve.chat:3478"] }`
   - Username format: `<expiry-timestamp>:<identity-id>` (coturn ephemeral user convention)
   - Credential: HMAC-SHA1 of username with shared secret
@@ -175,7 +199,7 @@ All styles added to existing `App.css` (both `client/src/` and `desktop/src/`). 
 
 - On connect: brief full-screen overlay showing peer avatar + "Connected" → fades to persistent bar after ~1 second
 - **Persistent call bar**: thin bar pinned at top of `.app-layout`, above chat header
-  - Shows: peer handle, elapsed time (MM:SS), mute toggle button, end call button
+  - Shows: peer handle, elapsed time (MM:SS, or H:MM:SS if over 1 hour), mute toggle button, end call button
   - Click bar → navigates back to the call conversation
   - Visible across all conversations while call is active
   - Accent-colored left border (consistent with app design language)
@@ -189,6 +213,7 @@ All styles added to existing `App.css` (both `client/src/` and `desktop/src/`). 
 - Missed (outbound): phone icon + "No answer"
 - Declined: phone icon + "Call declined"
 - Styled with existing `.system-message` CSS class
+- `CallEvent` messages update `lastMessages` sidebar preview (e.g., "Missed voice call") but do NOT increment `unreadCounts` — call events are informational, not actionable
 
 ---
 
@@ -210,7 +235,7 @@ Lives in `client/src/hooks/`. Manages all call state and WebRTC lifecycle.
 - `isMuted` — boolean
 
 **Internal responsibilities**:
-- Fetches TURN credentials from `GET /turn-credentials` before creating connections
+- Fetches TURN credentials from `POST /turn-credentials` before creating connections
 - Creates/manages `RTCPeerConnection` via `voiceCall.js` module
 - Sends signaling envelopes via `voiceEnvelopes.js` builders + existing `sendEnvelope`
 - Handles ring timeout (30s timer)
@@ -249,8 +274,8 @@ Follows identical pattern to `envelopes.js`:
 
 ### Server Changes
 
-**One new route**: `GET /turn-credentials`
-- Requires authentication (signed request, same as other authenticated endpoints)
+**One new route**: `POST /turn-credentials`
+- **Authentication**: POST body contains `{ authPub, ts, sig }` where `sig` signs `JSON.stringify({ action: "turn-credentials", ts })` with auth private key. Server verifies signature against `authPub` and checks `ts` is within 30 seconds of server time (replay window).
 - Reads `TURN_SECRET` from environment
 - Generates ephemeral HMAC credential pair
 - Returns JSON: `{ username, credential, ttl, urls }`
@@ -263,7 +288,7 @@ No other server changes. Signaling flows through existing `/send` and inbox drai
 ### Tauri / Desktop
 
 - WebRTC and `getUserMedia` work in Tauri v2's WebView out of the box
-- CSP `connect-src` in `tauri.conf.json`: may need `turn:relay.dissolve.chat:3478` added (verify during implementation)
+- CSP `connect-src`: TURN connections are handled by the WebRTC stack at the browser engine level, outside the scope of CSP `connect-src`. No CSP changes needed for TURN. (The signaling goes through existing HTTP/WS which is already allowed.)
 - No Rust-side changes needed
 - Desktop picks up all shared component/hook/protocol changes via Vite aliases
 
@@ -283,14 +308,13 @@ No other server changes. Signaling flows through existing `/send` and inbox drai
 ### Modified Files
 | File | Changes |
 |------|---------|
-| `client/src/hooks/useMessaging.js` | Route voice envelope types to useVoiceCall callbacks |
+| `client/src/hooks/useMessaging.js` | Route voice envelope types to useVoiceCall callbacks, skip unread increment for CallEvent |
 | `client/src/components/ChatPanel.jsx` | Call button in header, CallEvent rendering in messages |
 | `client/src/components/App.jsx` | Wire useVoiceCall hook, render IncomingCallOverlay + CallBar |
 | `client/src/components/Icons.jsx` | Add phone/call icons |
 | `client/src/App.css` | Call overlay, call bar, call button, call history styles |
 | `desktop/src/App.css` | Same styles (kept in sync) |
-| `server/src/routes.js` | Add `GET /turn-credentials` endpoint |
-| `desktop/src-tauri/tauri.conf.json` | CSP update for TURN server (if needed) |
+| `server/src/routes.js` | Add `POST /turn-credentials` endpoint |
 
 ### Server Deployment
 | Item | Details |
