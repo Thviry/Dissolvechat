@@ -17,8 +17,8 @@
   <nav class="nav">
     <a href="/" class="nav-wordmark">[DISSOLVE]</a>
     <div class="nav-links">
-      <a href="#threats" class="nav-link">Why</a>
-      <a href="#features" class="nav-link">How</a>
+      <a href="#how-it-works" class="nav-link">How</a>
+      <a href="#compare" class="nav-link">Compare</a>
       <a href="#download" class="nav-link">Download</a>
       <a href="#" id="nav-github" class="nav-link" target="_blank" rel="noopener">GitHub</a>
     </div>
@@ -29,17 +29,15 @@
     <section class="hero" id="hero">
       <div class="hero-inner">
         <div class="hero-tag">
-          <span class="blink">_</span> OPEN BETA — v<span id="hero-version-num">0.1.3</span>
+          <span class="blink">_</span> OPEN BETA — v<span id="hero-version-num">0.1.6</span>
         </div>
         <h1 class="hero-title">
-          <span class="reveal-line">Your conversations</span>
-          <span class="reveal-line">are not <span class="redacted">private</span>.</span>
-          <span class="reveal-line accent-line">Dissolve fixes that.</span>
+          <span class="reveal-line">No account.</span>
+          <span class="reveal-line">No phone number.</span>
+          <span class="reveal-line accent-line">Just talk.</span>
         </h1>
         <p class="hero-sub reveal-fade">
-          End-to-end encrypted messaging with no accounts, no phone numbers,
-          and no server that can read your messages. Your identity is a cryptographic
-          key pair — on your device, under your control.
+          Dissolve is a free, open-source chat app that doesn't know who you are.
         </p>
         <div class="hero-ctas reveal-fade">
           <a href="#" class="btn btn-primary" id="hero-download-btn">
@@ -56,6 +54,104 @@
           <span class="alt-sep">/</span>
           <a href="#" id="alt-linux" class="alt-link">Linux</a>
         </div>
+        <div class="hero-screenshot reveal-fade">
+          <img src="screenshot.png" alt="Dissolve chat interface" class="hero-screenshot-img"
+               onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'>App preview coming soon</div>'" />
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="section-inner">
+        <p class="section-tag reveal-fade">// HOW_IT_WORKS</p>
+        <h2 class="section-title reveal-fade">Three steps. That's it.</h2>
+        <div class="steps-grid">
+          <div class="step-card reveal-fade">
+            <span class="step-num">01</span>
+            <h3 class="step-title">Pick a handle</h3>
+            <p class="step-body">Choose a name. No email, no phone number, no verification.</p>
+          </div>
+          <div class="step-card reveal-fade">
+            <span class="step-num">02</span>
+            <h3 class="step-title">Share it</h3>
+            <p class="step-body">Send your handle to a friend. They add you by name.</p>
+          </div>
+          <div class="step-card reveal-fade">
+            <span class="step-num">03</span>
+            <h3 class="step-title">Start talking</h3>
+            <p class="step-body">Messages are encrypted end-to-end. The server never sees them.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="compare" id="compare">
+      <div class="section-inner">
+        <p class="section-tag reveal-fade">// WHY_SWITCH</p>
+        <h2 class="section-title reveal-fade">Why not just use...?</h2>
+        <div class="compare-wrap reveal-fade">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="compare-dissolve">Dissolve</th>
+                <th>WhatsApp</th>
+                <th>Signal</th>
+                <th>iMessage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="compare-label">Needs phone number</td>
+                <td class="compare-dissolve compare-yes">No</td>
+                <td class="compare-no">Yes</td>
+                <td class="compare-no">Yes</td>
+                <td>No<sup>*</sup></td>
+              </tr>
+              <tr>
+                <td class="compare-label">Needs email</td>
+                <td class="compare-dissolve compare-yes">No</td>
+                <td class="compare-yes">No</td>
+                <td class="compare-yes">No</td>
+                <td class="compare-no">Yes</td>
+              </tr>
+              <tr>
+                <td class="compare-label">Server retains messages</td>
+                <td class="compare-dissolve compare-yes">No</td>
+                <td class="compare-no">Yes</td>
+                <td>No<sup>**</sup></td>
+                <td class="compare-no">Yes</td>
+              </tr>
+              <tr>
+                <td class="compare-label">Phone number to find contacts</td>
+                <td class="compare-dissolve compare-yes">No</td>
+                <td class="compare-no">Yes</td>
+                <td class="compare-no">Yes</td>
+                <td class="compare-no">Yes</td>
+              </tr>
+              <tr>
+                <td class="compare-label">Open source</td>
+                <td class="compare-dissolve compare-yes">Yes</td>
+                <td class="compare-no">No</td>
+                <td class="compare-yes">Yes</td>
+                <td class="compare-no">No</td>
+              </tr>
+              <tr>
+                <td class="compare-label">Run your own server</td>
+                <td class="compare-dissolve compare-yes">Yes</td>
+                <td class="compare-no">No</td>
+                <td class="compare-no">No</td>
+                <td class="compare-no">No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="compare-footnotes reveal-fade">
+          <span>* iMessage requires an Apple ID (email) — still an identity you don't control.</span><br />
+          <span>** Signal queues encrypted messages temporarily until delivered, but does not retain them long-term.</span>
+        </p>
       </div>
     </section>
 
@@ -128,9 +224,8 @@
               <h3 class="feature-title">The server is a dumb pipe.</h3>
             </div>
             <p class="feature-body">
-              The relay routes encrypted blobs. It never sees plaintext, never stores
-              keys, can't impersonate users. Ephemeral keys for forward secrecy on every
-              message. The relay is designed to be untrusted — and replaceable.
+              It routes encrypted blobs. It never sees your messages, never stores
+              keys, and can't impersonate anyone. You can even run your own.
             </p>
           </div>
           <div class="feature-card reveal-fade">
@@ -139,9 +234,8 @@
               <h3 class="feature-title">You control who reaches you.</h3>
             </div>
             <p class="feature-body">
-              Capability-based addressing. To message you, someone needs a token you
-              issued. Revoke any token instantly — cut off one sender without touching
-              your inbox. No other messenger gives you this control.
+              To message you, someone needs a token you gave them. Revoke any
+              token instantly — cut off one sender without touching your inbox.
             </p>
           </div>
           <div class="feature-card reveal-fade">
@@ -150,9 +244,8 @@
               <h3 class="feature-title">Group chat. Same zero trust.</h3>
             </div>
             <p class="feature-body">
-              E2EE group conversations — AES-256-GCM symmetric key, wrapped per-member
-              via ECDH. The relay never knows a group exists. Same security model as
-              1-to-1. Opt-in presence if you want it.
+              Every group message gets its own encryption key. The server never
+              knows a group exists. Same security as 1-to-1.
             </p>
           </div>
           <div class="feature-card feature-wide reveal-fade">
@@ -178,7 +271,7 @@
           Power to the user,<br />not the platform.
         </h2>
         <p class="cta-sub reveal-fade">
-          Free. Open source. No account required.<br />
+          Free. No account. Takes 30 seconds.<br />
           Open beta — things may break. Ship fast, fix fast.
         </p>
         <div class="download-strip reveal-fade">
@@ -196,7 +289,7 @@
           </a>
         </div>
         <p class="cta-note reveal-fade">
-          All releases on <a href="#" id="dl-github-link" target="_blank" rel="noopener">GitHub</a>.
+          Open source — <a href="#" id="dl-github-link" target="_blank" rel="noopener">view on GitHub</a>.
           Early adopters and contributors welcome.
         </p>
       </div>
