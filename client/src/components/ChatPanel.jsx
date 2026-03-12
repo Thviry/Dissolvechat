@@ -4,6 +4,7 @@ import { IconSend, IconAttach, IconClose, IconDownload, IconFile, IconCheck, Ico
 import EmojiPicker from "./EmojiPicker";
 import { parseLinks } from "@utils/linkify";
 import { fileToBase64, base64ToBlob, downloadBlob, formatFileSize } from "@utils/fileUtils";
+import { idToHue, formatCallDuration } from "@utils/callHelpers";
 import { MAX_INLINE_FILE_SIZE, INLINE_IMAGE_TYPES } from "@config";
 
 // Format a date for the separator chip
@@ -40,16 +41,6 @@ function MessageStatus({ status }) {
     default:
       return null;
   }
-}
-
-// Generate a stable hue (0-360) from an ID string
-function idToHue(id) {
-  if (!id) return 0;
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 360;
 }
 
 export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId }) {
