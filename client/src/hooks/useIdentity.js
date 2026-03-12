@@ -122,6 +122,9 @@ export function useIdentity() {
   const [archiveEnabled, setArchiveEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showPresence, setShowPresence] = useState(false);
+  const [avatarColor, setAvatarColor] = useState(null); // null = auto from ID, or preset name
+  const [fontSize, setFontSize] = useState("default"); // "small" | "default" | "large"
+  const [messageDensity, setMessageDensity] = useState("default"); // "compact" | "default" | "spacious"
   const [mnemonic, setMnemonic] = useState(null);
   const [relayUrl, setRelayUrl] = useState("");
 
@@ -173,6 +176,10 @@ export function useIdentity() {
     setSoundEnabled(soundPref.enabled !== false);
     const presencePref = loadJson(`presence:${data.id}`, { enabled: false });
     setShowPresence(!!presencePref.enabled);
+    const profilePref = loadJson(`profile:${data.id}`, {});
+    setAvatarColor(profilePref.avatarColor ?? null);
+    setFontSize(profilePref.fontSize || "default");
+    setMessageDensity(profilePref.messageDensity || "default");
 
     const relayPref = loadJson(`relay:${data.id}`, { url: "" });
     setRelayUrl(relayPref.url || "");
@@ -183,6 +190,18 @@ export function useIdentity() {
       document.documentElement.setAttribute("data-theme", themePref.theme);
     } else {
       document.documentElement.removeAttribute("data-theme");
+    }
+
+    // Restore profile settings (font size, density)
+    if (profilePref.fontSize && profilePref.fontSize !== "default") {
+      document.documentElement.setAttribute("data-font-size", profilePref.fontSize);
+    } else {
+      document.documentElement.removeAttribute("data-font-size");
+    }
+    if (profilePref.messageDensity && profilePref.messageDensity !== "default") {
+      document.documentElement.setAttribute("data-density", profilePref.messageDensity);
+    } else {
+      document.documentElement.removeAttribute("data-density");
     }
 
     if (!skipPersist) {
@@ -385,6 +404,9 @@ export function useIdentity() {
     archiveEnabled, setArchiveEnabled,
     soundEnabled, setSoundEnabled,
     showPresence, setShowPresence,
+    avatarColor, setAvatarColor,
+    fontSize, setFontSize,
+    messageDensity, setMessageDensity,
     relayUrl, setRelayUrl,
     isReady,
     sessionChecked,

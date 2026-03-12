@@ -5,6 +5,30 @@ import LinkDeviceModal from "./LinkDeviceModal";
 import { saveJson } from "@utils/storage";
 import { IconSettings, IconLogout, IconClose, IconMore, IconSearch, IconPlus, IconGroup } from "./Icons";
 
+// Generate a stable hue (0-360) from an ID string
+function idToHue(id) {
+  if (!id) return 0;
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
+}
+
+const AVATAR_COLORS = [
+  { id: "auto",    label: "Auto",    hue: null },
+  { id: "red",     label: "Red",     hue: 0 },
+  { id: "orange",  label: "Orange",  hue: 30 },
+  { id: "amber",   label: "Amber",   hue: 45 },
+  { id: "green",   label: "Green",   hue: 140 },
+  { id: "teal",    label: "Teal",    hue: 175 },
+  { id: "cyan",    label: "Cyan",    hue: 190 },
+  { id: "blue",    label: "Blue",    hue: 220 },
+  { id: "indigo",  label: "Indigo",  hue: 245 },
+  { id: "purple",  label: "Purple",  hue: 270 },
+  { id: "pink",    label: "Pink",    hue: 330 },
+];
+
 export default function Sidebar({
   identity,
   contacts,
@@ -41,6 +65,7 @@ export default function Sidebar({
   const [lookupResult, setLookupResult] = useState(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showLinkDevice, setShowLinkDevice] = useState(false);
   const [contactMenu, setContactMenu] = useState(null);
@@ -49,6 +74,21 @@ export default function Sidebar({
     return url !== "" && url !== RELAY_OFFICIAL && url !== RELAY_LOCAL;
   });
   const importRef = useRef(null);
+
+  const saveProfile = (key, value) => {
+    const current = {
+      avatarColor: identity.avatarColor,
+      fontSize: identity.fontSize,
+      messageDensity: identity.messageDensity,
+    };
+    current[key] = value;
+    saveJson(`profile:${identity.id}`, current);
+  };
+
+  // Resolve identity avatar hue
+  const identityHue = identity.avatarColor
+    ? AVATAR_COLORS.find(c => c.id === identity.avatarColor)?.hue ?? idToHue(identity.id)
+    : idToHue(identity.id);
 
   const handleLookup = async () => {
     if (!lookupHandle.trim()) return;
@@ -307,10 +347,112 @@ export default function Sidebar({
         />
       )}
 
+      {/* ── Profile overlay ── */}
+      {showProfile && (
+        <div className="settings-overlay" role="dialog" aria-label="Profile">
+          <div className="settings-overlay-header">
+            <h3>Profile</h3>
+            <button
+              className="btn-icon"
+              onClick={() => setShowProfile(false)}
+              aria-label="Close profile"
+            >
+              <IconClose size={16} />
+            </button>
+          </div>
+          <div className="settings-overlay-body">
+
+            {/* Avatar preview */}
+            <div className="profile-avatar-section">
+              <div className="profile-avatar-preview" style={{ "--avatar-hue": identityHue }}>
+                {identity.label.charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-name">{identity.label}</div>
+              <div className="profile-id">{identity.id.slice(0, 24)}…</div>
+            </div>
+
+            {/* Avatar color */}
+            <div className="settings-section">
+              <h4>Avatar Color</h4>
+              <div className="avatar-color-grid">
+                {AVATAR_COLORS.map((c) => {
+                  const isActive = (identity.avatarColor || "auto") === c.id;
+                  const swatchHue = c.hue ?? idToHue(identity.id);
+                  return (
+                    <button
+                      key={c.id}
+                      className={`avatar-color-swatch${isActive ? " active" : ""}`}
+                      style={{ "--swatch-hue": swatchHue }}
+                      title={c.label}
+                      aria-label={c.label}
+                      aria-pressed={isActive}
+                      onClick={() => {
+                        const val = c.id === "auto" ? null : c.id;
+                        identity.setAvatarColor(val);
+                        saveProfile("avatarColor", val);
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Font size */}
+            <div className="settings-section">
+              <h4>Font Size</h4>
+              <div className="profile-option-group">
+                {[
+                  { id: "small", label: "Small" },
+                  { id: "default", label: "Default" },
+                  { id: "large", label: "Large" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    className={`btn btn-sm${identity.fontSize === opt.id ? " btn-primary" : " btn-secondary"}`}
+                    onClick={() => {
+                      identity.setFontSize(opt.id);
+                      saveProfile("fontSize", opt.id);
+                      document.documentElement.setAttribute("data-font-size", opt.id);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Message density */}
+            <div className="settings-section">
+              <h4>Message Density</h4>
+              <div className="profile-option-group">
+                {[
+                  { id: "compact", label: "Compact" },
+                  { id: "default", label: "Default" },
+                  { id: "spacious", label: "Spacious" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    className={`btn btn-sm${identity.messageDensity === opt.id ? " btn-primary" : " btn-secondary"}`}
+                    onClick={() => {
+                      identity.setMessageDensity(opt.id);
+                      saveProfile("messageDensity", opt.id);
+                      document.documentElement.setAttribute("data-density", opt.id);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* ── Identity header ── */}
       <div className="sidebar-header">
-        <div className="identity-info">
-          <div className="identity-avatar" aria-hidden="true">
+        <div className="identity-info" onClick={() => setShowProfile(true)} style={{ cursor: "pointer" }} title="Open profile settings">
+          <div className="identity-avatar" aria-hidden="true" style={{ "--avatar-hue": identityHue }}>
             {identity.label.charAt(0).toUpperCase()}
           </div>
           <div className="identity-details">
@@ -391,7 +533,7 @@ export default function Sidebar({
                     aria-current={c.id === activeId ? "true" : undefined}
                   >
                     <div className="contact-accent-bar" aria-hidden="true" />
-                    <div className="contact-avatar" aria-hidden="true">
+                    <div className="contact-avatar" aria-hidden="true" data-hue style={{ "--avatar-hue": idToHue(c.id) }}>
                       {(c.label || "?").charAt(0).toUpperCase()}
                       {onlineIds[c.id] && <span className="presence-dot" />}
                     </div>
@@ -491,7 +633,7 @@ export default function Sidebar({
               {requests.map((r) => (
                 <div key={r.id} className="request-item">
                   <div className="request-header">
-                    <div className="contact-avatar request-avatar" aria-hidden="true">
+                    <div className="contact-avatar request-avatar" aria-hidden="true" data-hue style={{ "--avatar-hue": idToHue(r.id) }}>
                       {(r.label || "?").charAt(0).toUpperCase()}
                     </div>
                     <div className="contact-info">
