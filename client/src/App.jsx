@@ -20,14 +20,18 @@ import { lookupDirectory as relayLookup, blockOnRelay, getRelayUrl } from "@prot
 import { buildBlockRequest, buildDirectoryPublish } from "@protocol/envelopes";
 import useGroups from "@hooks/useGroups";
 import useGroupActions from "@hooks/useGroupActions";
+import useVoiceCall from "@hooks/useVoiceCall";
 import LoginScreen from "@components/LoginScreen";
 import Sidebar from "@components/Sidebar";
 import ChatPanel from "@components/ChatPanel";
 import CreateGroupModal from "@components/CreateGroupModal";
 import GroupInfoPanel from "@components/GroupInfoPanel";
+import IncomingCallOverlay from "@components/IncomingCallOverlay";
+import CallBar from "@components/CallBar";
 import ToastContainer from "@components/Toast";
 import PassphraseModal from "@components/PassphraseModal";
-import { IconClose } from "@components/Icons";
+import { IconClose, IconPhoneOff } from "@components/Icons";
+import { idToHue } from "@utils/callHelpers";
 import "./App.css";
 
 export default function App() {
@@ -42,6 +46,21 @@ export default function App() {
   const groupsMgr = useGroups(identity.id);
   const messaging = useMessaging(identity, contactsMgr, groupsMgr, addToast);
   const groupActions = useGroupActions(identity, groupsMgr, addToast);
+  const contactsRef = useRef(contactsMgr.contacts);
+  useEffect(() => { contactsRef.current = contactsMgr.contacts; }, [contactsMgr.contacts]);
+  const voiceCall = useVoiceCall(identity, contactsRef, messaging.addCallEvent);
+
+  // Wire voice call handlers into message routing
+  useEffect(() => {
+    if (messaging.setVoiceCallHandlers) {
+      messaging.setVoiceCallHandlers({
+        handleIncomingOffer: (inner) => voiceCall.handleIncomingOffer(inner),
+        handleIncomingAnswer: voiceCall.handleIncomingAnswer,
+        handleIncomingIce: voiceCall.handleIncomingIce,
+        handleIncomingEnd: voiceCall.handleIncomingEnd,
+      });
+    }
+  }, [voiceCall, messaging.setVoiceCallHandlers]);
 
   const [activeGroupId, setActiveGroupId] = useState(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -533,6 +552,17 @@ export default function App() {
         </div>
       )}
       <div className="app-layout">
+        {voiceCall.callState === "connected" && (
+          <CallBar
+            peerLabel={voiceCall.callPeer?.label}
+            duration={voiceCall.callDuration}
+            isMuted={voiceCall.isMuted}
+            onMute={voiceCall.mute}
+            onUnmute={voiceCall.unmute}
+            onHangup={() => voiceCall.hangup()}
+            onNavigate={() => handleSelectPeer(voiceCall.callPeer?.id)}
+          />
+        )}
         <Sidebar
           identity={identity}
           contacts={contactsMgr.contacts}
@@ -578,9 +608,43 @@ export default function App() {
             onRetry={messaging.retryMsg}
             onDismiss={messaging.dismissMsg}
             identityId={identity.id}
+            onStartCall={(peerId) => {
+              const peer = contactsMgr.contacts.find(c => c.id === peerId);
+              if (peer) voiceCall.startCall(peer);
+            }}
+            callState={voiceCall.callState}
           />
         )}
       </div>
+
+      {/* Voice call overlays */}
+      {voiceCall.callState === "incoming" && (
+        <IncomingCallOverlay
+          callerLabel={voiceCall.callPeer?.label}
+          callerId={voiceCall.callPeer?.id}
+          onAccept={() => voiceCall.acceptCall()}
+          onDecline={() => voiceCall.declineCall()}
+        />
+      )}
+
+      {(voiceCall.callState === "offering" || voiceCall.callState === "ringing") && (
+        <div className="call-overlay">
+          <div className="call-overlay-content">
+            <div className="call-overlay-avatar" style={{ "--avatar-hue": idToHue(voiceCall.callPeer?.id || "") }}>
+              {(voiceCall.callPeer?.label || "?")[0].toUpperCase()}
+            </div>
+            <div className="call-overlay-label">{voiceCall.callPeer?.label}</div>
+            <div className="call-overlay-status">Calling...</div>
+            <div className="call-overlay-actions">
+              <button className="call-btn call-btn-decline" onClick={() => voiceCall.hangup()} title="Cancel">
+                <IconPhoneOff size={24} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <audio ref={voiceCall.remoteAudioRef} className="call-remote-audio" autoPlay />
 
       <ToastContainer toasts={toasts} />
 
