@@ -2771,6 +2771,187 @@ textarea.input-field {
   display: none;
 }
 
+/* ── Voice Call ─────────────────────────────────────────── */
+
+/* Call overlay (incoming call + brief connected state) */
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+.call-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.call-overlay-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: hsl(var(--avatar-hue, 200) 60% 30%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+  font-family: var(--font-display);
+}
+
+.call-overlay-label {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  font-family: var(--font-display);
+}
+
+.call-overlay-status {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-sans);
+}
+
+.call-overlay-actions {
+  display: flex;
+  gap: 40px;
+  margin-top: 24px;
+}
+
+.call-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.call-btn:hover {
+  transform: scale(1.1);
+}
+
+.call-btn-accept {
+  background: var(--accent);
+  color: #000;
+}
+
+.call-btn-decline {
+  background: #e53e3e;
+  color: #fff;
+}
+
+/* Persistent call bar */
+.call-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+}
+
+.call-bar:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.call-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.call-bar-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.call-bar-duration {
+  font-size: 12px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.call-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.call-bar-btn {
+  color: var(--text-secondary);
+}
+
+.call-bar-btn:hover {
+  color: var(--text-primary);
+}
+
+.call-bar-muted {
+  color: #e53e3e;
+}
+
+.call-bar-end {
+  color: #e53e3e;
+}
+
+.call-bar-end:hover {
+  color: #fc4848;
+}
+
+/* Call button in chat header */
+.chat-header-call {
+  color: var(--text-secondary);
+  transition: color 0.15s;
+}
+
+.chat-header-call:hover {
+  color: var(--accent);
+}
+
+.chat-header-call:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Call history entries in chat */
+.call-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  justify-content: center;
+}
+
+.call-event-icon {
+  color: var(--text-tertiary);
+}
+
+.call-event-missed .call-event-icon {
+  color: #e53e3e;
+}
+
+/* Hidden audio element for remote stream */
+.call-remote-audio {
+  display: none;
+}
+
 /* ============================================================
    Responsive
    ============================================================ */
