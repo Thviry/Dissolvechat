@@ -74,9 +74,34 @@ export function flashTitle(message = "New message!") {
 }
 
 /**
- * Notify the user of a new incoming message (audio + visual).
+ * Show an OS/system notification if permission is granted.
  */
-export function notifyIncoming() {
+function showSystemNotification(title, body) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    new Notification(title, { body, icon: "/favicon.ico" });
+  }
+}
+
+/**
+ * Request notification permission (call once on user interaction).
+ */
+export function requestNotificationPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+/**
+ * Notify the user of a new incoming message (audio + visual + OS).
+ */
+export function notifyIncoming(senderName) {
   playPing();
   flashTitle("New message!");
+  if (!document.hasFocus()) {
+    showSystemNotification(
+      senderName || "New message",
+      senderName ? "sent you a message" : "You have a new message"
+    );
+  }
 }

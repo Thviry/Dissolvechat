@@ -608,9 +608,14 @@ export default function App() {
             onRetry={messaging.retryMsg}
             onDismiss={messaging.dismissMsg}
             identityId={identity.id}
-            onStartCall={(peerId) => {
+            onStartCall={async (peerId) => {
               const peer = contactsMgr.contacts.find(c => c.id === peerId);
-              if (peer) voiceCall.startCall(peer);
+              if (peer) {
+                const result = await voiceCall.startCall(peer);
+                if (result?.error === "turn_failed") {
+                  addToast("Call failed — please try again in a moment", "error");
+                }
+              }
             }}
             callState={voiceCall.callState}
           />

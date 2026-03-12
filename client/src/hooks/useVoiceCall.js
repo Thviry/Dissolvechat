@@ -185,6 +185,15 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
     if (stateRef.current !== "idle") return;
     if (!identity?.isReady) return;
 
+    // Fetch TURN credentials before showing call UI to avoid flash on failure
+    let creds;
+    try {
+      creds = await fetchTurnCredentials(identity.authPubJwk, identity.authPrivKey);
+    } catch (err) {
+      console.error("[Voice] Failed to get TURN credentials:", err);
+      return { error: "turn_failed" };
+    }
+
     const newCallId = crypto.randomUUID();
     callIdRef.current = newCallId;
     directionRef.current = "outbound";
@@ -197,7 +206,6 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
     setCallDuration(0);
 
     try {
-      const creds = await fetchTurnCredentials(identity.authPubJwk, identity.authPrivKey);
       const pc = createCallConnection(creds);
       pcRef.current = pc;
 

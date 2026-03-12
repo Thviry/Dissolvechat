@@ -36,7 +36,7 @@ import {
   buildDeliveryReceipt,
 } from "@protocol/envelopes";
 import { checkAndUpdateReplay } from "@utils/storage";
-import { notifyIncoming, flashTitle } from "@utils/notifications";
+import { notifyIncoming, flashTitle, requestNotificationPermission } from "@utils/notifications";
 
 import { createMessageStore } from "@utils/messageStore";
 import { POLL_INTERVAL_MS, CAP_REPUBLISH_INTERVAL_MS, SEND_RETRY_BASE_DELAY_MS } from "@config";
@@ -61,6 +61,10 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const pollTimerRef = useRef(null);
   const archiveRef = useRef(null);
   const soundRef = useRef(true);
+
+  // Request OS notification permission on mount
+  useEffect(() => { requestNotificationPermission(); }, []);
+
   const fetchMessagesRef = useRef(null);
   const voiceHandlersRef = useRef(null);
 
@@ -258,7 +262,9 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
           ...prev,
           [inner.from]: { text: inner.file ? "Attachment" : (inner.text || "").slice(0, 80), ts: inner.ts },
         }));
-        if (soundRef.current) notifyIncoming(); else flashTitle();
+        const senderContact = contactsRef.current.find((c) => c.id === inner.from);
+        const senderName = senderContact?.label || inner.senderLabel || "Someone";
+        if (soundRef.current) notifyIncoming(senderName); else flashTitle();
         return { from: inner.from, msgId: msg.msgId };
       }
 
@@ -298,7 +304,9 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
           ...prev,
           [inner.groupId]: { text: inner.file ? "Attachment" : (inner.text || "").slice(0, 80), ts: inner.ts },
         }));
-        if (soundRef.current) notifyIncoming(); else flashTitle();
+        const groupSender = contactsRef.current.find((c) => c.id === inner.from);
+        const groupName = groupSender?.label || inner.senderLabel || "Someone";
+        if (soundRef.current) notifyIncoming(groupName); else flashTitle();
         return { from: inner.from, msgId: inner.msgId };
       }
 
@@ -448,7 +456,8 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
         const archMsg = { dir: "in", peerId: env.from, text: plaintext, ts: env.ts, msgId: msg.msgId || randomId() };
         setMessages((prev) => [...prev, archMsg]);
         archiveRef.current?.save(myId, archMsg);
-        if (soundRef.current) notifyIncoming(); else flashTitle();
+        const legacySender = contactsRef.current.find((c) => c.id === env.from);
+        if (soundRef.current) notifyIncoming(legacySender?.label || "Someone"); else flashTitle();
       }
     }
   }, [myId, e2eePrivJwk, computeId, contactsRef, requestsRef, addContact, addOrUpdateRequest, groupsMgr, addToast, updateMessageStatus]);
@@ -862,15 +871,14 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const selectPeer = useCallback((peerId) => {
     setActiveId(peerId);
     activeIdRef.current = peerId;
-    if (peerId && unreadCounts[peerId]) {
-      setUnreadCounts((prev) => {
-        const updated = { ...prev };
-        delete updated[peerId];
-        localStorage.setItem(`unread:${myId}`, JSON.stringify(updated));
-        return updated;
-      });
-    }
-  }, [myId, unreadCounts]);
+    setUnreadCounts((prev) => {
+      if (!peerId || !prev[peerId]) return prev;
+      const updated = { ...prev };
+      delete updated[peerId];
+      localStorage.setItem(`unread:${myId}`, JSON.stringify(updated));
+      return updated;
+    });
+  }, [myId]);
 
   const reset = useCallback(() => {
     setMessages([]);

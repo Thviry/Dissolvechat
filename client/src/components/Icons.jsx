@@ -196,9 +196,9 @@ export const IconPhone = ({ size = 16, ...props }) => (
 );
 
 export const IconPhoneOff = ({ size = 16, ...props }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-    <path d="M6 2.5H4.5a2 2 0 00-2 2c0 1.5.3 2.9.8 4.2M8.8 11.2c1.3.5 2.7.8 4.2.8a2 2 0 002-2V10l-2.8-1.2L9 10.5" />
-    <line x1="2" y1="2" x2="14" y2="14" />
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <line x1="4" y1="4" x2="12" y2="12" />
+    <line x1="12" y1="4" x2="4" y2="12" />
   </svg>
 );
 
