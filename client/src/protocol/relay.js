@@ -348,3 +348,20 @@ export function connectWebSocket(myId, authPubJwk, authPrivJwk, onNotify, onAuth
     close() { handles.forEach(h => h.close()); },
   };
 }
+
+/**
+ * Fetch ephemeral TURN credentials for voice call setup.
+ * Authenticated via signed request body.
+ */
+export async function fetchTurnCredentials(authPubJwk, authPrivJwk) {
+  const ts = Date.now();
+  // Pass raw object to signObject — it uses JCS canonicalization internally
+  const sig = await signObject({ action: "turn-credentials", ts }, authPrivJwk);
+  const base = getRelayUrl();
+  const resp = await relayFetch(base, "/turn-credentials", {
+    method: "POST",
+    body: JSON.stringify({ authPub: authPubJwk, ts, sig }),
+  });
+  if (!resp.ok) throw new Error(`TURN credentials failed: ${resp.status}`);
+  return resp.json ? await resp.json() : resp;
+}

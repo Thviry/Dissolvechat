@@ -364,6 +364,40 @@ function registerRoutes(app, store, wss) {
     res.json({ ok: true, online });
   });
 
+  // ── POST /turn-credentials — ephemeral TURN credentials for voice calls ──
+  app.post("/turn-credentials", async (req, res) => {
+    const ipKey = getIpKey(req);
+    if (!rateCheck(req, res, "ip", `${ipKey}:turn`, { window: 60, max: 10 }, "/turn-credentials")) return;
+
+    const { authPub, ts, sig } = req.body;
+    if (!authPub || !ts || !sig) return res.status(400).json({ error: "missing_fields" });
+
+    // Anti-replay: timestamp must be within 30s
+    const now = Date.now();
+    if (Math.abs(now - ts) > 30000) return res.status(403).json({ error: "timestamp_expired" });
+
+    // Verify signature over raw object (verifySignature uses JCS internally)
+    const valid = await verifySignature({ action: "turn-credentials", ts }, sig, authPub);
+    if (!valid) return res.status(403).json({ error: "invalid_signature" });
+
+    const identityId = computeIdFromAuthPubJwk(authPub);
+
+    // Identity rate limit
+    if (!rateCheck(req, res, "id", `id:${identityId}:turn`, { window: 60, max: 5 }, "/turn-credentials")) return;
+
+    const secret = process.env.TURN_SECRET;
+    if (!secret) return res.status(503).json({ error: "turn_not_configured" });
+
+    const expiry = Math.floor(Date.now() / 1000) + 300;
+    const username = `${expiry}:${identityId}`;
+    const credential = crypto
+      .createHmac("sha1", secret)
+      .update(username)
+      .digest("base64");
+
+    return res.json({ username, credential, ttl: 300, urls: ["turn:relay.dissolve.chat:3478"] });
+  });
+
   // ── POST /send — metadata-minimal message delivery ────────────────
   app.post("/send", async (req, res) => {
     const ipKey = getIpKey(req);
