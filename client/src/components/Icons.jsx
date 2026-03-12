@@ -188,3 +188,41 @@ export const IconStar = ({ size = 16, filled = false, ...props }) => (
     <path d="M8 1.5l2 4 4.5.7-3.3 3.1.8 4.5L8 11.5l-4 2.3.8-4.5L1.5 6.2l4.5-.7z" />
   </svg>
 );
+
+export const IconPhone = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M6 2.5H4.5a2 2 0 00-2 2c0 5 4 9 9 9a2 2 0 002-2V10l-2.8-1.2L9 10.5a7.5 7.5 0 01-3.5-3.5L7.2 5.3 6 2.5z" />
+  </svg>
+);
+
+export const IconPhoneOff = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M6 2.5H4.5a2 2 0 00-2 2c0 1.5.3 2.9.8 4.2M8.8 11.2c1.3.5 2.7.8 4.2.8a2 2 0 002-2V10l-2.8-1.2L9 10.5" />
+    <line x1="2" y1="2" x2="14" y2="14" />
+  </svg>
+);
+
+export const IconPhoneMissed = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M6 2.5H4.5a2 2 0 00-2 2c0 5 4 9 9 9a2 2 0 002-2V10l-2.8-1.2L9 10.5a7.5 7.5 0 01-3.5-3.5L7.2 5.3 6 2.5z" />
+    <path d="M10 2l4 4M14 2l-4 4" />
+  </svg>
+);
+
+export const IconMic = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <rect x="5.5" y="1.5" width="5" height="8" rx="2.5" />
+    <path d="M3 7.5a5 5 0 0010 0" />
+    <line x1="8" y1="12.5" x2="8" y2="14.5" />
+  </svg>
+);
+
+export const IconMicOff = ({ size = 16, ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M10.5 4V3.5a2.5 2.5 0 00-5 0v4c0 .3.1.6.2.9" />
+    <path d="M10.2 9.3A2.5 2.5 0 015.5 7.5" />
+    <path d="M3 7.5a5 5 0 008.5 3.5" />
+    <line x1="8" y1="12.5" x2="8" y2="14.5" />
+    <line x1="2" y1="2" x2="14" y2="14" />
+  </svg>
+);
