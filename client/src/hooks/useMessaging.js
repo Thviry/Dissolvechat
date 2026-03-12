@@ -62,6 +62,7 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
   const archiveRef = useRef(null);
   const soundRef = useRef(true);
   const fetchMessagesRef = useRef(null);
+  const voiceHandlersRef = useRef(null);
 
   const {
     id: myId, label: myLabel,
@@ -343,6 +344,35 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
 
       if (inner.t === "GroupNameChange" && groupsMgr) {
         groupsMgr.renameGroup(inner.groupId, inner.groupName);
+      }
+
+      // --- Voice call signaling (transient — not stored as messages) ---
+      if (inner.t === "VoiceOffer") {
+        if (voiceHandlersRef.current?.handleIncomingOffer) {
+          voiceHandlersRef.current.handleIncomingOffer(inner);
+        }
+        return;
+      }
+
+      if (inner.t === "VoiceAnswer") {
+        if (voiceHandlersRef.current?.handleIncomingAnswer) {
+          voiceHandlersRef.current.handleIncomingAnswer(inner);
+        }
+        return;
+      }
+
+      if (inner.t === "VoiceIce") {
+        if (voiceHandlersRef.current?.handleIncomingIce) {
+          voiceHandlersRef.current.handleIncomingIce(inner);
+        }
+        return;
+      }
+
+      if (inner.t === "VoiceEnd") {
+        if (voiceHandlersRef.current?.handleIncomingEnd) {
+          voiceHandlersRef.current.handleIncomingEnd(inner);
+        }
+        return;
       }
 
       return;
@@ -856,6 +886,20 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     archiveRef.current = null;
   }, []);
 
+  const setVoiceCallHandlers = useCallback((handlers) => {
+    voiceHandlersRef.current = handlers;
+  }, []);
+
+  const addCallEventFn = useCallback((event) => {
+    const peerId = event.peerId || event.from;
+    setMessages(prev => [...prev, event]);
+    setLastMessages(prev => ({ ...prev, [peerId]: event }));
+    if (archiveRef.current) {
+      archiveRef.current.save(myId, event).catch(() => {});
+    }
+    // Note: no setUnreadCounts — call events are informational
+  }, [myId]);
+
   return {
     messages, activeId, setActiveId: selectPeer,
     groupMessages,
@@ -863,5 +907,6 @@ export function useMessaging(identity, contactsMgr, groupsMgr, addToast) {
     retryMsg, dismissMsg, updateMessageStatus,
     reset, historyLoaded,
     unreadCounts, lastMessages,
+    setVoiceCallHandlers, addCallEvent: addCallEventFn,
   };
 }
