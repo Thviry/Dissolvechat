@@ -1,6 +1,6 @@
 // client/src/components/ChatPanel.jsx
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { IconSend, IconAttach, IconClose, IconDownload, IconFile, IconCheck, IconCheckDouble, IconClock, IconRetry, IconAlert, IconEmoji, IconCopy } from "./Icons";
+import { IconSend, IconAttach, IconClose, IconDownload, IconFile, IconCheck, IconCheckDouble, IconClock, IconRetry, IconAlert, IconEmoji, IconCopy, IconPhone, IconPhoneMissed } from "./Icons";
 import EmojiPicker from "./EmojiPicker";
 import { parseLinks } from "@utils/linkify";
 import { fileToBase64, base64ToBlob, downloadBlob, formatFileSize } from "@utils/fileUtils";
@@ -43,7 +43,7 @@ function MessageStatus({ status }) {
   }
 }
 
-export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId }) {
+export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId, onStartCall, callState }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -308,6 +308,16 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
               ⚠ No cap
             </div>
           )}
+          {peer && !group && onStartCall && (
+            <button
+              className="btn-icon chat-header-call"
+              onClick={() => onStartCall(peer.id)}
+              disabled={callState !== "idle"}
+              title={callState !== "idle" ? "Already in a call" : "Start voice call"}
+            >
+              <IconPhone size={16} />
+            </button>
+          )}
         </div>
       )}
 
@@ -330,6 +340,23 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
             item.type === "separator" ? (
               <div key={item.key} className="chat-date-separator" aria-label={`Messages from ${item.label}`}>
                 <span className="chat-date-chip">{item.label}</span>
+              </div>
+            ) : item.t === "CallEvent" ? (
+              <div key={item.callId} className={`call-event ${(item.reason === "timeout" || item.reason === "missed") ? "call-event-missed" : ""}`}>
+                <span className="call-event-icon">
+                  {(item.reason === "timeout" || item.reason === "missed") ? <IconPhoneMissed size={14} /> : <IconPhone size={14} />}
+                </span>
+                {item.reason === "hangup" && item.duration > 0
+                  ? `Voice call — ${formatCallDuration(item.duration)}`
+                  : item.reason === "decline"
+                  ? "Call declined"
+                  : item.reason === "busy"
+                  ? "User busy"
+                  : item.reason === "error"
+                  ? "Call failed"
+                  : item.direction === "inbound"
+                  ? "Missed voice call"
+                  : "No answer"}
               </div>
             ) : (
               <React.Fragment key={item.msgId}>
