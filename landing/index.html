@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dissolve — Power to the user, not the platform</title>
-  <meta name="description" content="End-to-end encrypted messaging. No accounts. No phone numbers. Your identity is a key pair you control." />
+  <title>Dissolve — No account. No phone number. Just talk.</title>
+  <meta name="description" content="Free, open-source chat app. No account, no phone number, end-to-end encrypted. Your data stays on your device." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230a0a0a'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-weight='700' font-size='20' fill='%2339ff14'>[D]</text></svg>" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -65,7 +66,7 @@
     <section class="how-it-works" id="how-it-works">
       <div class="section-inner">
         <p class="section-tag reveal-fade">// HOW_IT_WORKS</p>
-        <h2 class="section-title reveal-fade">Three steps. That's it.</h2>
+        <h2 class="section-title reveal-fade">No signup flow. No verification email. Just this:</h2>
         <div class="steps-grid">
           <div class="step-card reveal-fade">
             <span class="step-num">01</span>
@@ -105,6 +106,14 @@
             </thead>
             <tbody>
               <tr>
+                <td class="compare-label">Server retains messages</td>
+                <td class="compare-dissolve compare-yes">No</td>
+                <td class="compare-no">Yes</td>
+                <td class="compare-no">Yes</td>
+                <td>No<sup>**</sup></td>
+                <td class="compare-no">Yes</td>
+              </tr>
+              <tr>
                 <td class="compare-label">Needs phone number</td>
                 <td class="compare-dissolve compare-yes">No</td>
                 <td class="compare-yes">No</td>
@@ -118,14 +127,6 @@
                 <td class="compare-no">Yes</td>
                 <td class="compare-yes">No</td>
                 <td class="compare-yes">No</td>
-                <td class="compare-no">Yes</td>
-              </tr>
-              <tr>
-                <td class="compare-label">Server retains messages</td>
-                <td class="compare-dissolve compare-yes">No</td>
-                <td class="compare-no">Yes</td>
-                <td class="compare-no">Yes</td>
-                <td>No<sup>**</sup></td>
                 <td class="compare-no">Yes</td>
               </tr>
               <tr>
@@ -188,111 +189,104 @@
       </div>
     </section>
 
-    <!-- Threat Landscape -->
-    <section class="threats" id="threats">
+    <!-- Deep Dive (collapsible) -->
+    <section class="deep-dive" id="deep-dive">
       <div class="section-inner">
-        <p class="section-tag reveal-fade">// THREAT_LANDSCAPE</p>
-        <h2 class="section-title reveal-fade">The conversation is never private.</h2>
-        <p class="section-sub reveal-fade">
-          Every major platform treats your messages as a product.
-          Here's what's happening right now.
-        </p>
-        <div class="threat-grid">
-          <div class="threat-card reveal-fade">
-            <span class="threat-stat">4,000+</span>
-            <span class="threat-label">data brokers</span>
-            <p class="threat-body">
-              operate in the US alone, buying and selling personal data
-              including message metadata, contact graphs, and behavioral profiles.
-            </p>
-          </div>
-          <div class="threat-card reveal-fade">
-            <span class="threat-stat">~400K</span>
-            <span class="threat-label">government requests / year</span>
-            <p class="threat-body">
-              Major platforms receive hundreds of thousands of legal requests
-              for user data annually. Most comply. Most users are never notified.
-            </p>
-          </div>
-          <div class="threat-card reveal-fade">
-            <span class="threat-stat">100%</span>
-            <span class="threat-label">of metadata is retained</span>
-            <p class="threat-body">
-              Even "encrypted" platforms log who you talk to, when, how often,
-              and from where. Metadata alone rebuilds your entire social graph.
-            </p>
-          </div>
-          <div class="threat-card reveal-fade">
-            <span class="threat-stat">&infin;</span>
-            <span class="threat-label">retention by default</span>
-            <p class="threat-body">
-              Your chat logs are permanent records stored on servers you don't
-              control. They survive account deletion, company acquisitions, and breaches.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- How Dissolve Handles It -->
-    <section class="features" id="features">
-      <div class="section-inner">
-        <p class="section-tag reveal-fade">// HOW_WE_HANDLE_IT</p>
-        <h2 class="section-title reveal-fade">Built to resist. Not to comply.</h2>
-        <div class="feature-grid">
-          <div class="feature-card reveal-fade">
-            <div class="feature-header">
-              <span class="feature-num">01</span>
-              <h3 class="feature-title">No accounts. No phone numbers.</h3>
+        <details class="deep-dive-toggle">
+          <summary class="deep-dive-summary reveal-fade">
+            <span class="section-tag">// DEEP_DIVE</span>
+            <h2 class="section-title">Want the full picture? Here's how it works under the hood.</h2>
+          </summary>
+          <div class="deep-dive-content">
+            <div class="threat-grid">
+              <div class="threat-card">
+                <span class="threat-stat">4,000+</span>
+                <span class="threat-label">data brokers</span>
+                <p class="threat-body">
+                  operate in the US alone, buying and selling personal data
+                  including message metadata, contact graphs, and behavioral profiles.
+                </p>
+              </div>
+              <div class="threat-card">
+                <span class="threat-stat">~400K</span>
+                <span class="threat-label">government requests / year</span>
+                <p class="threat-body">
+                  Major platforms receive hundreds of thousands of legal requests
+                  for user data annually. Most comply. Most users are never notified.
+                </p>
+              </div>
+              <div class="threat-card">
+                <span class="threat-stat">100%</span>
+                <span class="threat-label">of metadata is retained</span>
+                <p class="threat-body">
+                  Even "encrypted" platforms log who you talk to, when, how often,
+                  and from where. Metadata alone rebuilds your entire social graph.
+                </p>
+              </div>
+              <div class="threat-card">
+                <span class="threat-stat">&infin;</span>
+                <span class="threat-label">retention by default</span>
+                <p class="threat-body">
+                  Your chat logs are permanent records stored on servers you don't
+                  control. They survive account deletion, company acquisitions, and breaches.
+                </p>
+              </div>
             </div>
-            <p class="feature-body">
-              Your identity is a cryptographic key pair stored on your device.
-              No email, no phone, no server-side account. Back it up to a USB drive.
-              Nobody can recover it — and nobody can seize it.
-            </p>
-          </div>
-          <div class="feature-card reveal-fade">
-            <div class="feature-header">
-              <span class="feature-num">02</span>
-              <h3 class="feature-title">The server is a dumb pipe.</h3>
+            <div class="feature-grid" style="margin-top: 48px;">
+              <div class="feature-card">
+                <div class="feature-header">
+                  <span class="feature-num">01</span>
+                  <h3 class="feature-title">No accounts. No phone numbers.</h3>
+                </div>
+                <p class="feature-body">
+                  Your identity is a cryptographic key pair stored on your device.
+                  No email, no phone, no server-side account. Nobody can recover it — and nobody can seize it.
+                </p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-header">
+                  <span class="feature-num">02</span>
+                  <h3 class="feature-title">The server is a dumb pipe.</h3>
+                </div>
+                <p class="feature-body">
+                  It routes encrypted blobs. It never sees your messages, never stores
+                  keys, and can't impersonate anyone. You can even run your own.
+                </p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-header">
+                  <span class="feature-num">03</span>
+                  <h3 class="feature-title">You control who reaches you.</h3>
+                </div>
+                <p class="feature-body">
+                  To message you, someone needs a token you gave them. Revoke any
+                  token instantly — cut off one sender without touching your inbox.
+                </p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-header">
+                  <span class="feature-num">04</span>
+                  <h3 class="feature-title">Group chat. Same zero trust.</h3>
+                </div>
+                <p class="feature-body">
+                  Every group message gets its own encryption key. The server never
+                  knows a group exists. Same security as 1-to-1.
+                </p>
+              </div>
+              <div class="feature-card feature-wide">
+                <div class="feature-header">
+                  <span class="feature-num">05</span>
+                  <h3 class="feature-title">Open source. Fully auditable.</h3>
+                </div>
+                <p class="feature-body">
+                  MIT licensed. Every line of code is public. Run your own relay if you don't
+                  trust ours. We built this because user security is in freefall and
+                  nobody seemed to care. We care.
+                </p>
+              </div>
             </div>
-            <p class="feature-body">
-              It routes encrypted blobs. It never sees your messages, never stores
-              keys, and can't impersonate anyone. You can even run your own.
-            </p>
           </div>
-          <div class="feature-card reveal-fade">
-            <div class="feature-header">
-              <span class="feature-num">03</span>
-              <h3 class="feature-title">You control who reaches you.</h3>
-            </div>
-            <p class="feature-body">
-              To message you, someone needs a token you gave them. Revoke any
-              token instantly — cut off one sender without touching your inbox.
-            </p>
-          </div>
-          <div class="feature-card reveal-fade">
-            <div class="feature-header">
-              <span class="feature-num">04</span>
-              <h3 class="feature-title">Group chat. Same zero trust.</h3>
-            </div>
-            <p class="feature-body">
-              Every group message gets its own encryption key. The server never
-              knows a group exists. Same security as 1-to-1.
-            </p>
-          </div>
-          <div class="feature-card feature-wide reveal-fade">
-            <div class="feature-header">
-              <span class="feature-num">05</span>
-              <h3 class="feature-title">Open source. Fully auditable.</h3>
-            </div>
-            <p class="feature-body">
-              MIT licensed. Every line of code is public. Run your own relay if you don't
-              trust ours. We built this because user security is in freefall and
-              nobody seemed to care. We care.
-            </p>
-          </div>
-        </div>
+        </details>
       </div>
     </section>
 
