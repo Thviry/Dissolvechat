@@ -401,6 +401,53 @@ a:hover { text-decoration: underline; }
   font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.8;
+  margin-bottom: 32px;
+}
+
+/* ── Incident cards ── */
+.incident-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.incident-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--red);
+  border-radius: 4px;
+  padding: 20px 20px 16px;
+  transition: border-color 200ms, background 200ms;
+}
+.incident-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 51, 51, 0.3);
+  border-top-color: var(--red);
+}
+
+.incident-platform {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--red);
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.incident-body {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+.incident-body a {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.incident-body a:hover {
+  color: var(--accent);
 }
 
 /* ── Shared section styles ── */
@@ -743,4 +790,6 @@ a:hover { text-decoration: underline; }
   .compare-table tbody tr:hover td:first-child {
     background: var(--bg-card);
   }
+
+  .incident-grid { grid-template-columns: 1fr; }
 }
