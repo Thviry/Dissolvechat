@@ -43,7 +43,7 @@ function MessageStatus({ status }) {
   }
 }
 
-export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId, onStartCall, callState }) {
+export default function ChatPanel({ className, isMobile, onBack, peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId, onStartCall, callState }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -259,7 +259,7 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
 
   if (!peer && !group) {
     return (
-      <main className="chat-panel">
+      <main className={`chat-panel ${className || ""}`}>
         <div className="chat-empty">
           <div className="chat-empty-watermark" aria-hidden="true">◈</div>
           <div className="chat-empty-icon" aria-hidden="true">◈</div>
@@ -276,10 +276,15 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
   const canSend = group ? true : !!peer?.cap;
 
   return (
-    <main className="chat-panel" onClick={handleChatClick}>
+    <main className={`chat-panel ${className || ""}`} onClick={handleChatClick}>
       {/* Header */}
       {group ? (
         <div className="chat-header" onClick={onGroupInfo} style={{ cursor: "pointer" }}>
+          {isMobile && (
+            <button className="btn-icon chat-header-back" onClick={(e) => { e.stopPropagation(); onBack(); }} aria-label="Back to contacts">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 10H5"/><path d="M10 5l-5 5 5 5"/></svg>
+            </button>
+          )}
           <div className="chat-header-avatar group-avatar" aria-hidden="true">
             {group.groupName[0].toUpperCase()}
           </div>
@@ -290,6 +295,11 @@ export default function ChatPanel({ peer, group, messages, onSend, onGroupInfo, 
         </div>
       ) : (
         <div className="chat-header">
+          {isMobile && (
+            <button className="btn-icon chat-header-back" onClick={onBack} aria-label="Back to contacts">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 10H5"/><path d="M10 5l-5 5 5 5"/></svg>
+            </button>
+          )}
           <div className="chat-header-avatar" aria-hidden="true" data-hue style={{ "--avatar-hue": idToHue(peer.id) }}>
             {(peer.label || "?").charAt(0).toUpperCase()}
           </div>
