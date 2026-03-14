@@ -21,6 +21,7 @@ const AVATAR_COLORS = [
 ];
 
 export default function Sidebar({
+  className,
   identity,
   contacts,
   requests,
@@ -98,7 +99,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${className || ""}`}>
 
       {/* ── Settings overlay (slides over full sidebar) ── */}
       {showSettings && (
