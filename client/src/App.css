@@ -2952,21 +2952,65 @@ textarea.input-field {
   display: none;
 }
 
-/* ============================================================
-   Responsive
-   ============================================================ */
-@media (max-width: 768px) {
-  :root { --sidebar-width: 280px; }
+/* Back button — only rendered on mobile via React */
+.chat-header-back {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background 0.15s, color 0.15s;
 }
 
-@media (max-width: 600px) {
-  .app-layout { flex-direction: column; }
+.chat-header-back:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   Responsive — mobile (≤768px): full-screen view swap
+   ============================================================ */
+@media (max-width: 768px) {
+  :root { --sidebar-width: 100%; }
+
+  .mobile-hidden { display: none !important; }
+
   .sidebar {
     width: 100%;
     min-width: 100%;
-    max-height: 45vh;
     border-right: none;
-    border-bottom: 1px solid var(--border);
+  }
+
+  .chat-panel {
+    width: 100%;
+  }
+
+  /* Touch-friendly tap targets */
+  .contact-item,
+  .request-item {
+    min-height: 44px;
+  }
+
+  /* Wider bubbles on mobile */
+  .chat-bubble {
+    max-width: 80%;
+  }
+
+  /* Hide custom emoji picker — use native keyboard */
+  .btn-emoji { display: none; }
+
+  /* GroupInfoPanel: full-screen overlay on mobile */
+  .group-info-panel {
+    position: fixed;
+    inset: 0;
+    min-width: unset;
+    max-width: unset;
+    z-index: 1000;
+    border-left: none;
   }
 }
 
