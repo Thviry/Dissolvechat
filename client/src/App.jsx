@@ -32,6 +32,7 @@ import ToastContainer from "@components/Toast";
 import PassphraseModal from "@components/PassphraseModal";
 import { IconClose, IconPhoneOff } from "@components/Icons";
 import { idToHue } from "@utils/callHelpers";
+import useMediaQuery from "@hooks/useMediaQuery";
 import "./App.css";
 
 export default function App() {
@@ -39,6 +40,9 @@ export default function App() {
   const [backupDismissed, setBackupDismissed] = useState(false);
   const [exportDismissed, setExportDismissed] = useState(false);
   const [pendingViewMnemonic, setPendingViewMnemonic] = useState(null);
+
+  const isMobile = useMediaQuery(768);
+  const [mobileView, setMobileView] = useState("contacts");
 
   const identity = useIdentity();
   const contactsMgr = useContacts(identity.id);
@@ -243,13 +247,15 @@ export default function App() {
     setActiveGroupId(groupId);
     messaging.setActiveId(groupId); // clears unread for this group
     setShowGroupInfo(false);
-  }, [messaging]);
+    if (isMobile) setMobileView("chat");
+  }, [messaging, isMobile]);
 
   const handleSelectPeer = useCallback((peerId) => {
     messaging.setActiveId(peerId);
     setActiveGroupId(null);
     setShowGroupInfo(false);
-  }, [messaging]);
+    if (isMobile) setMobileView("chat");
+  }, [messaging, isMobile]);
 
   // --- Logout ---
   const handleLogout = useCallback(() => {
@@ -261,6 +267,7 @@ export default function App() {
     setShowCreateGroup(false);
     setShowGroupInfo(false);
     setMode("login");
+    setMobileView("contacts");
   }, [identity, contactsMgr, groupsMgr, messaging]);
 
   // --- Export contact card (includes inbox cap — share with trusted contacts) ---
@@ -339,6 +346,7 @@ export default function App() {
     const peer = contactsMgr.findPeer(id);
     if (!peer) return;
     contactsMgr.removeById(id);
+    if (isMobile) setMobileView("contacts");
     try {
       const capHash = typeof peer.cap === "string" && peer.cap
         ? await capHashFromCap(peer.cap)
@@ -348,7 +356,7 @@ export default function App() {
       );
       await blockOnRelay(identity.id, id, capHash, body);
     } catch { /* best-effort */ }
-  }, [identity, contactsMgr]);
+  }, [identity, contactsMgr, isMobile]);
 
   // --- Directory lookup ---
   const handleLookup = useCallback(async (handle) => {
@@ -564,6 +572,7 @@ export default function App() {
           />
         )}
         <Sidebar
+          className={isMobile && mobileView === "chat" ? "mobile-hidden" : ""}
           identity={identity}
           contacts={contactsMgr.contacts}
           requests={contactsMgr.requests}
@@ -594,6 +603,9 @@ export default function App() {
         />
         {activeGroup ? (
           <ChatPanel
+            className={isMobile && mobileView === "contacts" ? "mobile-hidden" : ""}
+            isMobile={isMobile}
+            onBack={() => setMobileView("contacts")}
             group={activeGroup}
             messages={activeGroupMessages}
             onSend={(_, text, file) => messaging.sendGroupMsg(activeGroupId, text, file)}
@@ -602,6 +614,9 @@ export default function App() {
           />
         ) : (
           <ChatPanel
+            className={isMobile && mobileView === "contacts" ? "mobile-hidden" : ""}
+            isMobile={isMobile}
+            onBack={() => setMobileView("contacts")}
             peer={activePeer}
             messages={visibleMessages}
             onSend={messaging.sendMsg}
@@ -681,8 +696,8 @@ export default function App() {
           onRemoveMember={groupActions.removeGroupMember}
           onChangeRole={groupActions.changeAdminRole}
           onRenameGroup={groupActions.renameGroup}
-          onLeaveGroup={(gid) => { groupActions.leaveGroup(gid); setActiveGroupId(null); setShowGroupInfo(false); }}
-          onDeleteGroup={(gid) => { groupActions.deleteGroup(gid); setActiveGroupId(null); setShowGroupInfo(false); }}
+          onLeaveGroup={(gid) => { groupActions.leaveGroup(gid); setActiveGroupId(null); setShowGroupInfo(false); setMobileView("contacts"); }}
+          onDeleteGroup={(gid) => { groupActions.deleteGroup(gid); setActiveGroupId(null); setShowGroupInfo(false); setMobileView("contacts"); }}
         />
       )}
 
