@@ -205,7 +205,7 @@
 @keyframes toast-enter {
   from {
     opacity: 0;
-    transform: translateX(12px) scale(0.96);
+    transform: translateX(20px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -2262,7 +2262,7 @@ textarea.input-field {
   border-radius: var(--radius-full);
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-raised);
   font-size: 13px;
   font-weight: 500;
   max-width: 340px;
@@ -2278,16 +2278,19 @@ textarea.input-field {
 .toast-success {
   border-color: rgba(52, 211, 153, 0.25);
   background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(52, 211, 153, 0.15));
+  border-left: 2px solid var(--accent);
 }
 
 .toast-error {
   border-color: rgba(248, 113, 113, 0.25);
   background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(248, 113, 113, 0.15));
+  border-left: 2px solid var(--danger);
 }
 
 .toast-warning {
   border-color: rgba(251, 191, 36, 0.25);
   background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(251, 191, 36, 0.15));
+  border-left: 2px solid var(--warning);
 }
 
 .toast-info {
