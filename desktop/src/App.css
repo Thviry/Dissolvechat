@@ -1360,6 +1360,7 @@ code, kbd {
   flex-direction: column;
   background: var(--bg-primary);
   min-width: 0;
+  animation: fadeSlideUp 150ms ease-out;
 }
 
 /* Empty state — no peer selected */

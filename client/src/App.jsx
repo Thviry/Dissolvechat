@@ -603,6 +603,7 @@ export default function App() {
         />
         {activeGroup ? (
           <ChatPanel
+            key={activeGroupId}
             className={isMobile && mobileView === "contacts" ? "mobile-hidden" : ""}
             isMobile={isMobile}
             onBack={() => setMobileView("contacts")}
@@ -617,6 +618,7 @@ export default function App() {
           />
         ) : (
           <ChatPanel
+            key={activePeer?.id}
             className={isMobile && mobileView === "contacts" ? "mobile-hidden" : ""}
             isMobile={isMobile}
             onBack={() => setMobileView("contacts")}
