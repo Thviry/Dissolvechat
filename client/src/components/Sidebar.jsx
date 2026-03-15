@@ -74,7 +74,9 @@ export default function Sidebar({
   const [lookupResult, setLookupResult] = useState(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsExiting, setSettingsExiting] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [profileExiting, setProfileExiting] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showLinkDevice, setShowLinkDevice] = useState(false);
   const [contactMenu, setContactMenu] = useState(null);
@@ -83,6 +85,9 @@ export default function Sidebar({
     return url !== "" && url !== RELAY_OFFICIAL && url !== RELAY_LOCAL;
   });
   const importRef = useRef(null);
+
+  const closeSettings = () => { setSettingsExiting(true); setTimeout(() => { setShowSettings(false); setSettingsExiting(false); }, 200); };
+  const closeProfile = () => { setProfileExiting(true); setTimeout(() => { setShowProfile(false); setProfileExiting(false); }, 200); };
 
   const saveProfile = (key, value) => {
     const current = {
@@ -120,12 +125,12 @@ export default function Sidebar({
 
       {/* ── Settings overlay (slides over full sidebar) ── */}
       {showSettings && (
-        <div className="settings-overlay" role="dialog" aria-label="Settings">
+        <div className={`settings-overlay${settingsExiting ? " exiting" : ""}`} role="dialog" aria-label="Settings">
           <div className="settings-overlay-header">
             <h3>Settings</h3>
             <button
               className="btn-icon"
-              onClick={() => setShowSettings(false)}
+              onClick={closeSettings}
               aria-label="Close settings"
             >
               <IconClose size={16} />
@@ -136,7 +141,7 @@ export default function Sidebar({
             <div className="settings-section">
               <h4>Sharing</h4>
               <div className="settings-actions">
-                <button className="btn btn-sm btn-primary" onClick={() => { setShowShare(true); setShowSettings(false); }}>
+                <button className="btn btn-sm btn-primary" onClick={() => { setShowShare(true); closeSettings(); }}>
                   Share Contact
                 </button>
                 <label className="btn btn-sm btn-secondary" tabIndex={0}>
@@ -336,7 +341,7 @@ export default function Sidebar({
               <h4>Device</h4>
               <button
                 className="btn btn-sm btn-secondary"
-                onClick={() => { setShowLinkDevice(true); setShowSettings(false); }}
+                onClick={() => { setShowLinkDevice(true); closeSettings(); }}
               >
                 Link to Mobile
               </button>
@@ -358,12 +363,12 @@ export default function Sidebar({
 
       {/* ── Profile overlay ── */}
       {showProfile && (
-        <div className="settings-overlay" role="dialog" aria-label="Profile">
+        <div className={`settings-overlay${profileExiting ? " exiting" : ""}`} role="dialog" aria-label="Profile">
           <div className="settings-overlay-header">
             <h3>Profile</h3>
             <button
               className="btn-icon"
-              onClick={() => setShowProfile(false)}
+              onClick={closeProfile}
               aria-label="Close profile"
             >
               <IconClose size={16} />

@@ -202,6 +202,11 @@
   to   { transform: translateX(0);    opacity: 1; }
 }
 
+@keyframes slide-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-100%); opacity: 0; }
+}
+
 @keyframes toast-enter {
   from {
     opacity: 0;
@@ -870,7 +875,11 @@ code, kbd {
   z-index: 10;
   display: flex;
   flex-direction: column;
-  animation: slide-in-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slide-in-left 200ms ease-out;
+}
+
+.settings-overlay.exiting {
+  animation: slide-out-left 200ms ease-in forwards;
 }
 
 .settings-overlay-header {
