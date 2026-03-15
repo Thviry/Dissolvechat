@@ -6,6 +6,23 @@ import { saveJson } from "@utils/storage";
 import { idToHue } from "@utils/callHelpers";
 import { IconSettings, IconLogout, IconClose, IconMore, IconSearch, IconPlus, IconGroup } from "./Icons";
 
+function formatRelativeTime(ts) {
+  if (!ts) return "";
+  const now = new Date();
+  const d = new Date(ts);
+  const diffMs = now - d;
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  if (diffDays < 7) return d.toLocaleDateString([], { weekday: "short" });
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 const AVATAR_COLORS = [
   { id: "auto",    label: "Auto",    hue: null },
   { id: "red",     label: "Red",     hue: 0 },
@@ -530,7 +547,12 @@ export default function Sidebar({
                       {onlineIds[c.id] && <span className="presence-dot" />}
                     </div>
                     <div className="contact-info">
-                      <div className="contact-name">{c.label}</div>
+                      <div className="contact-name-row">
+                        <div className="contact-name">{c.label}</div>
+                        {lastMessages[c.id]?.ts && (
+                          <span className="contact-time">{formatRelativeTime(lastMessages[c.id].ts)}</span>
+                        )}
+                      </div>
                       {lastMessages[c.id]
                         ? <div className="contact-preview">{lastMessages[c.id].text}</div>
                         : <div className="contact-id">{c.id.slice(0, 20)}…</div>
@@ -598,7 +620,12 @@ export default function Sidebar({
                       {g.groupName[0].toUpperCase()}
                     </div>
                     <div className="contact-info">
-                      <div className="contact-name">{g.groupName}</div>
+                      <div className="contact-name-row">
+                        <div className="contact-name">{g.groupName}</div>
+                        {lastMessages[g.groupId]?.ts && (
+                          <span className="contact-time">{formatRelativeTime(lastMessages[g.groupId].ts)}</span>
+                        )}
+                      </div>
                       {lastMessages[g.groupId]
                         ? <div className="contact-preview">{lastMessages[g.groupId].text}</div>
                         : <div className="contact-id">{g.members.length} members</div>
