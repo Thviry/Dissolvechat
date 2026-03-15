@@ -2984,7 +2984,7 @@ textarea.input-field {
   transition: opacity 0.2s ease, transform 0.2s ease, background var(--t-base), color var(--t-base);
   box-shadow: var(--shadow-sm);
   opacity: 0;
-  transform: translateY(8px) scale(0.9);
+  transform: translateY(8px) scale(0.8);
   pointer-events: none;
 }
 
@@ -3286,7 +3286,7 @@ textarea.input-field {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  animation: msg-in 0.12s ease-out;
+  animation: scalePop 150ms ease-out;
 }
 
 .emoji-favorites {
