@@ -1611,6 +1611,27 @@ code, kbd {
   border-top-right-radius: var(--radius-xs);
 }
 
+/* Grouped bubble radius — stacked feel */
+.chat-bubble.incoming.msg-group-first {
+  border-radius: var(--radius-sm) var(--radius-bubble) var(--radius-bubble) var(--radius-sm);
+}
+.chat-bubble.incoming.msg-group-middle {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) var(--radius-sm);
+}
+.chat-bubble.incoming.msg-group-last {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-bubble) var(--radius-sm);
+}
+
+.chat-bubble.outgoing.msg-group-first {
+  border-radius: var(--radius-bubble) var(--radius-sm) var(--radius-sm) var(--radius-bubble);
+}
+.chat-bubble.outgoing.msg-group-middle {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) var(--radius-sm);
+}
+.chat-bubble.outgoing.msg-group-last {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) var(--radius-bubble);
+}
+
 .chat-bubble-text {
   font-size: 14px;
   line-height: 1.5;
