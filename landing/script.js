@@ -1,11 +1,11 @@
 // ── Configuration — update before each release ─────────────────────────────
 'use strict';
 const GITHUB_REPO     = 'Thviry/Dissolvechat';
-const RELEASE_VERSION = '0.1.8-beta';
+const RELEASE_VERSION = '0.1.9-beta';
 const RELEASE_ASSETS  = {
-  windows: `Dissolve_0.1.8_x64-setup.exe`,
-  mac:     `Dissolve_0.1.8_universal.dmg`,
-  linux:   `Dissolve_0.1.8_amd64.AppImage`,
+  windows: `Dissolve_0.1.9_x64-setup.exe`,
+  mac:     `Dissolve_0.1.9_universal.dmg`,
+  linux:   `Dissolve_0.1.9_amd64.AppImage`,
 };
 
 // ── Derived URLs ────────────────────────────────────────────────────────────
