@@ -531,7 +531,13 @@ export default function Sidebar({
         <div className="sidebar-section">
           <h3 className="section-title">Contacts</h3>
           {contacts.length === 0 ? (
-            <p className="empty-state">No contacts yet — look up a handle above</p>
+            <div className="empty-state-rich">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="empty-state-icon">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <p>Look up a handle to start chatting</p>
+            </div>
           ) : (
             <div className="contact-list" role="list">
               {contacts.map((c) => (
@@ -605,7 +611,15 @@ export default function Sidebar({
             </button>
           </div>
           {groups.length === 0 ? (
-            <p className="empty-state" style={{ padding: "0 16px" }}>No groups yet</p>
+            <div className="empty-state-rich">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="empty-state-icon">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <p>Create a group to chat with multiple people</p>
+            </div>
           ) : (
             <div className="contact-list" role="list">
               {groups.map((g) => (

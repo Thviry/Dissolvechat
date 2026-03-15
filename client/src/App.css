@@ -1022,6 +1022,25 @@ code, kbd {
   padding: 4px 0;
 }
 
+.empty-state-rich {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  color: var(--text-tertiary);
+}
+
+.empty-state-rich .empty-state-icon {
+  color: var(--accent);
+  opacity: 0.4;
+}
+
+.empty-state-rich p {
+  font-size: 12px;
+  text-align: center;
+}
+
 /* Lookup bar */
 .lookup-bar {
   display: flex;
