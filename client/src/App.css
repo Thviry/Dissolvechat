@@ -788,19 +788,18 @@ code, kbd {
 }
 
 .contact-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
   flex-shrink: 0;
-  border: 1px solid var(--border);
+  box-shadow: var(--shadow-avatar);
   position: relative;
 }
 
@@ -808,12 +807,12 @@ code, kbd {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   background: var(--success);
   border-radius: 50%;
-  border: 2px solid var(--bg-secondary);
-  box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 6px var(--accent-40);
   animation: presence-pulse 3s ease-in-out infinite;
 }
 
@@ -1111,7 +1110,8 @@ code, kbd {
 }
 
 .contact-item.active {
-  background: var(--bg-active);
+  background: var(--accent-4);
+  border-left: 2px solid var(--accent);
 }
 
 /* Left accent bar on active contact */
@@ -1168,17 +1168,18 @@ code, kbd {
 
 .unread-badge {
   flex-shrink: 0;
-  min-width: 18px;
-  height: 18px;
+  min-width: 20px;
+  height: 20px;
   padding: 0 5px;
-  border-radius: 9px;
-  background: var(--accent);
-  color: var(--bg-primary);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  color: var(--text-inverse);
   font-size: 10px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 8px var(--accent-40);
   margin-left: auto;
 }
 
@@ -2480,7 +2481,8 @@ textarea.input-field {
    ============================================================ */
 
 .group-avatar {
-  background: var(--accent-muted, rgba(57, 255, 20, 0.15));
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-12), var(--accent-4));
   color: var(--accent);
   font-family: var(--font-display);
   font-weight: 800;
