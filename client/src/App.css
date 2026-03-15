@@ -923,6 +923,8 @@ code, kbd {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-20);
 }
 
 .settings-actions {
@@ -960,6 +962,10 @@ code, kbd {
   flex-shrink: 0;
   position: relative;
   transition: background var(--t-base), border-color var(--t-base);
+}
+
+.toggle-label input[type="checkbox"]:active {
+  animation: toggleBounce 150ms ease;
 }
 
 .toggle-label input[type="checkbox"]::after {
