@@ -211,7 +211,7 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
     if (!canSendMsg || sending) return;
 
     if (hasFile && pendingFile.size > MAX_INLINE_FILE_SIZE) {
-      setError(`File too large (max ${formatFileSize(MAX_INLINE_FILE_SIZE)}). Try a smaller file.`);
+      setError(`File too large (max ${formatFileSize(MAX_INLINE_FILE_SIZE)}) — try a smaller file`);
       return;
     }
 
