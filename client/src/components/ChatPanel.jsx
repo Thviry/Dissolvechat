@@ -239,7 +239,8 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
     let lastDateStr = null;
     let prevSender = null;
     let prevTs = 0;
-    for (const msg of messages) {
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
       const d = new Date(msg.ts);
       const dateStr = d.toDateString();
       if (dateStr !== lastDateStr) {
@@ -247,10 +248,22 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
         lastDateStr = dateStr;
         prevSender = null;
       }
-      // Group consecutive messages from same sender within 2 minutes
       const sender = msg.dir === "out" ? "__self__" : (msg.senderId || msg.dir);
       const grouped = sender === prevSender && (msg.ts - prevTs) < 120000;
-      result.push({ type: "message", grouped, ...msg });
+
+      // Look ahead to determine group position
+      const nextMsg = messages[i + 1];
+      const nextSender = nextMsg ? (nextMsg.dir === "out" ? "__self__" : (nextMsg.senderId || nextMsg.dir)) : null;
+      const nextGrouped = nextMsg && sender === nextSender && (nextMsg.ts - msg.ts) < 120000;
+      const nextDateStr = nextMsg ? new Date(nextMsg.ts).toDateString() : null;
+      const nextIsNewDay = nextMsg && nextDateStr !== dateStr;
+
+      let groupPos = null;
+      if (grouped && (nextGrouped && !nextIsNewDay)) groupPos = "middle";
+      else if (grouped && (!nextGrouped || nextIsNewDay)) groupPos = "last";
+      else if (!grouped && (nextGrouped && !nextIsNewDay)) groupPos = "first";
+
+      result.push({ type: "message", grouped, groupPos, ...msg });
       prevSender = sender;
       prevTs = msg.ts;
     }
@@ -371,7 +384,7 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
             ) : (
               <React.Fragment key={item.msgId}>
               <div
-                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${item.status === "failed" ? " failed" : ""}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}${item.grouped ? " grouped" : ""}`}
+                className={`chat-bubble ${item.dir === "out" ? "outgoing" : "incoming"}${item.status === "failed" ? " failed" : ""}${!seenRef.current?.has(item.msgId) ? " is-new" : ""}${item.grouped ? " grouped" : ""}${item.groupPos ? ` msg-group-${item.groupPos}` : ""}`}
               >
                 {item.text && (
                   <button
