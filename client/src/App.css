@@ -1386,7 +1386,8 @@ code, kbd {
   align-items: center;
   gap: 12px;
   padding: 10px 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--border), transparent) 1;
   background: var(--bg-secondary);
   min-height: var(--header-height);
   flex-shrink: 0;
@@ -1736,7 +1737,8 @@ code, kbd {
 /* Input area */
 .chat-input-area {
   padding: 10px 20px 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--border), transparent) 1;
   background: var(--bg-secondary);
   flex-shrink: 0;
 }
@@ -1773,7 +1775,8 @@ code, kbd {
 
 .chat-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-muted), 0 0 16px var(--accent-muted);
+  box-shadow: 0 0 0 2px var(--accent-15);
+  outline: none;
 }
 
 .chat-input::placeholder {
@@ -1796,11 +1799,12 @@ code, kbd {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background var(--t-base), box-shadow var(--t-base), transform var(--t-fast) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform var(--t-fast) !important;
 }
 
 .btn-send:not(:disabled):hover {
-  box-shadow: 0 0 12px var(--accent-glow);
+  box-shadow: 0 0 12px var(--accent-40);
 }
 
 /* ── File attach button ─────────────────────────────────────── */
