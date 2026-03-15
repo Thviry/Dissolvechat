@@ -408,6 +408,7 @@ code, kbd {
     linear-gradient(90deg, rgba(57, 255, 20, 0.025) 1px, transparent 1px),
     radial-gradient(ellipse at 50% 0%, rgba(57, 255, 20, 0.06) 0%, transparent 65%);
   background-size: 48px 48px, 48px 48px, 100% 100%;
+  animation: fadeSlideUp 300ms ease-out;
 }
 
 .login-card {
@@ -458,6 +459,22 @@ code, kbd {
   display: block;
   animation: icon-pulse 4s ease-in-out infinite;
   letter-spacing: 0;
+  position: relative;
+}
+
+.login-icon::before {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-6) 0%, transparent 70%);
+  animation: glowPulse 4s ease-in-out infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Wordmark — h1 inside login card */
@@ -2097,16 +2114,17 @@ code, kbd {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
   border-color: var(--accent);
   color: var(--text-inverse);
   font-weight: 600;
+  border: none;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-  box-shadow: 0 0 16px var(--accent-glow);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  box-shadow: 0 0 12px var(--accent-40);
 }
 
 .btn-primary:disabled {
