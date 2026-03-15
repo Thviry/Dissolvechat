@@ -6,6 +6,9 @@ import { IconClose } from "./Icons";
 export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile, onClose }) {
   const [tab, setTab] = useState("link"); // link | file | qr
   const [copied, setCopied] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  const handleClose = () => { setExiting(true); setTimeout(onClose, 150); };
 
   // Build a shareable link with the contact card encoded as a URL-safe base64 fragment
   const shareLink = useMemo(() => {
@@ -41,13 +44,13 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Escape") onClose();
+    if (e.key === "Escape") handleClose();
   };
 
   return (
     <div
-      className="modal-overlay"
-      onClick={onClose}
+      className={`modal-overlay${exiting ? " exiting" : ""}`}
+      onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="share-modal-title"
@@ -56,7 +59,7 @@ export default function ShareModal({ cardData, onDownloadCard, onDownloadProfile
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3 id="share-modal-title">Share Contact</h3>
-          <button className="btn-icon modal-close" onClick={onClose} aria-label="Close"><IconClose size={16} /></button>
+          <button className="btn-icon modal-close" onClick={handleClose} aria-label="Close"><IconClose size={16} /></button>
         </div>
 
         {/* Tabs */}

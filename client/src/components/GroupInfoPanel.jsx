@@ -17,6 +17,9 @@ export default function GroupInfoPanel({
   const [showAddMember, setShowAddMember] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState(group.groupName);
+  const [exiting, setExiting] = useState(false);
+
+  const handleClose = () => { setExiting(true); setTimeout(onClose, 150); };
 
   const me = group.members.find((m) => m.id === myId);
   const isAdmin = me?.role === "admin";
@@ -33,7 +36,7 @@ export default function GroupInfoPanel({
   };
 
   return (
-    <div className="group-info-panel">
+    <div className={`group-info-panel${exiting ? " exiting" : ""}`}>
       <div className="group-info-header">
         {editingName ? (
           <input
@@ -54,7 +57,7 @@ export default function GroupInfoPanel({
             {group.groupName}
           </h3>
         )}
-        <button className="btn-icon" onClick={onClose} aria-label="Close">
+        <button className="btn-icon" onClick={handleClose} aria-label="Close">
           <IconClose size={16} />
         </button>
       </div>

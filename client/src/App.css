@@ -2329,13 +2329,26 @@ textarea.input-field {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(6px);
-  animation: fade-in 0.18s ease;
+  animation: modalBackdropIn 150ms ease-out;
+}
+
+.modal-overlay.exiting {
+  animation: modalBackdropOut 150ms ease-in forwards;
+}
+
+.modal-overlay > :first-child {
+  animation: modalBodyIn 200ms ease-out;
+}
+
+.modal-overlay.exiting > :first-child {
+  animation: modalBodyOut 150ms ease-in forwards;
 }
 
 .modal-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #1a1a1a, #141414);
+  border: none;
+  border-radius: 12px;
+  box-shadow: var(--shadow-floating);
   width: 90%;
   max-width: 440px;
   max-height: 85vh;

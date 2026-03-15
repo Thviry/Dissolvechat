@@ -16,6 +16,7 @@ function generateQrDataUrl(text) {
 
 export default function LinkDeviceModal({ identity, onClose }) {
   const [status, setStatus] = useState("generating"); // generating | waiting | transferring | success | error
+  const [exiting, setExiting] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [qrPayload, setQrPayload] = useState("");
   const [error, setError] = useState("");
@@ -139,12 +140,14 @@ export default function LinkDeviceModal({ identity, onClose }) {
     };
   }, []);
 
+  const handleClose = () => { setExiting(true); setTimeout(onClose, 150); };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className={`modal-overlay${exiting ? " exiting" : ""}`} onClick={handleClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
         <div className="modal-header">
           <h3>Link to Mobile</h3>
-          <button className="btn-icon" onClick={onClose} aria-label="Close">
+          <button className="btn-icon" onClick={handleClose} aria-label="Close">
             <IconClose size={16} />
           </button>
         </div>

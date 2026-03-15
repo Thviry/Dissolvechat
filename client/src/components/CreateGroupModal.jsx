@@ -5,6 +5,9 @@ import { IconClose } from "./Icons";
 export default function CreateGroupModal({ contacts, onClose, onCreate }) {
   const [name, setName] = useState("");
   const [selected, setSelected] = useState(new Set());
+  const [exiting, setExiting] = useState(false);
+
+  const handleClose = () => { setExiting(true); setTimeout(onClose, 150); };
 
   const toggle = (id) => {
     setSelected((prev) => {
@@ -24,11 +27,11 @@ export default function CreateGroupModal({ contacts, onClose, onCreate }) {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className={`modal-backdrop${exiting ? " exiting" : ""}`} onClick={handleClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Create Group</h3>
-          <button className="btn-icon" onClick={onClose} aria-label="Close">
+          <button className="btn-icon" onClick={handleClose} aria-label="Close">
             <IconClose size={16} />
           </button>
         </div>
@@ -62,7 +65,7 @@ export default function CreateGroupModal({ contacts, onClose, onCreate }) {
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-secondary" onClick={handleClose}>Cancel</button>
           <button
             className="btn btn-primary"
             onClick={handleCreate}

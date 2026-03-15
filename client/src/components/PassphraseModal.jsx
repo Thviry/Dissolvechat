@@ -14,7 +14,10 @@ export default function PassphraseModal({
   const [confirmValue, setConfirmValue] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const inputRef = useRef(null);
+
+  const handleClose = () => { setExiting(true); setTimeout(onCancel, 150); };
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -27,13 +30,13 @@ export default function PassphraseModal({
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && canConfirm) onConfirm(passphrase);
-    if (e.key === "Escape") onCancel();
+    if (e.key === "Escape") handleClose();
   };
 
   return (
     <div
-      className="modal-overlay"
-      onClick={onCancel}
+      className={`modal-overlay${exiting ? " exiting" : ""}`}
+      onClick={handleClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="pp-modal-title"
@@ -43,7 +46,7 @@ export default function PassphraseModal({
           <h3 id="pp-modal-title">{title}</h3>
           <button
             className="btn-icon modal-close"
-            onClick={onCancel}
+            onClick={handleClose}
             aria-label="Cancel"
             type="button"
           >
@@ -103,7 +106,7 @@ export default function PassphraseModal({
           )}
 
           <div className="modal-actions">
-            <button className="btn btn-secondary" type="button" onClick={onCancel}>
+            <button className="btn btn-secondary" type="button" onClick={handleClose}>
               Cancel
             </button>
             <button
