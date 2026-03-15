@@ -43,7 +43,7 @@ function MessageStatus({ status }) {
   }
 }
 
-export default function ChatPanel({ className, isMobile, onBack, peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId, onStartCall, callState }) {
+export default function ChatPanel({ className, isMobile, onBack, peer, group, messages, onSend, onGroupInfo, onRetry, onDismiss, identityId, onStartCall, callState, identity, contactCount, groupCount }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -271,15 +271,37 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
   }, [messages]);
 
   if (!peer && !group) {
+    const avatarHue = (() => {
+      try {
+        const profile = JSON.parse(localStorage.getItem(`profile:${identityId}`) || "{}");
+        if (profile.avatarColor && profile.avatarColor !== "auto") {
+          const COLORS = { red: 0, orange: 30, amber: 45, green: 140, teal: 175, cyan: 190, blue: 220, indigo: 245, purple: 270, pink: 330 };
+          return COLORS[profile.avatarColor] ?? idToHue(identityId);
+        }
+      } catch {}
+      return idToHue(identityId);
+    })();
+
     return (
       <main className={`chat-panel ${className || ""}`}>
-        <div className="chat-empty">
-          <div className="chat-empty-watermark" aria-hidden="true">◈</div>
-          <div className="chat-empty-icon" aria-hidden="true">◈</div>
-          <h2>Dissolve Chat</h2>
-          <p>Select a contact or group to start a secure conversation</p>
-          <div className="chat-empty-shortcuts">
-            <kbd>Enter</kbd> send &nbsp; <kbd>Shift+Enter</kbd> new line
+        <div className="chat-empty identity-hub">
+          <div className="identity-hub-glow" aria-hidden="true" />
+          <div className="identity-hub-avatar" style={{ "--avatar-hue": avatarHue }}>
+            {(identity?.handle || identity?.label || "?").charAt(0).toUpperCase()}
+          </div>
+          <div className="identity-hub-handle" style={{ animationDelay: "80ms" }}>
+            {identity?.handle || identity?.label || "Anonymous"}
+          </div>
+          <div className="identity-hub-stats" style={{ animationDelay: "160ms" }}>
+            {contactCount ?? 0} contact{contactCount !== 1 ? "s" : ""} · {groupCount ?? 0} group{groupCount !== 1 ? "s" : ""}
+          </div>
+          <div className="identity-hub-tags" style={{ animationDelay: "240ms" }}>
+            <span className="identity-hub-tag accent">Encrypted</span>
+            <span className="identity-hub-tag">P2P</span>
+            <span className="identity-hub-tag">Anonymous</span>
+          </div>
+          <div className="identity-hub-motto" style={{ animationDelay: "320ms" }}>
+            Power to the user, not the platform.
           </div>
         </div>
       </main>
