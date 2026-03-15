@@ -347,7 +347,7 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
           {!peer.cap && (
             <div
               className="chat-header-warning"
-              title="Cannot send messages — no inbox capability for this contact"
+              title="Waiting for connection..."
               role="status"
             >
               ⚠ No cap
@@ -377,7 +377,7 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
           <div className="chat-no-messages">
             <span>No messages yet</span>
             <span style={{ fontSize: "11px" }}>
-              {canSend ? "Send the first message below" : "No inbox capability — request one first"}
+              {canSend ? "Send the first message below" : "Waiting for connection..."}
             </span>
           </div>
         ) : (
@@ -558,7 +558,7 @@ export default function ChatPanel({ className, isMobile, onBack, peer, group, me
               el.style.height = "auto";
               el.style.height = Math.min(el.scrollHeight, 120) + "px";
             }}
-            placeholder={canSend ? "Type a message…" : "Cannot send — no inbox capability"}
+            placeholder={canSend ? "Type a message…" : "Waiting for connection..."}
             disabled={!canSend || sending}
             aria-label="Message input"
             rows={1}
