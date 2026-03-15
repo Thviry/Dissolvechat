@@ -205,7 +205,7 @@
 @keyframes toast-enter {
   from {
     opacity: 0;
-    transform: translateX(12px) scale(0.96);
+    transform: translateX(20px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -458,6 +458,22 @@ code, kbd {
   display: block;
   animation: icon-pulse 4s ease-in-out infinite;
   letter-spacing: 0;
+  position: relative;
+}
+
+.login-icon::before {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-6) 0%, transparent 70%);
+  animation: glowPulse 4s ease-in-out infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Wordmark — h1 inside login card */
@@ -906,6 +922,8 @@ code, kbd {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-20);
 }
 
 .settings-actions {
@@ -965,6 +983,10 @@ code, kbd {
 .toggle-label input[type="checkbox"]:checked::after {
   transform: translateX(16px);
   background: var(--accent);
+}
+
+.toggle-label input[type="checkbox"]:active {
+  animation: toggleBounce 150ms ease;
 }
 
 .hint-text {
@@ -2097,16 +2119,17 @@ code, kbd {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
   border-color: var(--accent);
   color: var(--text-inverse);
   font-weight: 600;
+  border: none;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-  box-shadow: 0 0 16px var(--accent-glow);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  box-shadow: 0 0 12px var(--accent-40);
 }
 
 .btn-primary:disabled {
@@ -2238,7 +2261,7 @@ textarea.input-field {
   border-radius: var(--radius-full);
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-raised);
   font-size: 13px;
   font-weight: 500;
   max-width: 340px;
@@ -2254,16 +2277,19 @@ textarea.input-field {
 .toast-success {
   border-color: rgba(52, 211, 153, 0.25);
   background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(52, 211, 153, 0.15));
+  border-left: 2px solid var(--accent);
 }
 
 .toast-error {
   border-color: rgba(248, 113, 113, 0.25);
   background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(248, 113, 113, 0.15));
+  border-left: 2px solid var(--danger);
 }
 
 .toast-warning {
   border-color: rgba(251, 191, 36, 0.25);
   background: color-mix(in srgb, var(--bg-tertiary) 85%, rgba(251, 191, 36, 0.15));
+  border-left: 2px solid var(--warning);
 }
 
 .toast-info {
@@ -2305,13 +2331,26 @@ textarea.input-field {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(6px);
-  animation: fade-in 0.18s ease;
+  animation: modalBackdropIn 150ms ease-out;
+}
+
+.modal-overlay.exiting {
+  animation: modalBackdropOut 150ms ease-in forwards;
+}
+
+.modal-overlay > :first-child {
+  animation: modalBodyIn 200ms ease-out;
+}
+
+.modal-overlay.exiting > :first-child {
+  animation: modalBodyOut 150ms ease-in forwards;
 }
 
 .modal-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #1a1a1a, #141414);
+  border: none;
+  border-radius: 12px;
+  box-shadow: var(--shadow-floating);
   width: 90%;
   max-width: 440px;
   max-height: 85vh;
@@ -2944,7 +2983,7 @@ textarea.input-field {
   transition: opacity 0.2s ease, transform 0.2s ease, background var(--t-base), color var(--t-base);
   box-shadow: var(--shadow-sm);
   opacity: 0;
-  transform: translateY(8px) scale(0.9);
+  transform: translateY(8px) scale(0.8);
   pointer-events: none;
 }
 
@@ -3246,7 +3285,7 @@ textarea.input-field {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  animation: msg-in 0.12s ease-out;
+  animation: scalePop 150ms ease-out;
 }
 
 .emoji-favorites {
