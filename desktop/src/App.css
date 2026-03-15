@@ -1386,7 +1386,8 @@ code, kbd {
   align-items: center;
   gap: 12px;
   padding: 10px 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--border), transparent) 1;
   background: var(--bg-secondary);
   min-height: var(--header-height);
   flex-shrink: 0;
@@ -1570,26 +1571,31 @@ code, kbd {
   white-space: pre-wrap;
 }
 
-.chat-bubble.is-new {
-  animation: msg-in 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+.chat-bubble.incoming.is-new {
+  animation: fadeSlideUp 200ms ease-out;
 }
 
-/* Incoming — dark card, left-aligned */
+.chat-bubble.outgoing.is-new {
+  animation: scalePop 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Incoming — gradient glass, left-aligned */
 .chat-bubble.incoming {
   align-self: flex-start;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: var(--radius-xs);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm) var(--radius-bubble) var(--radius-bubble) var(--radius-sm);
+  box-shadow: var(--shadow-raised);
   color: var(--text-primary);
 }
 
-/* Outgoing — glass effect with accent right-border */
+/* Outgoing — accent gradient glass */
 .chat-bubble.outgoing {
   align-self: flex-end;
-  background: rgba(57, 255, 20, 0.07);
-  border: 1px solid rgba(57, 255, 20, 0.16);
-  border-right: 2px solid var(--accent);
-  border-bottom-right-radius: var(--radius-xs);
+  background: linear-gradient(135deg, var(--accent-12), var(--accent-4));
+  border: 1px solid var(--accent-15);
+  border-radius: var(--radius-bubble) var(--radius-sm) var(--radius-sm) var(--radius-bubble);
+  box-shadow: 0 2px 12px var(--accent-6);
   color: var(--text-primary);
 }
 
@@ -1604,6 +1610,27 @@ code, kbd {
 
 .chat-bubble.outgoing.grouped {
   border-top-right-radius: var(--radius-xs);
+}
+
+/* Grouped bubble radius — stacked feel */
+.chat-bubble.incoming.msg-group-first {
+  border-radius: var(--radius-sm) var(--radius-bubble) var(--radius-bubble) var(--radius-sm);
+}
+.chat-bubble.incoming.msg-group-middle {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) var(--radius-sm);
+}
+.chat-bubble.incoming.msg-group-last {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-bubble) var(--radius-sm);
+}
+
+.chat-bubble.outgoing.msg-group-first {
+  border-radius: var(--radius-bubble) var(--radius-sm) var(--radius-sm) var(--radius-bubble);
+}
+.chat-bubble.outgoing.msg-group-middle {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) var(--radius-sm);
+}
+.chat-bubble.outgoing.msg-group-last {
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-sm) var(--radius-bubble);
 }
 
 .chat-bubble-text {
@@ -1710,7 +1737,8 @@ code, kbd {
 /* Input area */
 .chat-input-area {
   padding: 10px 20px 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--border), transparent) 1;
   background: var(--bg-secondary);
   flex-shrink: 0;
 }
@@ -1747,7 +1775,8 @@ code, kbd {
 
 .chat-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-muted), 0 0 16px var(--accent-muted);
+  box-shadow: 0 0 0 2px var(--accent-15);
+  outline: none;
 }
 
 .chat-input::placeholder {
@@ -1770,11 +1799,12 @@ code, kbd {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background var(--t-base), box-shadow var(--t-base), transform var(--t-fast) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform var(--t-fast) !important;
 }
 
 .btn-send:not(:disabled):hover {
-  box-shadow: 0 0 12px var(--accent-glow);
+  box-shadow: 0 0 12px var(--accent-40);
 }
 
 /* ── File attach button ─────────────────────────────────────── */
