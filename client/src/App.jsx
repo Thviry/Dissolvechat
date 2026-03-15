@@ -611,6 +611,9 @@ export default function App() {
             onSend={(_, text, file) => messaging.sendGroupMsg(activeGroupId, text, file)}
             onGroupInfo={() => setShowGroupInfo(true)}
             identityId={identity.id}
+            identity={identity}
+            contactCount={contactsMgr.contacts.length}
+            groupCount={groupsMgr.groups.length}
           />
         ) : (
           <ChatPanel
@@ -623,6 +626,9 @@ export default function App() {
             onRetry={messaging.retryMsg}
             onDismiss={messaging.dismissMsg}
             identityId={identity.id}
+            identity={identity}
+            contactCount={contactsMgr.contacts.length}
+            groupCount={groupsMgr.groups.length}
             onStartCall={async (peerId) => {
               const peer = contactsMgr.contacts.find(c => c.id === peerId);
               if (peer) {

@@ -604,6 +604,10 @@ export default function App() {
             messages={activeGroupMessages}
             onSend={(_, text) => messaging.sendGroupMsg(activeGroupId, text)}
             onGroupInfo={() => setShowGroupInfo(true)}
+            identityId={identity.id}
+            identity={identity}
+            contactCount={contactsMgr.contacts.length}
+            groupCount={groupsMgr.groups.length}
           />
         ) : (
           <ChatPanel
@@ -616,6 +620,9 @@ export default function App() {
             onRetry={messaging.retryMsg}
             onDismiss={messaging.dismissMsg}
             identityId={identity.id}
+            identity={identity}
+            contactCount={contactsMgr.contacts.length}
+            groupCount={groupsMgr.groups.length}
             onStartCall={(peerId) => {
               const peer = contactsMgr.contacts.find(c => c.id === peerId);
               if (peer) voiceCall.startCall(peer);
