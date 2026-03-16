@@ -31,6 +31,9 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
   const [callId, setCallId] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+  const [audioDevices, setAudioDevices] = useState([]);
+  const [selectedInput, setSelectedInput] = useState("");
+  const [selectedOutput, setSelectedOutput] = useState("");
 
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -46,9 +49,15 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
   const disconnectTimeoutRef = useRef(null);
   const callStartRef = useRef(null);
   const directionRef = useRef(null);
+  const selectedInputRef = useRef("");
+  const selectedOutputRef = useRef("");
+  const isMutedRef = useRef(false);
 
   // Keep stateRef in sync
   useEffect(() => { stateRef.current = callState; }, [callState]);
+  useEffect(() => { selectedInputRef.current = selectedInput; }, [selectedInput]);
+  useEffect(() => { selectedOutputRef.current = selectedOutput; }, [selectedOutput]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
   // Duration timer
   useEffect(() => {
@@ -71,6 +80,77 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
       }
     };
   }, [callState]);
+
+  // Load saved device preferences
+  useEffect(() => {
+    if (!identity?.id) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(`audioDevices:${identity.id}`) || "{}");
+      if (saved.inputId) setSelectedInput(saved.inputId);
+      if (saved.outputId) setSelectedOutput(saved.outputId);
+    } catch { /* ignore */ }
+  }, [identity?.id]);
+
+  // Enumerate audio devices and listen for changes
+  useEffect(() => {
+    const enumerate = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audio = devices
+          .filter(d => d.kind === "audioinput" || d.kind === "audiooutput")
+          .map(d => ({ deviceId: d.deviceId, label: d.label, kind: d.kind }));
+        setAudioDevices(audio);
+
+        // If selected input disappeared, fall back to default
+        setSelectedInput(prev => {
+          if (prev && !audio.some(d => d.kind === "audioinput" && d.deviceId === prev)) {
+            // Mid-call: re-acquire default mic
+            if (pcRef.current && localStreamRef.current) {
+              navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(newStream => {
+                  const newTrack = newStream.getAudioTracks()[0];
+                  const sender = pcRef.current?.getSenders().find(s => s.track?.kind === "audio");
+                  if (sender) sender.replaceTrack(newTrack);
+                  for (const track of localStreamRef.current.getAudioTracks()) track.stop();
+                  localStreamRef.current = newStream;
+                })
+                .catch(err => {
+                  console.warn("[Voice] Fallback mic failed, ending call:", err.message);
+                  endCall("error");
+                });
+            }
+            return "";
+          }
+          return prev;
+        });
+
+        // If selected output disappeared, fall back to default
+        setSelectedOutput(prev => {
+          if (prev && !audio.some(d => d.kind === "audiooutput" && d.deviceId === prev)) {
+            if (remoteAudioRef.current && typeof remoteAudioRef.current.setSinkId === "function") {
+              remoteAudioRef.current.setSinkId("").catch(() => {});
+            }
+            return "";
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.warn("[Voice] Failed to enumerate devices:", err.message);
+      }
+    };
+
+    enumerate();
+    navigator.mediaDevices.addEventListener("devicechange", enumerate);
+    return () => navigator.mediaDevices.removeEventListener("devicechange", enumerate);
+  }, []);
+
+  const saveDevicePref = useCallback(() => {
+    if (!identity?.id) return;
+    localStorage.setItem(`audioDevices:${identity.id}`, JSON.stringify({
+      inputId: selectedInputRef.current,
+      outputId: selectedOutputRef.current,
+    }));
+  }, [identity?.id]);
 
   const cleanup = useCallback(() => {
     stopRinging();
@@ -150,6 +230,13 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
     pc.ontrack = (event) => {
       if (remoteAudioRef.current && event.streams[0]) {
         remoteAudioRef.current.srcObject = event.streams[0];
+        // Apply saved output device (read from ref to avoid stale closure)
+        const outputId = selectedOutputRef.current;
+        if (outputId && typeof remoteAudioRef.current.setSinkId === "function") {
+          remoteAudioRef.current.setSinkId(outputId).catch(err => {
+            console.warn("[Voice] Failed to set output device:", err.message);
+          });
+        }
       }
     };
 
@@ -209,7 +296,10 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
       const pc = createCallConnection(creds);
       pcRef.current = pc;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const audioConstraints = selectedInput
+        ? { deviceId: selectedInput }
+        : true;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
       localStreamRef.current = stream;
 
       setupPcHandlers(pc, peer);
@@ -301,7 +391,10 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
       const pc = createCallConnection(creds);
       pcRef.current = pc;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const audioConstraints = selectedInput
+        ? { deviceId: selectedInput }
+        : true;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
       localStreamRef.current = stream;
 
       setupPcHandlers(pc, peer);
@@ -405,6 +498,69 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
     }
   }, []);
 
+  const switchInputDevice = useCallback(async (deviceId) => {
+    setSelectedInput(deviceId);
+    saveDevicePref();
+
+    // If in a call, hot-swap the audio track
+    if (pcRef.current && localStreamRef.current) {
+      try {
+        const constraints = deviceId
+          ? { audio: { deviceId: { exact: deviceId } }, video: false }
+          : { audio: true, video: false };
+        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const newTrack = newStream.getAudioTracks()[0];
+        const sender = pcRef.current.getSenders().find(s => s.track?.kind === "audio");
+        if (sender) {
+          await sender.replaceTrack(newTrack);
+        }
+        // Stop old tracks
+        for (const track of localStreamRef.current.getAudioTracks()) {
+          track.stop();
+        }
+        // Update localStreamRef so mute/unmute still works
+        localStreamRef.current = newStream;
+        // Preserve mute state on the new track
+        if (isMutedRef.current) {
+          newTrack.enabled = false;
+        }
+      } catch (err) {
+        console.warn("[Voice] Failed to switch input device:", err.message);
+      }
+    }
+  }, [saveDevicePref]);
+
+  const switchOutputDevice = useCallback(async (deviceId) => {
+    setSelectedOutput(deviceId);
+    saveDevicePref();
+
+    // If in a call, switch the audio output
+    if (remoteAudioRef.current && typeof remoteAudioRef.current.setSinkId === "function") {
+      try {
+        await remoteAudioRef.current.setSinkId(deviceId);
+      } catch (err) {
+        console.warn("[Voice] Failed to switch output device:", err.message);
+      }
+    }
+  }, [saveDevicePref]);
+
+  const requestMicPermission = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop immediately — we only needed permission
+      for (const track of stream.getTracks()) track.stop();
+      // Re-enumerate to get labels
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audio = devices
+        .filter(d => d.kind === "audioinput" || d.kind === "audiooutput")
+        .map(d => ({ deviceId: d.deviceId, label: d.label, kind: d.kind }));
+      setAudioDevices(audio);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -418,5 +574,8 @@ export default function useVoiceCall(identity, contactsRef, addCallEvent) {
     startCall, acceptCall, declineCall, hangup, mute, unmute,
     handleIncomingOffer, handleIncomingAnswer, handleIncomingIce, handleIncomingEnd,
     remoteAudioRef,
+    // Audio device selection
+    audioDevices, selectedInput, selectedOutput,
+    switchInputDevice, switchOutputDevice, requestMicPermission,
   };
 }
