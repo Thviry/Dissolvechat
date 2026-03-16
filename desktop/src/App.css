@@ -3176,6 +3176,83 @@ textarea.input-field {
   color: #fc4848;
 }
 
+/* ── Audio device pickers (CallBar) ── */
+
+.callbar-action-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.callbar-device-trigger {
+  width: 16px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  margin-left: -4px;
+  opacity: 0.6;
+}
+
+.callbar-device-trigger:hover {
+  opacity: 1;
+}
+
+.callbar-device-picker {
+  position: relative;
+}
+
+.callbar-device-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  max-width: 300px;
+  background: var(--bg-secondary, #1e1e1e);
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+  padding: 4px 0;
+  z-index: 100;
+  box-shadow: var(--shadow-floating, 0 8px 32px rgba(0,0,0,0.5));
+  animation: fadeSlideUp 0.15s ease;
+}
+
+.callbar-device-option {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s, color 0.1s;
+}
+
+.callbar-device-option:hover {
+  background: var(--accent-8, rgba(57, 255, 20, 0.08));
+  color: var(--text-primary, #e0e0e0);
+}
+
+.callbar-device-option.active {
+  color: var(--accent, #39ff14);
+  font-weight: 500;
+}
+
+/* ── Audio device select (Settings) ── */
+
+.audio-device-select {
+  width: 100%;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.settings-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary, #aaa);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
 /* Call button in chat header */
 .chat-header-call {
   color: var(--text-secondary);
