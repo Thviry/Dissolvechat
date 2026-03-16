@@ -569,6 +569,11 @@ export default function App() {
             onUnmute={voiceCall.unmute}
             onHangup={() => voiceCall.hangup()}
             onNavigate={() => handleSelectPeer(voiceCall.callPeer?.id)}
+            audioDevices={voiceCall.audioDevices}
+            selectedInput={voiceCall.selectedInput}
+            selectedOutput={voiceCall.selectedOutput}
+            onSwitchInput={voiceCall.switchInputDevice}
+            onSwitchOutput={voiceCall.switchOutputDevice}
           />
         )}
         <Sidebar
