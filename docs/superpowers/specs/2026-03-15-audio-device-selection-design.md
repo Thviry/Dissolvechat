@@ -53,8 +53,9 @@ A new **Audio** section in the Settings overlay, placed between the Privacy and 
 2. Get the new audio track from the stream
 3. Find the audio sender on the RTCPeerConnection via `pc.getSenders()`
 4. Call `sender.replaceTrack(newTrack)` — no renegotiation needed
-5. Stop the old track
-6. Update the saved preference in localStorage
+5. Stop the old track's streams
+6. **Update `localStreamRef.current`** with the new stream so mute/unmute continues to work
+7. Update the saved preference in localStorage
 
 *Output (speaker):*
 1. Call `remoteAudioElement.setSinkId(newDeviceId)`
@@ -67,13 +68,19 @@ A new **Audio** section in the Settings overlay, placed between the Privacy and 
 - `selectedInput` / `selectedOutput` — current device IDs
 
 **Modified behavior:**
-- `getUserMedia` call uses saved `inputId` preference: `{ audio: { deviceId: { exact: savedInputId } } }` (omit `exact` constraint if `""` / default)
-- After call connects, apply saved `outputId` via `setSinkId()` on the remote audio element
+- `getUserMedia` call uses saved `inputId` as a hint: `{ audio: { deviceId: savedInputId } }` (no `exact` — gracefully falls back if device unavailable). For mid-call switching use `{ exact: id }` since the user explicitly picked a device.
+- Apply saved `outputId` via `setSinkId()` on the remote `<audio>` element inside the `ontrack` handler, after `srcObject` is assigned (must be after element has a stream)
 - Expose `switchInputDevice(deviceId)` and `switchOutputDevice(deviceId)` functions
-- Listen for `devicechange` events; if active device disappears mid-call, fall back to default and refresh device list
+- Listen for `devicechange` events; if active device disappears mid-call:
+  - Compare `enumerateDevices()` result against `selectedInput`/`selectedOutput`
+  - For input: call `getUserMedia({ audio: true })` + `replaceTrack` + update `localStreamRef`
+  - For output: call `setSinkId("")` to reset to default
+  - If `getUserMedia` fails during fallback (no mic available), end the call gracefully
+- Clean up `devicechange` listener on hook unmount
 
 **Fallback behavior:**
-- If the saved device ID fails (device unplugged since last use), catch the error and fall back to default device
+- Since `getUserMedia` uses `deviceId` as hint (not `exact`), stale device IDs gracefully fall back to default — no try/catch/retry needed for call start
+- Mid-call `exact` failures show a toast and fall back to default
 - Log a warning but don't block the call
 
 ### 4. Component Changes
@@ -82,13 +89,14 @@ A new **Audio** section in the Settings overlay, placed between the Privacy and 
 - New "Audio" section with two `<select>` elements
 - Reads/writes `audioDevices:{identityId}` from localStorage
 - "Grant microphone access" button when labels are unavailable
-- Device list refreshes on `devicechange` event
+- Device list refreshes on `devicechange` event; listener cleaned up on unmount
 
 **`CallBar.jsx`:**
 - Dropdown menus on mic icon and speaker icon
 - Receives `audioDevices`, `selectedInput`, `selectedOutput`, `switchInputDevice`, `switchOutputDevice` as props from parent
 - Dropdown closes on outside click or device selection
 - Highlight currently active device
+- Dropdown opens downward from CallBar; if near viewport bottom, opens upward
 
 **`App.jsx`:**
 - Pass new voice call props down to CallBar
@@ -108,7 +116,7 @@ A new **Audio** section in the Settings overlay, placed between the Privacy and 
 | No microphone available | Call button disabled, tooltip explains |
 | Saved device unplugged before call | Fall back to default, log warning |
 | Device unplugged mid-call | `devicechange` fires → fall back to default, refresh list, continue call |
-| `setSinkId` not supported (Firefox) | Hide output device selector entirely (both Settings and CallBar) |
+| `setSinkId` not supported (Firefox / macOS Tauri WebKit) | Hide output device selector entirely (both Settings and CallBar) |
 | Permission not yet granted | Settings shows "Grant microphone access" button; call flow requests permission naturally |
 | Only one input/output device | Dropdown still shown but with one option (consistent UX) |
 
@@ -129,4 +137,4 @@ A new **Audio** section in the Settings overlay, placed between the Privacy and 
 - Noise suppression / echo cancellation toggles (browser defaults are fine)
 - Audio level meters / volume controls
 - Video device selection
-- Device selection for ringtone output (uses same output device as call)
+- Ringtone output routing — ringtone uses `AudioContext` (Web Audio API) which doesn't support `setSinkId`, so it always plays on system default output regardless of speaker selection. Acceptable limitation for now.
