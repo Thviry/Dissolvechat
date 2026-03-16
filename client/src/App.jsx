@@ -559,23 +559,23 @@ export default function App() {
           </button>
         </div>
       )}
+      {voiceCall.callState === "connected" && (
+        <CallBar
+          peerLabel={voiceCall.callPeer?.label}
+          duration={voiceCall.callDuration}
+          isMuted={voiceCall.isMuted}
+          onMute={voiceCall.mute}
+          onUnmute={voiceCall.unmute}
+          onHangup={() => voiceCall.hangup()}
+          onNavigate={() => handleSelectPeer(voiceCall.callPeer?.id)}
+          audioDevices={voiceCall.audioDevices}
+          selectedInput={voiceCall.selectedInput}
+          selectedOutput={voiceCall.selectedOutput}
+          onSwitchInput={voiceCall.switchInputDevice}
+          onSwitchOutput={voiceCall.switchOutputDevice}
+        />
+      )}
       <div className="app-layout">
-        {voiceCall.callState === "connected" && (
-          <CallBar
-            peerLabel={voiceCall.callPeer?.label}
-            duration={voiceCall.callDuration}
-            isMuted={voiceCall.isMuted}
-            onMute={voiceCall.mute}
-            onUnmute={voiceCall.unmute}
-            onHangup={() => voiceCall.hangup()}
-            onNavigate={() => handleSelectPeer(voiceCall.callPeer?.id)}
-            audioDevices={voiceCall.audioDevices}
-            selectedInput={voiceCall.selectedInput}
-            selectedOutput={voiceCall.selectedOutput}
-            onSwitchInput={voiceCall.switchInputDevice}
-            onSwitchOutput={voiceCall.switchOutputDevice}
-          />
-        )}
         <Sidebar
           className={isMobile && mobileView === "chat" ? "mobile-hidden" : ""}
           identity={identity}

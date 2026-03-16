@@ -27,7 +27,7 @@ function DevicePicker({ devices, selectedId, onSelect, label }) {
         aria-label={`Select ${label}`}
         aria-expanded={open}
       >
-        <IconChevronDown size={10} />
+        <IconChevronDown size={14} />
       </button>
       {open && (
         <div className="callbar-device-menu" role="listbox" aria-label={label}>
