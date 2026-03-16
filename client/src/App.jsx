@@ -600,6 +600,8 @@ export default function App() {
           onCreateGroup={() => setShowCreateGroup(true)}
           unreadCounts={messaging.unreadCounts}
           lastMessages={messaging.lastMessages}
+          voiceCall={voiceCall}
+          addToast={addToast}
         />
         {activeGroup ? (
           <ChatPanel
