@@ -66,6 +66,8 @@ export default function Sidebar({
   onCreateGroup,
   unreadCounts = {},
   lastMessages = {},
+  voiceCall,
+  addToast,
 }) {
   const RELAY_OFFICIAL = "https://relay.dissolve.chat";
   const RELAY_LOCAL    = "http://localhost:3001";
@@ -85,6 +87,9 @@ export default function Sidebar({
     return url !== "" && url !== RELAY_OFFICIAL && url !== RELAY_LOCAL;
   });
   const importRef = useRef(null);
+
+  const supportsSinkId = typeof HTMLMediaElement !== "undefined" &&
+    typeof HTMLMediaElement.prototype.setSinkId === "function";
 
   const closeSettings = () => { setSettingsExiting(true); setTimeout(() => { setShowSettings(false); setSettingsExiting(false); }, 200); };
   const closeProfile = () => { setProfileExiting(true); setTimeout(() => { setShowProfile(false); setProfileExiting(false); }, 200); };
@@ -230,6 +235,64 @@ export default function Sidebar({
                     Lowercase letters, numbers, hyphens, underscores
                   </div>
                 </div>
+              )}
+            </div>
+
+            <div className="settings-section">
+              <h4>Audio</h4>
+              {voiceCall?.audioDevices?.some(d => d.label) ? (
+                <>
+                  <label className="settings-label">Microphone</label>
+                  <select
+                    className="input-field audio-device-select"
+                    value={voiceCall.selectedInput}
+                    onChange={(e) => voiceCall.switchInputDevice(e.target.value)}
+                  >
+                    <option value="">Default</option>
+                    {voiceCall.audioDevices
+                      .filter(d => d.kind === "audioinput")
+                      .map(d => (
+                        <option key={d.deviceId} value={d.deviceId}>
+                          {d.label || `Microphone ${d.deviceId.slice(0, 8)}`}
+                        </option>
+                      ))}
+                  </select>
+
+                  {supportsSinkId && (
+                    <>
+                      <label className="settings-label" style={{ marginTop: "8px" }}>Speaker</label>
+                      <select
+                        className="input-field audio-device-select"
+                        value={voiceCall.selectedOutput}
+                        onChange={(e) => voiceCall.switchOutputDevice(e.target.value)}
+                      >
+                        <option value="">Default</option>
+                        {voiceCall.audioDevices
+                          .filter(d => d.kind === "audiooutput")
+                          .map(d => (
+                            <option key={d.deviceId} value={d.deviceId}>
+                              {d.label || `Speaker ${d.deviceId.slice(0, 8)}`}
+                            </option>
+                          ))}
+                      </select>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={async () => {
+                      const ok = await voiceCall?.requestMicPermission();
+                      if (!ok) addToast("Microphone access denied", "error");
+                    }}
+                  >
+                    Grant Microphone Access
+                  </button>
+                  <div className="hint-text" style={{ marginTop: "4px" }}>
+                    Required to see available audio devices
+                  </div>
+                </>
               )}
             </div>
 
